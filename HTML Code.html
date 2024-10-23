@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+const emailBodyHTML = " \
+  <html> \
+    <head> \
+      <title>Submission Details</title> \
+    </head> \
+    <body> \
+      <p> \
+        Hi, \
+      </p> \
+      <p> \
+        Here is a copy of the latest submission: \
+      </p> \
+      <p> \
+        <strong>&nbsp;&nbsp;&nbsp;Head Run: </strong>" + headRun + "\
+      </p> \
+      <p> \
+        <strong>&nbsp;&nbsp;&nbsp;Distance: </strong>" + distance + "\
+      </p> \
+      <p>\
+        <strong>&nbsp;&nbsp;&nbsp;Attendees: </strong>" + attendees + "\
+      </p> \
+      <p> \
+        <strong>&nbsp;&nbsp;&nbsp;Submitted by: </strong> " + toEmail + "\
+      </p> \
+      <p> \
+          &nbsp;&nbsp; \
+        <strong><em>I declare all attendees have provided their waiver and paid the one-time member fee: </em></strong>" + 
+          confirmation + " \
+      </p> \
+      <p> \
+        <strong>&nbsp;&nbsp;&nbsp;Comments: </strong> " + notes + "\
+      </p> \
+      <p> \
+        <br> \
+        - McRUN Bot \
+      </p> \
+    </body> \
+  </html>";
+  
+
+ const remainderEmailBodyHTML_Form = " \
+  <html> \
+    <head> \
+      <title>Missing Submission Form</title> \
+    </head> \
+    <body> \
+      <p> \
+        Hi, \
+      </p> \
+      <p> \
+        This is a friendly reminder to submit today's headrun attendance. \
+      </p> \
+      <p> \
+        <strong>Click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form. </strong> \
+      </p> \
+      <p> \
+        Please ignore this message if the headrun has been cancelled or your group has already submitted the attendance form. \
+      </p> \
+      <p> \
+        <br> \
+        Thank you for all your help! McRun only runs because of you.\
+      </p> \
+      <p> \
+        <br> \
+        - McRUN Bot \
+      </p> \
+    </body> \
+  </html>";
+
+
+  const remainderEmailBodyHTML_App = " \
+  <html> \
+    <head> \
+      <title>Missing Submission Form</title> \
+    </head> \
+    <body> \
+      <p> \
+        Hi, \
+      </p> \
+      <p> \
+        This is a friendly reminder to submit today's headrun attendance. \
+      </p> \
+      <p> \
+        <strong>Submit attendance using the McRUN App. </strong> \
+      </p> \
+      <p> \
+        Please ignore this message if the headrun has been cancelled or your group has already submitted the attendance form. \
+      </p> \
+      <p> \
+        <br> \
+        Thank you for all your help! McRun only runs because of you.\
+      </p> \
+      <p> \
+        <br> \
+        - McRUN Bot \
+      </p> \
+    </body> \
+  </html>";
+
