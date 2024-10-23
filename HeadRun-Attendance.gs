@@ -1,7 +1,6 @@
 /* SHEET CONSTANTS */
 const SHEET_NAME = 'HR Attendance F24';
 const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-const MCRUN_EMAIL = 'mcrunningclub@ssmu.ca';
 
 const MEMBERSHIP_NAME = 'Fall 2024';
 const MASTER_NAME = 'MASTER';
@@ -9,11 +8,31 @@ const TIMEZONE = getUserTimeZone();
 
 // List of columns in SHEET_NAME
 const TIMESTAMP_COL = 1;
+const EMAIL_COL = 2;
+const HEADRUNNERS = 3;
 const HEADRUN_COL = 4;
+const RUN_LEVEL_COL = 5;
+const ATTENDEES_BEGINNER_COL = 6;
+const ATTENDEES_INTERMEDIATE_COL = 7;
+const ATTENDEES_ADVANCED_COL = 8;
+const CONFIRMATION_COL = 9;
+const DISTANCE_COL = 10;
+const COMMENTS_COL = 11;
+const COPY_SENT_COL = 12;
+const PLATFORM_COL = 13;
 
 
 function getUserTimeZone() {
   return Session.getScriptTimeZone();
+}
+
+function getColumnPosition() {
+  var rangeList = ATTENDANCE_SHEET.getNamedRanges();
+  var dRange = ATTENDANCE_SHEET.getNamedRanges()[0].getRange();
+
+  for (var i=0; i < rangeList.length; i++){
+    Logger.log(rangeList[i].getName());
+  }
 }
 
 function onFormSubmission() {
@@ -81,7 +100,7 @@ function onEditCheck() {
 function addMissingFormInfo() {
   const sheet = ATTENDANCE_SHEET;
 
-  const rangePlatform = sheet.getRange(sheet.getLastRow(), sheet.getLastColumn());
+  const rangePlatform = sheet.getRange(sheet.getLastRow(), PLATFORM_COL);
   rangePlatform.setValue('Google Form');
 
   const rangeSendEmail = sheet.getRange(sheet.getLastRow(), 11);   // cell for email confirmation
@@ -119,30 +138,30 @@ function removePresenceChecks() {
 /**
  * @author: Andrey S Gonzalez
  * @date: Oct 9, 2023
- * @update: Oct 10, 2024
+ * @update: Oct 23, 2024
  * 
  * Format certain columns. Triggered by form or app submission.
  */
 function formatSpecificColumns() {
   const sheet = ATTENDANCE_SHEET;
   
-  const rangeListToBold = sheet.getRangeList(['A2:A', 'D2:D', 'M2:K']);
+  const rangeListToBold = sheet.getRangeList(['A2:A', 'D2:D', 'L2:N']);
   rangeListToBold.setFontWeight('bold');  // Set ranges to bold
 
-  const rangeListToWrap = sheet.getRangeList(['B2:G', 'I2:J']);
+  const rangeListToWrap = sheet.getRangeList(['B2:G', 'I2:K']);
   rangeListToWrap.setWrap(true);  // Turn on wrap
 
-  const rangeAttendees = sheet.getRange('E2:G');
+  const rangeAttendees = sheet.getRange('F2:H');
   rangeAttendees.setFontSize(9);  // Reduce font size for `Attendees` column
 
   const rangeHeadRun = sheet.getRange('D2:D');
   rangeHeadRun.setFontSize(11);   // Increase font size for `Head Run` column
 
-  const rangeListToCenter = sheet.getRangeList(['K2:M']); 
+  const rangeListToCenter = sheet.getRangeList(['L2:N']); 
   rangeListToCenter.setHorizontalAlignment('center'); 
   rangeListToCenter.setVerticalAlignment('middle');   // Center and align to middle
 
-  const rangePlatform = sheet.getRange('M2:M');
+  const rangePlatform = sheet.getRange('N2:N');
   rangePlatform.setFontSize(11);  // Increase font size for `Submission Platform` column
 
   // Gets non-empty range
@@ -170,19 +189,19 @@ function emailSubmission() {
   const lastRow = sheet.getLastRow();
   const latestSubmission = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn());
 
-  const values = latestSubmission.getValues();
+  const values = latestSubmission.getValues()[0];
 
-  var timestamp = new Date(values[0][0]);
+  var timestamp = new Date(values[0]);
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
 
   // Read only (cannot edit values in sheet)
-  const toEmail = values[0][2];
-  const headRun = values[0][3];
-  var attendees = values[0][4];     // stored as string with '\n' delimeters
+  const toEmail = values[2];
+  const headRun = values[3];
+  var attendees = values[4];     // stored as string with '\n' delimeters
   var formattedAttendees;           // stores formatted string in `attendees`
-  var confirmation = values[0][5];
-  const distance = values[0][6];
-  const notes = values[0][7];
+  var confirmation = values[5];
+  const distance = values[6];
+  const notes = values[7];
 
   // Read and edit sheet values
   const rangeConfirmation = sheet.getRange(lastRow, 6);
