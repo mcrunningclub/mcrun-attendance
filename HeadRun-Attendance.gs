@@ -18,7 +18,7 @@ const ATTENDEES_ADVANCED_COL = 8;
 const CONFIRMATION_COL = 9;
 const DISTANCE_COL = 10;
 const COMMENTS_COL = 11;
-const COPY_SENT_COL = 12;
+const IS_COPY_SENT_COL = 12;
 const PLATFORM_COL = 13;
 
 
@@ -82,7 +82,7 @@ function onEditCheck() {
 
   if (Date.now() - timestamp > timeLimit) return;   // exit if over time limit
 
-  const latestPlatform = sheet.getRange(sheet.getLastRow(), sheet.getLastColumn()).getValue();
+  const latestPlatform = sheet.getRange(sheet.getLastRow(), PLATFORM_COL).getValue();
 
   if (latestPlatform == "McRUN App") {
     onAppSubmission();
@@ -99,11 +99,12 @@ function onEditCheck() {
 
 function addMissingFormInfo() {
   const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
 
-  const rangePlatform = sheet.getRange(sheet.getLastRow(), PLATFORM_COL);
+  const rangePlatform = sheet.getRange(lastRow, PLATFORM_COL);
   rangePlatform.setValue('Google Form');
 
-  const rangeSendEmail = sheet.getRange(sheet.getLastRow(), 11);   // cell for email confirmation
+  const rangeSendEmail = sheet.getRange(lastRow, IS_COPY_SENT_COL);   // cell for email confirmation
   rangeSendEmail.setValue(true);
   rangeSendEmail.insertCheckboxes();
 }
@@ -145,7 +146,7 @@ function removePresenceChecks() {
 function formatSpecificColumns() {
   const sheet = ATTENDANCE_SHEET;
   
-  const rangeListToBold = sheet.getRangeList(['A2:A', 'D2:D', 'L2:N']);
+  const rangeListToBold = sheet.getRangeList(['A2:A', 'D2:D', 'L2:M']);
   rangeListToBold.setFontWeight('bold');  // Set ranges to bold
 
   const rangeListToWrap = sheet.getRangeList(['B2:G', 'I2:K']);
@@ -157,11 +158,11 @@ function formatSpecificColumns() {
   const rangeHeadRun = sheet.getRange('D2:D');
   rangeHeadRun.setFontSize(11);   // Increase font size for `Head Run` column
 
-  const rangeListToCenter = sheet.getRangeList(['L2:N']); 
-  rangeListToCenter.setHorizontalAlignment('center'); 
+  const rangeListToCenter = sheet.getRangeList(['L2:M']); 
+  rangeListToCenter.setHorizontalAlignment('center');
   rangeListToCenter.setVerticalAlignment('middle');   // Center and align to middle
 
-  const rangePlatform = sheet.getRange('N2:N');
+  const rangePlatform = sheet.getRange('M2:M');
   rangePlatform.setFontSize(11);  // Increase font size for `Submission Platform` column
 
   // Gets non-empty range
@@ -169,9 +170,103 @@ function formatSpecificColumns() {
   range.getBandings().forEach(banding => banding.remove());   // Need to remove current banding, before applying it to current range
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);    // Apply BLUE banding with distinct header and footer colours.
 
-  //const rangeSendEmail = sheet.getRange('K2:K');   // cells for email confirmation
+  //const rangeSendEmail = sheet.getRange('L2:L');   // cells for email confirmation
   //rangeSendEmail.insertCheckboxes();
 }
+
+
+
+/**
+ * @author: Andrey S Gonzalez & ChatGPT
+ * @date: Oct 24, 2024
+ * @update: Oct 24, 2024
+ * 
+ * Format attendee names from 'row' into uniform view, sorted and separated by newline.
+ * 
+ */
+function formatNamesInRow(row) {
+  const sheet = ATTENDANCE_SHEET;
+  var nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, 3);  // Attendees columns
+  var namesArr = nameRange.getValues()[0];    // 1D Array of size 3 (Beginner, Intermediate, Advanced)
+
+  for (var i = 0; i < namesArr.length; i++) {
+    // Only process non-empty cells
+    if (namesArr[i]) { 
+      // Replace "n/a" (case insensitive) with "None"
+      var cellValue = namesArr[i].replace(/n\/a/gi, "None");
+        
+      // Split by commas or newline characters
+      var names = cellValue.split(/[,|\n]+/); 
+
+      // Remove whitespace and capitalize names
+      var formattedNames = names.map(function(name) {
+        return name
+              .trim()
+              .toLowerCase()
+              .replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      });
+        
+      // Sort names alphabetically
+      formattedNames.sort();
+        
+      // Join back with newline characters
+      namesArr[i] = formattedNames.join('\n');
+      }
+    }
+  
+  // Replace values with formatted names
+  nameRange.setValues([namesArr]);    // setValues requires 2D array
+}
+
+
+/**
+ * @author: Andrey S Gonzalez & ChatGPT
+ * @date: Oct 24, 2024
+ * @update: Oct 24, 2024
+ * 
+ * Consolidate multiple submission of same headrun into single row
+ * CURRENTLY IN PROGRESS
+ * 
+ */
+function consolidateSubmissions() {
+  const sheet = ATTENDANCE_SHEET;
+  var dataRange = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()); // Data range, assuming headers are on row 1
+  var data = dataRange.getValues();
+
+  // Create a map to store consolidated rows
+  var consolidated = {};
+  
+  for (var i = 0; i < data.length; i++) {
+    var date = new Date(data[i][0]).toDateString(); // Convert the timestamp in column A (1st column) to a date string
+    var matchString = data[i][3]; // Column D (4th column)
+    
+    var key = date + '|' + matchString; // Create a unique key for matching
+    
+    // If a row with the same key already exists, consolidate the data
+    if (consolidated[key]) {
+      for (var j = 1; j < data[i].length; j++) {
+        if (j !== 3) { // Skip column D since we're matching based on it
+          // Concatenate the new data, separated by commas or newlines, avoiding duplicates
+          if (consolidated[key][j] && data[i][j]) {
+            consolidated[key][j] += ', ' + data[i][j];
+          } else if (data[i][j]) {
+            consolidated[key][j] = data[i][j];
+          }
+        }
+      }
+    } else {
+      // If no matching row exists, store the current row as it is
+      consolidated[key] = data[i];
+    }
+  }
+  
+  // Clear the existing data and set the consolidated rows
+  sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clear(); // Clear data range
+  
+  var newData = Object.values(consolidated); // Convert the consolidated object to an array of rows
+  sheet.getRange(2, 1, newData.length, newData[0].length).setValues(newData); // Write the new consolidated data
+}
+
 
 
 /**
@@ -183,7 +278,7 @@ function formatSpecificColumns() {
  */
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
-  if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;
+  //if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;
 
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
@@ -410,6 +505,7 @@ function checkMissingAttendance() {
   MailApp.sendEmail(reminderEmail);
   return;
 
+  // Date formatting examples
   const todayWeekDay = Utilities.formatDate(today, TIMEZONE, 'EEEE');
   const todayDate = Utilities.formatDate(today, TIMEZONE, 'dd');
 }
