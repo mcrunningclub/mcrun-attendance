@@ -1,15 +1,23 @@
 // Emails of current execs
 const emailPresident = 'alexis.demetriou@mail.mcgill.ca';
-const emailVPinternal = ''
-
+const emailVPinternal = '';
 
 /**
- * @author: Andrey S Gonzalez
- * @date: Nov 13, 2023
- * @update: Sep 24, 2024
+ * Returns the headrunners' emails according to input `headrun`.
  * 
- * Returns the headrunners' emails for input `headrun`.
- */ 
+ * @param {string}  headrun  The headrun code representing specific headrun (e.g., `'SundayPM'`).
+ * @return {string[]}  Array of headrunner emails for respective headrun. (e.g., `['headrunner1@example.com', 'headrunner2@example.com', ...]`)
+ *  
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Nov 13, 2023
+ * @update  Sep 29, 2024
+ * 
+ * ```javascript
+ * // Sample Script ➜ Getting headrunner emails for Sunday evening run.
+ * const headrunnerEmails = getHeadRunnerEmail('SundayPM');
+ * ```
+ */
+
 function getHeadRunnerEmail(headrun) {
 
   // Head Runner Emails
@@ -43,11 +51,48 @@ function getHeadRunnerEmail(headrun) {
   const theoGhanem = 'theo.ghanem@mail.mcgill.ca';
 
   // Head Runners associated to each head run
-  const tuesdayHeadRunner = [tessLedieu, julietteAdeline, jamesDiPaola, michaelRafferty, liamMurphy, bridgetAndersen];
-  const wednesdayHeadRunner = [kateRichards, nicolasMorrison, sophiaLongo, camilaCognac, alexanderHebiton];
-  const thursdayHeadRunner = [charlesVillegas, ameliaRilling, emersonDarling, justinCote, liamGrant];
-  const saturdayHeadRunner = [abigailFinch, rachelMattingly, filipSnitil, theoGhanem, bellaVignuzzi, lakshyaSethi];
-  const sundayHeadRunner = [prabhjeetSingh, edmundPaquin, roriSa, madisonHughes, pooyaPilehChiha, aidenLee];
+  const tuesdayHeadRunner = [
+    tessLedieu,
+    julietteAdeline,
+    jamesDiPaola, 
+    michaelRafferty, 
+    liamMurphy, 
+    bridgetAndersen
+    ];
+
+  const wednesdayHeadRunner = [
+    kateRichards, 
+    nicolasMorrison, 
+    sophiaLongo, 
+    camilaCognac, 
+    alexanderHebiton
+    ];
+
+  const thursdayHeadRunner = [
+    charlesVillegas, 
+    ameliaRilling, 
+    emersonDarling, 
+    justinCote, 
+    liamGrant
+    ];
+
+  const saturdayHeadRunner = [
+    abigailFinch, 
+    rachelMattingly, 
+    filipSnitil, 
+    theoGhanem, 
+    bellaVignuzzi, 
+    lakshyaSethi
+    ];
+
+  const sundayHeadRunner = [
+    prabhjeetSingh, 
+    edmundPaquin, 
+    roriSa, 
+    madisonHughes, 
+    pooyaPilehChiha, 
+    aidenLee
+    ];
 
   // Easier to decode from input `headrun`
   switch (headrun) {
@@ -64,25 +109,38 @@ function getHeadRunnerEmail(headrun) {
 
 
 /**
- * @author: Andrey S Gonzalez
- * @date: Nov 13, 2023
- * @update: Sep 24, 2024
+ * Return headrun day and time from headrun code input `headRunDay`.
  * 
- * Returns the head run details as a string using input `headRunDay`
- *  Tuesday   :  6:00pm            
-    Wednesday :  6:00pm          
-    Thursday  :  7:30am           
-    Saturday  :  10:00am
-    Sunday    :  6:00pm
- */ 
+ * @param {string}  headRunDay  The headrun code representing specific headrun (e.g., `'SundayPM'`).
+ * @return {string}  String of headrun day and time. (e.g., `'Sunday - 6pm'`)
+ * 
+ * Current head runs for semester:
+ * 
+ * Tuesday   :  6:00pm            
+ * Wednesday :  6:00pm          
+ * Thursday  :  7:30am           
+ * Saturday  :  10:00am
+ * Sunday    :  6:00pm
+ *  
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Nov 13, 2023
+ * @update  Sep 24, 2024
+ * 
+ * ```javascript
+ * // Sample Script ➜ Getting headrun datetime for Sunday evening run.
+ * const headrun = getHeadRunnerEmail('SundayPM');
+ * Logger.log(headrun) // 'Sunday - 6pm'
+ * ```
+ */
+
 
 function getHeadRunString(headRunDay) {
   switch(headRunDay) {
-    case 'TuesdayPM'  : return 'Tuesday 6pm';
-    case 'WednesdayPM': return 'Wednesday 6pm';
-    case 'ThursdayAM' : return 'Thursday 7:30am';
-    case 'SaturdayAM' : return 'Saturday 10am';
-    case 'SundayPM'   : return 'Sunday 6pm';
+    case 'TuesdayPM'  : return 'Tuesday - 6pm';
+    case 'WednesdayPM': return 'Wednesday - 6pm';
+    case 'ThursdayAM' : return 'Thursday - 7:30am';
+    case 'SaturdayAM' : return 'Saturday - 10am';
+    case 'SundayPM'   : return 'Sunday - 6pm';
 
   default : return '';
   }

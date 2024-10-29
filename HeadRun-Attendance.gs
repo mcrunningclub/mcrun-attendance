@@ -39,14 +39,14 @@ function onFormSubmission() {
   addMissingFormInfo();
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-  copyToLedger();
+  //copyToLedger();       // IN-REVIEW
 }
 
 function onAppSubmission() {
   removePresenceChecks();
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-  copyToLedger();
+  //copyToLedger();       // IN-REVIEW
 }
 
 /**
@@ -286,7 +286,7 @@ function emailSubmission() {
 
   const values = latestSubmission.getValues()[0];
 
-  var timestamp = new Date(values[0]);
+  var timestamp = new Date(values[TIMESTAMP_COL-1]);    // 1-indexed -> 0-indexed
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
 
   // Read only (cannot edit values in sheet)
@@ -299,11 +299,8 @@ function emailSubmission() {
   const notes = values[7];
 
   // Read and edit sheet values
-  const rangeConfirmation = sheet.getRange(lastRow, 6);
-  const rangeSendEmail = sheet.getRange(lastRow, 9);
-  const rangeCopyIsSent = sheet.getRange(lastRow, 10);
-
-  rangeSendEmail.insertCheckboxes();
+  const rangeConfirmation = sheet.getRange(lastRow, CONFIRMATION_COL);
+  const rangeCopyIsSent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
   
   // Only send if submitter wants copy && email has not been sent yet
   if(rangeCopyIsSent.getValue()) return;
@@ -382,15 +379,14 @@ function emailSubmission() {
  * 
  * @author: Andrey S Gonzalez
  * @date: Oct 30, 2023
- * @update: Oct 30, 2023
+ * @update: Oct 28, 2024
  * 
  * Copy newest submission to ledger spreadsheet
  */
 
 function copyToLedger() {
-  return // currently out of service (may-25)
   const sourceSheet = ATTENDANCE_SHEET;
-  const sheetUrl = "https://docs.google.com/spreadsheets/d/1J-nSg2QLNYkVWc0PplfwQWM8fyujE1Dv_PURL6kBNXI/edit?usp=sharing";
+  const sheetUrl = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/edit?usp=sharing";
 
   var destinationSpreadsheet = SpreadsheetApp.openByUrl(sheetUrl);
   var destinationSheet = destinationSpreadsheet.getSheetByName("Head Run Attendance");
@@ -419,7 +415,6 @@ function copyToLedger() {
  */
 
 function checkMissingAttendance() {
-
   const sheet = ATTENDANCE_SHEET;
   
   // Gets values of all timelogs
@@ -429,11 +424,11 @@ function checkMissingAttendance() {
 
   // Get date at trigger time and compare with timestamp of existing submissions
   const today = new Date();
-  const formattedToday = Utilities.formatDate(today, TIMEZONE, 'yyyy-MM-dd a');
+  const formattedToday = Utilities.formatDate(today, TIMEZONE, 'yyyy-MM-dd a');   // e.g. '2024-10-27 PM'
 
   // Formats trigger datetime to get head runner emails
   const headRunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
-  const headRunDetail = getHeadRunString(headRunDay);
+  const headRunDetail = getHeadRunString(headRunDay); // e.g 'Monday - 9am'
 
   // Error handling
   if (headRunDetail.length <= 0) {
@@ -502,7 +497,7 @@ function checkMissingAttendance() {
     name: "McRUN Attendance Bot"
   }
 
-  MailApp.sendEmail(reminderEmail);
+  //MailApp.sendEmail(reminderEmail); // TEST !
   return;
 
   // Date formatting examples
@@ -529,7 +524,7 @@ function copyRowToAnotherSpreadsheet() {
 }
 
 
-function deadCode() {
+function deadCode_() {
   return;
 
   var emailBody = 
