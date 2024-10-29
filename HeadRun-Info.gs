@@ -3,6 +3,45 @@ const emailPresident = 'alexis.demetriou@mail.mcgill.ca';
 const emailVPinternal = '';
 
 /**
+ * Return headrun day and time from headrun code input `headRunDay`.
+ * 
+ * @param {string}  headRunDay  The headrun code representing specific headrun (e.g., `'SundayPM'`).
+ * @return {string}  String of headrun day and time. (e.g., `'Sunday - 6pm'`)
+ * 
+ * Current head runs for semester:
+ * 
+ * Tuesday   :  6:00pm            
+ * Wednesday :  6:00pm          
+ * Thursday  :  7:30am           
+ * Saturday  :  10:00am
+ * Sunday    :  6:00pm
+ *  
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Nov 13, 2023
+ * @update  Sep 24, 2024
+ * 
+ * ```javascript
+ * // Sample Script ➜ Getting headrun datetime for Sunday evening run.
+ * const headrun = getHeadRunnerEmail('SundayPM');
+ * Logger.log(headrun) // 'Sunday - 6pm'
+ * ```
+ */
+
+function getHeadRunString(headRunDay) {
+  switch(headRunDay) {
+    case 'TuesdayPM'  : return 'Tuesday - 6pm';
+    case 'WednesdayPM': return 'Wednesday - 6pm';
+    case 'ThursdayAM' : return 'Thursday - 7:30am';
+    case 'SaturdayAM' : return 'Saturday - 10am';
+    case 'SundayPM'   : return 'Sunday - 6pm';
+
+  default : return '';
+  }
+
+}
+
+
+/**
  * Returns the headrunners' emails according to input `headrun`.
  * 
  * @param {string}  headrun  The headrun code representing specific headrun (e.g., `'SundayPM'`).
@@ -106,44 +145,3 @@ function getHeadRunnerEmail(headrun) {
   }
 
 }
-
-
-/**
- * Return headrun day and time from headrun code input `headRunDay`.
- * 
- * @param {string}  headRunDay  The headrun code representing specific headrun (e.g., `'SundayPM'`).
- * @return {string}  String of headrun day and time. (e.g., `'Sunday - 6pm'`)
- * 
- * Current head runs for semester:
- * 
- * Tuesday   :  6:00pm            
- * Wednesday :  6:00pm          
- * Thursday  :  7:30am           
- * Saturday  :  10:00am
- * Sunday    :  6:00pm
- *  
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 13, 2023
- * @update  Sep 24, 2024
- * 
- * ```javascript
- * // Sample Script ➜ Getting headrun datetime for Sunday evening run.
- * const headrun = getHeadRunnerEmail('SundayPM');
- * Logger.log(headrun) // 'Sunday - 6pm'
- * ```
- */
-
-
-function getHeadRunString(headRunDay) {
-  switch(headRunDay) {
-    case 'TuesdayPM'  : return 'Tuesday - 6pm';
-    case 'WednesdayPM': return 'Wednesday - 6pm';
-    case 'ThursdayAM' : return 'Thursday - 7:30am';
-    case 'SaturdayAM' : return 'Saturday - 10am';
-    case 'SundayPM'   : return 'Sunday - 6pm';
-
-  default : return '';
-  }
-
-}
-

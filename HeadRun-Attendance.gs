@@ -1,39 +1,8 @@
-/* SHEET CONSTANTS */
-const SHEET_NAME = 'HR Attendance F24';
-const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-
-const MEMBERSHIP_NAME = 'Fall 2024';
-const MASTER_NAME = 'MASTER';
-const TIMEZONE = getUserTimeZone();
-
-// List of columns in SHEET_NAME
-const TIMESTAMP_COL = 1;
-const EMAIL_COL = 2;
-const HEADRUNNERS = 3;
-const HEADRUN_COL = 4;
-const RUN_LEVEL_COL = 5;
-const ATTENDEES_BEGINNER_COL = 6;
-const ATTENDEES_INTERMEDIATE_COL = 7;
-const ATTENDEES_ADVANCED_COL = 8;
-const CONFIRMATION_COL = 9;
-const DISTANCE_COL = 10;
-const COMMENTS_COL = 11;
-const IS_COPY_SENT_COL = 12;
-const PLATFORM_COL = 13;
-
-
-function getUserTimeZone() {
-  return Session.getScriptTimeZone();
-}
-
-function getColumnPosition() {
-  var rangeList = ATTENDANCE_SHEET.getNamedRanges();
-  var dRange = ATTENDANCE_SHEET.getNamedRanges()[0].getRange();
-
-  for (var i=0; i < rangeList.length; i++){
-    Logger.log(rangeList[i].getName());
-  }
-}
+/**
+ * Functions to execute after form submission.
+ * 
+ * @trigger Form Submission.
+ */
 
 function onFormSubmission() {
   addMissingFormInfo();
@@ -42,6 +11,12 @@ function onFormSubmission() {
   //copyToLedger();       // IN-REVIEW
 }
 
+
+/**
+ * Functions to execute after McRUN app submission.
+ * 
+ * @trigger McRUN App Submission.
+ */
 function onAppSubmission() {
   removePresenceChecks();
   //emailSubmission();    // IN-REVIEW
@@ -49,30 +24,20 @@ function onAppSubmission() {
   //copyToLedger();       // IN-REVIEW
 }
 
-/**
- * @author: Andrey S Gonzalez
- * @date: Feb 9, 2024
- * @update: Feb 9, 2024
- * 
- * Returns email of current user.
- * Prevents incorrect account executing Google automations e.g. McRUN bot.
- * 
- */
-function getCurrentUserEmail() {
-  return Session.getActiveUser();
-}
-
 
 /**
- * @author: Andrey S Gonzalez
- * @date: Oct 17, 2023
- * @update: Oct 17, 2023
+ * Verifies if new submission in `HR Attendance` sheet from app.
  * 
- * Since app cannot create a trigger when submitting, onAppSubmission() will only run if latest submission
- * is less than [timeLimit] old. 
+ * Since app cannot create a trigger when submitting, `onAppSubmission()` 
+ * will only run if latest submission is less than `[timeLimit]` old. 
  * 
- * Triggered at edit time. Flag is timeLimit
+ * @trigger Edit time in `HR Attendance` sheet.
+ *  
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 17, 2023
+ * @update  Oct 17, 2023
  */
+
 function onEditCheck() {
   Utilities.sleep(5*1000);  // Let latest submission sync for 5 seconds
 
@@ -89,148 +54,22 @@ function onEditCheck() {
   }
 }
 
-/**
- * @author: Andrey S Gonzalez
- * @date: Oct 17, 2023
- * @update: Oct 17, 2023
- * 
- * Adds additional information when Google Form is used. Sets sendEmail column to `true` so emailSubmission() can proceed.
- */
-
-function addMissingFormInfo() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  const rangePlatform = sheet.getRange(lastRow, PLATFORM_COL);
-  rangePlatform.setValue('Google Form');
-
-  const rangeSendEmail = sheet.getRange(lastRow, IS_COPY_SENT_COL);   // cell for email confirmation
-  rangeSendEmail.setValue(true);
-  rangeSendEmail.insertCheckboxes();
-}
 
 /**
- * @author: Andrey S Gonzalez
- * @date: Oct 9, 2023
- * @update: October 23, 2024
+ * Consolidate multiple submission of same headrun into single row.
  * 
- * Change attendance status of all members to not present. 
- * Triggered after new head run or mcrun event.
+ * CURRENTLY IN REVIEW!
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
+ * @date  Oct 24, 2024
+ * @update  Oct 24, 2024
  */
-function removePresenceChecks() {
-  
-  // `Membership Collected (main)` Google Form
-  var ss = SpreadsheetApp.openByUrl("https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y70sI-FAktCiSWqEmkDxfZWz0lFu4/edit?usp=sharing");
 
-  var sheet = ss.getSheetByName(MASTER_NAME);
-  var rangeAttendance, rangeList = sheet.getNamedRanges();
-  
-  for (var i=0; i < rangeList.length; i++){
-    if (rangeList[i].getName() == "attendanceStatus") {
-      rangeAttendance = rangeList[i];
-      break;
-    }
-  }
-
-  rangeAttendance.getRange().uncheck(); // remove all Presence checks
-}
-
-
-/**
- * @author: Andrey S Gonzalez
- * @date: Oct 9, 2023
- * @update: Oct 23, 2024
- * 
- * Format certain columns. Triggered by form or app submission.
- */
-function formatSpecificColumns() {
-  const sheet = ATTENDANCE_SHEET;
-  
-  const rangeListToBold = sheet.getRangeList(['A2:A', 'D2:D', 'L2:M']);
-  rangeListToBold.setFontWeight('bold');  // Set ranges to bold
-
-  const rangeListToWrap = sheet.getRangeList(['B2:G', 'I2:K']);
-  rangeListToWrap.setWrap(true);  // Turn on wrap
-
-  const rangeAttendees = sheet.getRange('F2:H');
-  rangeAttendees.setFontSize(9);  // Reduce font size for `Attendees` column
-
-  const rangeHeadRun = sheet.getRange('D2:D');
-  rangeHeadRun.setFontSize(11);   // Increase font size for `Head Run` column
-
-  const rangeListToCenter = sheet.getRangeList(['L2:M']); 
-  rangeListToCenter.setHorizontalAlignment('center');
-  rangeListToCenter.setVerticalAlignment('middle');   // Center and align to middle
-
-  const rangePlatform = sheet.getRange('M2:M');
-  rangePlatform.setFontSize(11);  // Increase font size for `Submission Platform` column
-
-  // Gets non-empty range
-  const range = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn());
-  range.getBandings().forEach(banding => banding.remove());   // Need to remove current banding, before applying it to current range
-  range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);    // Apply BLUE banding with distinct header and footer colours.
-
-  //const rangeSendEmail = sheet.getRange('L2:L');   // cells for email confirmation
-  //rangeSendEmail.insertCheckboxes();
-}
-
-
-
-/**
- * @author: Andrey S Gonzalez & ChatGPT
- * @date: Oct 24, 2024
- * @update: Oct 24, 2024
- * 
- * Format attendee names from 'row' into uniform view, sorted and separated by newline.
- * 
- */
-function formatNamesInRow(row) {
-  const sheet = ATTENDANCE_SHEET;
-  var nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, 3);  // Attendees columns
-  var namesArr = nameRange.getValues()[0];    // 1D Array of size 3 (Beginner, Intermediate, Advanced)
-
-  for (var i = 0; i < namesArr.length; i++) {
-    // Only process non-empty cells
-    if (namesArr[i]) { 
-      // Replace "n/a" (case insensitive) with "None"
-      var cellValue = namesArr[i].replace(/n\/a/gi, "None");
-        
-      // Split by commas or newline characters
-      var names = cellValue.split(/[,|\n]+/); 
-
-      // Remove whitespace and capitalize names
-      var formattedNames = names.map(function(name) {
-        return name
-              .trim()
-              .toLowerCase()
-              .replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-      });
-        
-      // Sort names alphabetically
-      formattedNames.sort();
-        
-      // Join back with newline characters
-      namesArr[i] = formattedNames.join('\n');
-      }
-    }
-  
-  // Replace values with formatted names
-  nameRange.setValues([namesArr]);    // setValues requires 2D array
-}
-
-
-/**
- * @author: Andrey S Gonzalez & ChatGPT
- * @date: Oct 24, 2024
- * @update: Oct 24, 2024
- * 
- * Consolidate multiple submission of same headrun into single row
- * CURRENTLY IN PROGRESS
- * 
- */
 function consolidateSubmissions() {
   const sheet = ATTENDANCE_SHEET;
-  var dataRange = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()); // Data range, assuming headers are on row 1
+
+  // Data range, assuming headers are on row 1
+  var dataRange = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()); 
   var data = dataRange.getValues();
 
   // Create a map to store consolidated rows
@@ -268,17 +107,42 @@ function consolidateSubmissions() {
 }
 
 
+/**
+ * Copy newest attendance submission to ledger spreadsheet.
+ * 
+ * CURRENTLY IN REVIEW!
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
+ * @date  Oct 30, 2023
+ * @update  Oct 29, 2024
+ */
+
+function copyToLedger() {
+  const sourceSheet = ATTENDANCE_SHEET;
+  const ledgerName = LEDGER_NAME;
+  const sheetUrl = LEDGER_URL;
+
+  var destinationSpreadsheet = SpreadsheetApp.openByUrl(sheetUrl);
+  var destinationSheet = destinationSpreadsheet.getSheetByName(ledgerName);
+  var sourceData = sourceSheet.getRange(sourceSheet.getLastRow(), 1, 1, 5).getValues()[0];
+
+  destinationSheet.appendRow(sourceData);
+}
+
 
 /**
- * @author: Andrey S Gonzalez
- * @date: Oct 9, 2023
- * @update: Feb 9, 2024
+ * Send a copy of attendance submission to headrunners, President & VP Internal.
  * 
- * Send a copy of attendance submission to submitter & VP Internal. Triggered after app submission
+ * @trigger Attendance submissions.
+ *  
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 9, 2023
+ * @update  Oct 29, 2024
  */
+
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
-  //if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;
+  //if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;   // REMOVE AFTER TESTING !
 
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
@@ -355,7 +219,7 @@ function emailSubmission() {
     </body> \
   </html>";
 
-  Logger.log(emailBodyHTML);
+  Logger.log(emailBodyHTML);    // REMOVE AFTER TEST!
 
   
   var message = {
@@ -368,50 +232,28 @@ function emailSubmission() {
     name: "McRUN Attendance Bot"
   }
 
-  //MailApp.sendEmail(message);
+  //MailApp.sendEmail(message);   // REMOVE AFTER TEST!
 
   rangeCopyIsSent.setValue(true);
   rangeCopyIsSent.insertCheckboxes();
 }
 
-/**
- * UPDATE FUNCTION FOR STATIC REFERENCE
- * 
- * @author: Andrey S Gonzalez
- * @date: Oct 30, 2023
- * @update: Oct 28, 2024
- * 
- * Copy newest submission to ledger spreadsheet
- */
-
-function copyToLedger() {
-  const sourceSheet = ATTENDANCE_SHEET;
-  const sheetUrl = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/edit?usp=sharing";
-
-  var destinationSpreadsheet = SpreadsheetApp.openByUrl(sheetUrl);
-  var destinationSheet = destinationSpreadsheet.getSheetByName("Head Run Attendance");
-  var sourceData = sourceSheet.getRange(sourceSheet.getLastRow(), 1, 1, 5).getValues();
-
-  destinationSheet.appendRow(sourceData[0]);
-}
-
 
 /**
- * @author: Andrey S Gonzalez
- * @date: Oct 15, 2023
- * @update: Oct 10, 2024
+ * Check for missing submission after scheduled headrun.
  * 
- * Check for missing submission. Triggers set according to following schedule:
- *  Tuesday: 6:00pm
-    Wednesday: 6:00pm
-    Thursday: 7:30am 
-    Saturday: 10:00am
-    Sunday: 6:00pm
- *
- * FUNCTIONS TO UPDATE EACH SEMESTER: getHeadRunString(), getHeadRunnerEmail()
+ * @trigger 30-60 mins after schedule in `getHeadRunString()`.
  * 
- * TODO: [] change to -> checkMissingAttendance(var headRunAMorPM)
- *       [] modify headrun source to GSheet-> i.e. modify getHeadRunString() and getHeadRunnerEmail()
+ * CURRENTLY IN REVIEW!
+ * 
+ * @UPDATE-EACH-SEMESTER `getHeadRunString()`, `getHeadRunnerEmail()`.
+ * 
+ * @TODO  change to `checkMissingAttendance(var headRunAMorPM)`.
+ * @TODO  modify headrun source to GSheet-> i.e. modify `getHeadRunString()` and `getHeadRunnerEmail()`.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 15, 2023
+ * @update  Oct 10, 2024
  */
 
 function checkMissingAttendance() {
@@ -508,9 +350,9 @@ function checkMissingAttendance() {
 
 
 /** 
- * ChatGPT Example
+ * @author ChatGPT
  */
-function copyRowToAnotherSpreadsheet() {
+function copyRowToAnotherSpreadsheet_() {
   var sourceSpreadsheet = SpreadsheetApp.openById("SourceSpreadsheetID"); // Replace with the ID of your source spreadsheet
   var destinationSpreadsheet = SpreadsheetApp.openById("DestinationSpreadsheetID"); // Replace with the ID of your destination spreadsheet
 
