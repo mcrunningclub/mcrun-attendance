@@ -3,7 +3,7 @@
  * 
  * Sets sendEmail column to `true` so emailSubmission() can proceed.
  * 
- * @trigger New head run or mcrun event submission.
+ * @trigger New Google Form submission.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 17, 2023
@@ -15,12 +15,15 @@ function addMissingFormInfo() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
 
+  const rangeIsCopySent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
+  
+  // Since GForm automatically sends copy to submitter, set isCopySent `true`.
+  rangeIsCopySent
+    .insertCheckboxes()
+    .setValue(true);
+
   const rangePlatform = sheet.getRange(lastRow, PLATFORM_COL);
   rangePlatform.setValue('Google Form');
-
-  const rangeSendEmail = sheet.getRange(lastRow, IS_COPY_SENT_COL);   // cell for email confirmation
-  rangeSendEmail.setValue(true);
-  rangeSendEmail.insertCheckboxes();
 }
 
 
@@ -96,9 +99,22 @@ function formatSpecificColumns() {
   const range = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn());
   range.getBandings().forEach(banding => banding.remove());   // Need to remove current banding, before applying it to current range
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);    // Apply BLUE banding with distinct header and footer colours.
+}
 
-  //const rangeSendEmail = sheet.getRange('L2:L');   // cells for email confirmation
-  //rangeSendEmail.insertCheckboxes();
+
+/**
+ * Wrapper function for `formatNamesInRow` for lastest submission.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 30, 2024
+ * @update  Oct 30, 2024
+ */
+
+function formatLastestNames() {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+
+  formatNamesInRow(lastRow);
 }
 
 
@@ -120,7 +136,10 @@ function formatSpecificColumns() {
 
 function formatNamesInRow(row) {
   const sheet = ATTENDANCE_SHEET;
-  var nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, 3);  // Attendees columns
+  const numColToGet = LEVEL_COUNT;
+
+  // Get attendee names starting from beginner col
+  const nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
   var namesArr = nameRange.getValues()[0];    // 1D Array of size 3 (Beginner, Intermediate, Advanced)
 
   for (var i = 0; i < namesArr.length; i++) {
@@ -155,16 +174,13 @@ function formatNamesInRow(row) {
 
   }
   // Replace values with formatted names
-  nameRange.setValues([namesArr]);    // setValues requires 2D array
+  nameRange.setValues([namesArr]);    // setValues() requires 2D array
 }
 
 function test() {
-  formatNamesInRow(29);
+  formatNamesInRow(26);
+  return;
 
-  // Read and edit sheet values
-  const rangeConfirmation = sheet.getRange(lastRow, CONFIRMATION_COL);
-  const rangeCopyIsSent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
-  
   // Only send if submitter wants copy && email has not been sent yet
   if(rangeCopyIsSent.getValue()) return;
   

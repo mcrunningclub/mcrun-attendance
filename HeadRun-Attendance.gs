@@ -6,6 +6,7 @@
 
 function onFormSubmission() {
   addMissingFormInfo();
+  formatLastestNames();
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
   //copyToLedger();       // IN-REVIEW
@@ -19,6 +20,7 @@ function onFormSubmission() {
  */
 function onAppSubmission() {
   removePresenceChecks();
+  formatLastestNames();
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
   //copyToLedger();       // IN-REVIEW
@@ -133,11 +135,13 @@ function copyToLedger() {
 /**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
  * 
+ * Attendees are separated by level
+ * 
  * @trigger Attendance submissions.
  *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Oct 29, 2024
+ * @update  Oct 30, 2024
  */
 
 function emailSubmission() {
@@ -148,8 +152,10 @@ function emailSubmission() {
   const lastRow = sheet.getLastRow();
   const latestSubmission = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn());
 
-  const values = latestSubmission.getValues()[0];   // array is 0-indexed
-  values.unshift("");   // Transform array into 1-indexed for easy access using COLUMNS vars
+  // Save values in 0-indexed array, then transform into 1-indexed by appending empty
+  // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
+  const values = latestSubmission.getValues()[0];
+  values.unshift("");   // append "" to front
 
   var timestamp = new Date(values[TIMESTAMP_COL]);
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
@@ -173,14 +179,15 @@ function emailSubmission() {
 
   // Read and edit sheet values
   const rangeConfirmation = sheet.getRange(lastRow, CONFIRMATION_COL);
-  const rangeCopyIsSent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
+  const rangeIsCopySent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
   
   // Only send if submitter wants copy && email has not been sent yet
-  if(rangeCopyIsSent.getValue()) return;
+  if(rangeIsCopySent.getValue()) return;
 
-  // Replace newline delimiter with comma-space if non-empty
+  // Replace newline delimiter with comma-space if non-empty or matches "None"
   const attendeesStr = headrun.attendees.toString();
-  if(attendeesStr.length > 1 || !attendeesStr.localeCompare("None")) {
+
+  if(attendeesStr.length > 1) {
     headrun.attendees = attendeesStr.replaceAll('\n', ', ');
   }
   else headrun.attendees = 'None';  // otherwise replace empty string by 'none'
@@ -203,8 +210,10 @@ function emailSubmission() {
 
   //MailApp.sendEmail(message);   // REMOVE AFTER TEST!
 
-  rangeCopyIsSent.setValue(true);
-  rangeCopyIsSent.insertCheckboxes();
+  // As of Oct 2024, MailApp is void and cannot return a confirmation.
+  // Assume sent and set isCopySend as true.
+  rangeIsCopySent.setValue(true);
+  rangeIsCopySent.insertCheckboxes();
 }
 
 
@@ -316,6 +325,108 @@ function checkMissingAttendance() {
   const todayDate = Utilities.formatDate(today, TIMEZONE, 'dd');
 }
 
+/**
+ * Find attendees that are unregistered members.
+ * 
+ * CURRENTLY IN REVIEW!
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 30, 2024
+ * @update  Oct 30, 2024
+ */
+
+function getUnregisteredMembers(){
+  const sheet = ATTENDANCE_SHEET;
+  const NAMES_NOT_FOUND_COL = 14;
+  const lastRow = sheet.getLastRow();
+
+  const unfoundNameRange = sheet.getRange(lastRow, NAMES_NOT_FOUND_COL);
+
+  const numColToGet = LEVEL_COUNT;
+
+  // Get attendee names starting from beginner col
+  const nameRange = sheet.getRange(lastRow, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
+
+  // 1D Array of size 3 (Beginner, Intermediate, Advanced)
+  const allNames = nameRange.getValues()[0];
+
+  // Split names in each level into separate entry in array, then sort
+  const sortedNames = allNames
+    .filter(level => !level.includes("None")) // Skip levels with "none"
+    .flatMap(level => level.split('\n'))
+    .sort();
+
+  const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
+  const rangeMembers = memberSheet.getRange(2, 1, 223);
+  const members = rangeMembers.getValues().map(row => row[0]); // Get sorted member names in a 1D array
+
+  const cannotFindArray = [];
+  let index = 0;
+
+  // Iterate through sortedNames to find matching members
+  sortedNames.forEach(attendee => {
+    while (index < members.length) {
+      const memberName = members[index];
+
+      if (attendee === memberName) {
+        index++; // Move to next member in sorted order
+        return;  // Continue to the next attendee
+      } 
+      else if (attendee < memberName) {
+        cannotFindArray.push(attendee); // Attendee not in members
+        return;  // Continue to the next attendee
+      }
+
+      index++;
+    }
+
+    // If index exceeds members, remaining attendees are unfound
+    if (index >= members.length) cannotFindArray.push(attendee);
+  });
+
+  // Log unfound names
+  unfoundNameRange.setValue(cannotFindArray.join(", "));
+
+}
+
+
+/**
+ * Helper function to find unmatched attendees
+ * 
+ * CURRENTLY IN REVIEW!
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 30, 2024
+ * @update  Oct 30, 2024
+ */
+
+
+function findUnmatchedAttendees(attendees, members) {
+  const cannotFindArray = [];
+  let index = 0;
+
+  attendees.forEach(attendee => {
+    while (index < members.length) {
+      const memberName = members[index];
+
+      if (attendee === memberName) {
+        Logger.log("Found: " + attendee);
+        index++; // Move to next member in sorted order
+        return;  // Continue to the next attendee
+      } else if (attendee < memberName) {
+        cannotFindArray.push(attendee); // Attendee not in members
+        return;  // Continue to the next attendee
+      }
+
+      index++;
+    }
+
+    // If index exceeds members, remaining attendees are unfound
+    if (index >= members.length) cannotFindArray.push(attendee);
+  });
+
+  return cannotFindArray;
+}
 
 
 /** 

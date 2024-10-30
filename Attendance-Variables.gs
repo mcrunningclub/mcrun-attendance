@@ -18,10 +18,11 @@ const IS_COPY_SENT_COL = 12;
 const PLATFORM_COL = 13;
 
 const TIMEZONE = getUserTimeZone_();
+const LEVEL_COUNT = 3;  // Beginner/Easy, Intermediate, Hard
 
 // EXTERNAL SHEETS USED IN SCRIPTS
 const MASTER_NAME = 'MASTER';
-const MEMBERSHIP_NAME = 'Fall 2024';
+const SEMESTER_NAME = 'Fall 2024';
 const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y70sI-FAktCiSWqEmkDxfZWz0lFu4/edit?usp=sharing";
 
 const LEDGER_NAME = 'Head Run Attendance';
