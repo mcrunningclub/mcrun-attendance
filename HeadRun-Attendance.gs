@@ -148,19 +148,28 @@ function emailSubmission() {
   const lastRow = sheet.getLastRow();
   const latestSubmission = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn());
 
-  const values = latestSubmission.getValues()[0];
+  const values = latestSubmission.getValues()[0];   // array is 0-indexed
+  values.unshift("");   // Transform array into 1-indexed for easy access using COLUMNS vars
 
-  var timestamp = new Date(values[TIMESTAMP_COL-1]);    // 1-indexed -> 0-indexed
+  var timestamp = new Date(values[TIMESTAMP_COL]);
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
 
+  // Replace newline with comma-space
+  const allAttendees = [
+    ATTENDEES_BEGINNER_COL, 
+    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_ADVANCED_COL
+  ].map(level => values[level].replaceAll('\n', ', '));
+
   // Read only (cannot edit values in sheet)
-  const toEmail = values[2];
-  const headRun = values[3];
-  var attendees = values[4];     // stored as string with '\n' delimeters
-  var formattedAttendees;           // stores formatted string in `attendees`
-  var confirmation = values[5];
-  const distance = values[6];
-  const notes = values[7];
+  const headrun = { 
+    name:         values[HEADRUN_COL],
+    distance:     values[DISTANCE_COL],
+    attendees:    allAttendees,
+    toEmail:      values[EMAIL_COL],
+    confirmation: values[CONFIRMATION_COL],
+    notes:        values[COMMENTS_COL]
+  };
 
   // Read and edit sheet values
   const rangeConfirmation = sheet.getRange(lastRow, CONFIRMATION_COL);
@@ -169,61 +178,21 @@ function emailSubmission() {
   // Only send if submitter wants copy && email has not been sent yet
   if(rangeCopyIsSent.getValue()) return;
 
-  // Format string `attendees` by splitting by '\n', trimming whitespace then flatten array
-  if(attendees.toString().length > 1) {
-    const splitArray = attendees.split('\n');  // split the string into an array;
-    formattedAttendees = splitArray.map(str => str.trim());   // trim whitespace from every string in array
-    attendees = formattedAttendees.join(", ");       // combine all array elements into single string
+  // Replace newline delimiter with comma-space if non-empty
+  const attendeesStr = headrun.attendees.toString();
+  if(attendeesStr.length > 1 || !attendeesStr.localeCompare("None")) {
+    headrun.attendees = attendeesStr.replaceAll('\n', ', ');
   }
-  else attendees = 'none';  // otherwise replace empty string by 'none'
+  else headrun.attendees = 'None';  // otherwise replace empty string by 'none'
   
-  confirmation = (confirmation ? 'Yes' : 'No (explain in comment section)' );
-  rangeConfirmation.setValue(confirmation);
-
-  const emailBodyHTML = " \
-  <html> \
-    <head> \
-      <title>Submission Details</title> \
-    </head> \
-    <body> \
-      <p> \
-        Hi, \
-      </p> \
-      <p> \
-        Here is a copy of the latest submission: \
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Head Run: </strong>" + headRun + "\
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Distance: </strong>" + distance + "\
-      </p> \
-      <p>\
-        <strong>&nbsp;&nbsp;&nbsp;Attendees: </strong>" + attendees + "\
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Submitted by: </strong> " + toEmail + "\
-      </p> \
-      <p> \
-          &nbsp;&nbsp; \
-        <strong><em>I declare all attendees have provided their waiver and paid the one-time member fee: </em></strong>" + 
-          confirmation + " \
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Comments: </strong> " + notes + "\
-      </p> \
-      <p> \
-        <br> \
-        - McRUN Bot \
-      </p> \
-    </body> \
-  </html>";
-
-  Logger.log(emailBodyHTML);    // REMOVE AFTER TEST!
+  headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)' );
+  rangeConfirmation.setValue(headrun.confirmation);
 
   
+  const emailBodyHTML = createEmailCopy(headrun);
+
   var message = {
-    to: toEmail,
+    to: headrun.toEmail,
     bcc: emailPresident,
     cc: "mcrunningclub@ssmu.ca" + ", " + emailVPinternal,
     subject: "McRUN Attendance Form (" + formattedDate + ")",
@@ -312,7 +281,7 @@ function checkMissingAttendance() {
         This is a friendly reminder to submit today's headrun attendance. \
       </p> \
       <p> \
-        <strong>Click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form. </strong> \
+        <strong>Log attendance using the McRUN Appm or click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form or </strong> \
       </p> \
       <p> \
         Please ignore this message if the headrun has been cancelled or your group has already submitted the attendance form. \
@@ -339,7 +308,7 @@ function checkMissingAttendance() {
     name: "McRUN Attendance Bot"
   }
 
-  //MailApp.sendEmail(reminderEmail); // TEST !
+  MailApp.sendEmail(reminderEmail);
   return;
 
   // Date formatting examples
