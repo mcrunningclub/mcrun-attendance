@@ -26,6 +26,16 @@ function onAppSubmission() {
   //copyToLedger();       // IN-REVIEW
 }
 
+function test2() {
+  const sure = 0;
+  Logger.log(sure);
+
+  let email = "anna.malendowicz@mail.mcgill.ca";
+  const row = MembershipCollectedLibrary.findSubmissionFromEmail(email, 1, 200);
+  
+  Logger.log(row);
+}
+
 
 /**
  * Verifies if new submission in `HR Attendance` sheet from app.
@@ -330,7 +340,7 @@ function checkMissingAttendance() {
  * 
  * CURRENTLY IN REVIEW!
  * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
  * @update  Oct 30, 2024
  */
@@ -360,72 +370,54 @@ function getUnregisteredMembers(){
   const rangeMembers = memberSheet.getRange(2, 1, 223);
   const members = rangeMembers.getValues().map(row => row[0]); // Get sorted member names in a 1D array
 
-  const cannotFindArray = [];
-  let index = 0;
-
-  // Iterate through sortedNames to find matching members
-  sortedNames.forEach(attendee => {
-    while (index < members.length) {
-      const memberName = members[index];
-
-      if (attendee === memberName) {
-        index++; // Move to next member in sorted order
-        return;  // Continue to the next attendee
-      } 
-      else if (attendee < memberName) {
-        cannotFindArray.push(attendee); // Attendee not in members
-        return;  // Continue to the next attendee
-      }
-
-      index++;
-    }
-
-    // If index exceeds members, remaining attendees are unfound
-    if (index >= members.length) cannotFindArray.push(attendee);
-  });
+  // Use the helper function
+  const unregistered = findUnregistered(sortedNames, members);
+  unfoundNameRange.setValue(unregistered.join(", "));
 
   // Log unfound names
-  unfoundNameRange.setValue(cannotFindArray.join(", "));
+  unfoundNameRange.setValue(unregistered.join(", "));
 
 }
 
 
 /**
- * Helper function to find unmatched attendees
+ * Helper function to find unregistered attendees.
  * 
  * CURRENTLY IN REVIEW!
  * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @TODO Move this to `Membership (Main)` and call as library
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
  * @update  Oct 30, 2024
  */
 
-
-function findUnmatchedAttendees(attendees, members) {
-  const cannotFindArray = [];
+function findUnregistered_(attendees, members) {
+  const unregistered = [];
   let index = 0;
 
   attendees.forEach(attendee => {
+    // Move through `members` array starting from the last found `index`
     while (index < members.length) {
       const memberName = members[index];
 
       if (attendee === memberName) {
-        Logger.log("Found: " + attendee);
-        index++; // Move to next member in sorted order
-        return;  // Continue to the next attendee
+        index++; // Move to the next member in sorted order
+        return;  // Break out of the while loop, continue to next attendee
+        
       } else if (attendee < memberName) {
-        cannotFindArray.push(attendee); // Attendee not in members
+        unregistered.push(attendee); // Attendee not in members
         return;  // Continue to the next attendee
       }
 
       index++;
     }
 
-    // If index exceeds members, remaining attendees are unfound
-    if (index >= members.length) cannotFindArray.push(attendee);
+    // If index exceeds `members`, mark remaining attendees as unfound
+    if (index >= members.length) unregistered.push(attendee);
   });
 
-  return cannotFindArray;
+  return unregistered;
 }
 
 

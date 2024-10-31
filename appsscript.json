@@ -1,6 +1,19 @@
 {
   "timeZone": "America/Toronto",
   "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "MembershipCollectedLibrary",
+        "version": "0",
+        "libraryId": "18Dmy3-UYymJ1Nk6R8vvwx08uovlzwUp0lFQkFWWef0Ltbjlzt2cmJ0aP",
+        "developmentMode": true
+      },
+      {
+        "userSymbol": "OAuth2",
+        "version": "43",
+        "libraryId": "1B7FSrk5Zi6L1rSxxTDgDEUsPzlukDsi4KGuTMorsTQHhGBzBkMun4iDF"
+      }
+    ]
   },
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8"
