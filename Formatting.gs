@@ -147,7 +147,7 @@ function formatLastestNames() {
 /**
  * Formats attendee names from `row` into uniform view, sorted and separated by newline.
  *
- * @param {integer} row  The index in the `HR Attendance` sheet.
+ * @param {integer} row  The index in the `HR Attendance` sheet (1-indexed).
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 24, 2024
@@ -169,22 +169,23 @@ function formatNamesInRow(row) {
   var namesArr = nameRange.getValues()[0];    // 1D Array of size 3 (Beginner, Intermediate, Advanced)
 
   for (var i = 0; i < namesArr.length; i++) {
+    var trimmedArr = namesArr[i].trim();
+
     // Case 1: Cell is non-empty
-    if (namesArr[i].trim()) { 
+    if (trimmedArr.size != 0) { 
       
       // Replace "n/a" (case insensitive) with "None"
-      var cellValue = namesArr[i].replace(/n\/a/gi, "None");
+      var cellValue = trimmedArr.replace(/n\/a/gi, "None");
         
       // Split by commas or newline characters
       var names = cellValue.split(/[,|\n]+/); 
 
-      // Remove whitespace and capitalize names
-      var formattedNames = names.map(function(name) {
-        return name
-              .trim()
-              .toLowerCase()
-              .replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-      });
+      // Remove whitespace, strip accents and capitalize names
+      var formattedNames = names.map(name => name
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
+      );
         
       // Sort names alphabetically
       formattedNames.sort();
@@ -204,14 +205,10 @@ function formatNamesInRow(row) {
 }
 
 function test() {
-  formatNamesInRow(26);
-  return;
-
-  // Only send if submitter wants copy && email has not been sent yet
-  if(rangeCopyIsSent.getValue()) return;
-  
-  headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)' );
-  rangeConfirmation.setValue(headrun.confirmation);
+  for(var row=2; row< 20; row++){
+    formatNamesInRow(row);
+    getUnregisteredMembers(row);
+  }
 }
 
 
@@ -286,3 +283,37 @@ function createEmailCopy(emailDetails) {
   return emailBodyHTML;
 
 }
+
+
+/**
+ * Formats all entries in `names ` then sorts.
+ * 
+ * Removes whitespace, strip accents and capitalize names.
+ *
+ * @param {string[]} names  Array of names to format.
+ * @return {string[]}  Sorted array of formatted names.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Nov 1, 2024
+ * @update  Nov 1, 2024
+ * 
+ * ```javascript
+ * // Sample Script ➜ Format, then sort names.
+ * const rawNames = ["BOb burger", "Francine deBlé"];
+ * const result = formatAndSortNames(rawNames);
+ * Logger.log(result)  // [Bob Burger, Francine Deble]
+ * ```
+ */
+function formatAndSortNames(names) {
+  const formattedNames = names.map(name => 
+    name
+      .trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+      .toLowerCase()
+      .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
+  );
+
+  return formattedNames.sort();
+}
+
+
