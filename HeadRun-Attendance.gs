@@ -47,7 +47,7 @@ function test2() {
  *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 17, 2023
- * @update  Oct 17, 2023
+ * @update  Nov 1, 2024
  */
 
 function onEditCheck() {
@@ -64,6 +64,8 @@ function onEditCheck() {
   if (latestPlatform == "McRUN App") {
     onAppSubmission();
   }
+
+  sortAttendanceForm();   // Sort after adding information to submission
 }
 
 
@@ -367,6 +369,7 @@ function getUnregisteredMembers(){
     .sort();
 
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
+
   const rangeMembers = memberSheet.getRange(2, 1, 223);
   const members = rangeMembers.getValues().map(row => row[0]); // Get sorted member names in a 1D array
 
@@ -381,7 +384,7 @@ function getUnregisteredMembers(){
 
 
 /**
- * Helper function to find unregistered attendees.
+ * Helper function to find unregistered attendees
  * 
  * CURRENTLY IN REVIEW!
  * 
@@ -404,7 +407,6 @@ function findUnregistered_(attendees, members) {
       if (attendee === memberName) {
         index++; // Move to the next member in sorted order
         return;  // Break out of the while loop, continue to next attendee
-        
       } else if (attendee < memberName) {
         unregistered.push(attendee); // Attendee not in members
         return;  // Continue to the next attendee
