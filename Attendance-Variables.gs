@@ -16,6 +16,7 @@ const DISTANCE_COL = 10;
 const COMMENTS_COL = 11;
 const IS_COPY_SENT_COL = 12;
 const PLATFORM_COL = 13;
+const NAMES_NOT_FOUND_COL = 14;
 
 const TIMEZONE = getUserTimeZone_();
 const LEVEL_COUNT = 3;  // Beginner/Easy, Intermediate, Hard
