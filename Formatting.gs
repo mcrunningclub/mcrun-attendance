@@ -28,6 +28,32 @@ function addMissingFormInfo() {
 
 
 /**
+ * Sorts `ATTENDANCE_SHEET` according to submission time.
+ * 
+ * @trigger  Edit time.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Nov 1, 2024
+ * @update  Nov 1, 2024
+ * 
+ */
+
+function sortAttendanceForm() {
+  const sheet = ATTENDANCE_SHEET;
+
+  const numRows = sheet.getLastRow() - 1;     // Remove header row from count
+  const numCols = sheet.getLastColumn();
+  
+  // Sort all the way to the last row, without the header row
+  const range = sheet.getRange(2, 1, numRows, numCols);
+  
+  // Sorts values by `Timestamp`
+  range.sort([{column: 1, ascending: true}]);
+  return;
+}
+
+
+/**
  * Change attendance status of all members to not present.
  * 
  * Helper function for `consolidateMemberData()`.
