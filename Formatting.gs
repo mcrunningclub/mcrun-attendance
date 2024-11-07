@@ -170,9 +170,10 @@ function formatNamesInRow(row) {
 
   for (var i = 0; i < namesArr.length; i++) {
     var trimmedArr = namesArr[i].trim();
+    Logger.log(trimmedArr.length);
 
     // Case 1: Cell is non-empty
-    if (trimmedArr.size != 0) { 
+    if (trimmedArr.length != 0) { 
       
       // Replace "n/a" (case insensitive) with "None"
       var cellValue = trimmedArr.replace(/n\/a/gi, "None");
@@ -205,9 +206,12 @@ function formatNamesInRow(row) {
 }
 
 function test() {
-  for(var row=2; row< 20; row++){
-    formatNamesInRow(row);
-    getUnregisteredMembers(row);
+  var row = 36;
+  formatNamesInRow(row);
+  getUnregisteredMembers(row);
+
+  for(var row=38; row<39; row++){
+    break;
   }
 }
 
