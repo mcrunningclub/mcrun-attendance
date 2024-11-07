@@ -7,6 +7,8 @@
 function onFormSubmission() {
   addMissingFormInfo();
   formatLastestNames();
+  getUnregisteredMembers();
+  
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
   //copyToLedger();       // IN-REVIEW
@@ -21,6 +23,8 @@ function onFormSubmission() {
 function onAppSubmission() {
   removePresenceChecks();
   formatLastestNames();
+  getUnregisteredMembers();
+  
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
   //copyToLedger();       // IN-REVIEW
@@ -108,29 +112,6 @@ function consolidateSubmissions() {
   
   var newData = Object.values(consolidated); // Convert the consolidated object to an array of rows
   sheet.getRange(2, 1, newData.length, newData[0].length).setValues(newData); // Write the new consolidated data
-}
-
-
-/**
- * Copy newest attendance submission to ledger spreadsheet.
- * 
- * CURRENTLY IN REVIEW!
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
- * @date  Oct 30, 2023
- * @update  Oct 29, 2024
- */
-
-function copyToLedger() {
-  const sourceSheet = ATTENDANCE_SHEET;
-  const ledgerName = LEDGER_NAME;
-  const sheetUrl = LEDGER_URL;
-
-  var destinationSpreadsheet = SpreadsheetApp.openByUrl(sheetUrl);
-  var destinationSheet = destinationSpreadsheet.getSheetByName(ledgerName);
-  var sourceData = sourceSheet.getRange(sourceSheet.getLastRow(), 1, 1, 5).getValues()[0];
-
-  destinationSheet.appendRow(sourceData);
 }
 
 
@@ -279,42 +260,14 @@ function checkMissingAttendance() {
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
 
-  const remainderEmailBodyHTML = " \
-  <html> \
-    <head> \
-      <title>Missing Submission Form</title> \
-    </head> \
-    <body> \
-      <p> \
-        Hi, \
-      </p> \
-      <p> \
-        This is a friendly reminder to submit today's headrun attendance. \
-      </p> \
-      <p> \
-        <strong>Log attendance using the McRUN Appm or click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form or </strong> \
-      </p> \
-      <p> \
-        Please ignore this message if the headrun has been cancelled or your group has already submitted the attendance form. \
-      </p> \
-      <p> \
-        <br> \
-        Thank you for all your help! McRun only runs because of you.\
-      </p> \
-      <p> \
-        <br> \
-        - McRUN Bot \
-      </p> \
-      <br> \
-    </body> \
-  </html>";
+  const reminderEmailBodyHTML = REMINDER_EMAIL_HTML;
 
   var reminderEmail = {
     to: headRunnerEmail,
     bcc: emailPresident,
     cc: "mcrunningclub@ssmu.ca" + ", " + emailVPinternal,
     subject: "McRUN Missing Attendance Form - " + headRunDetail,
-    htmlBody: remainderEmailBodyHTML,
+    htmlBody: reminderEmailBodyHTML,
     noReply: true,
     name: "McRUN Attendance Bot"
   }
@@ -436,106 +389,32 @@ function findUnregistered_(attendees, members) {
 }
 
 
-/** 
- * @author ChatGPT
- */
-function copyRowToAnotherSpreadsheet_() {
-  var sourceSpreadsheet = SpreadsheetApp.openById("SourceSpreadsheetID"); // Replace with the ID of your source spreadsheet
-  var destinationSpreadsheet = SpreadsheetApp.openById("DestinationSpreadsheetID"); // Replace with the ID of your destination spreadsheet
-
-  var sourceSheet = sourceSpreadsheet.getSheetByName("SourceSheetName"); // Replace with the name of your source sheet
-  var destinationSheet = destinationSpreadsheet.getSheetByName("DestinationSheetName"); // Replace with the name of your destination sheet
-
-  var rowIndexToCopy = 2; // Replace with the row index you want to copy (e.g., row 2)
-  var sourceData = sourceSheet.getRange(rowIndexToCopy, 1, 1, sourceSheet.getLastColumn()).getValues();
-
-  destinationSheet.appendRow(sourceData[0]);
-}
-
-/**
- * Function to send email to each member updating them on their points
- * 
- * @trigger The 1st and 14th of every month
- * 
- * @author [Charles Villegas](<charles.villegas@mail.mcgill.ca>) & ChatGPT
- * @date  Nov 5, 2024
- * @update  Nov 5, 2024
- */
-
-
-function pointsEmail() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  const points = SpreadsheetApp.openByUrl(LEDGER_URL).getSheetByName("Member Points");
-  const emails = SpreadsheetApp.openByUrl(MEMBERSHIP_URL).getSheetByName("MASTER");
-
-  // Define the columns to check for attendees
-  const attendeeColumns = [
-    ATTENDEES_BEGINNER_COL, 
-    ATTENDEES_INTERMEDIATE_COL, 
-    ATTENDEES_ADVANCED_COL
-  ];
-
-  // Collect all unique values in one step
-  const uniqueRecipients = new Set(
-    attendeeColumns.flatMap(level => {
-      // Get all values in the current column and split by newline
-      return sheet.getRange(2, level, lastRow, 1).getValues()
-        .flat() // Flatten the 2D array to 1D
-        .map(value => value.split('\n')) // Split by newline
-        .flat(); // Flatten the nested arrays
-    })
-  );
-
-  // Convert the Set to an Array of unique recipients
-  const uniqueRecipientsArray = [...uniqueRecipients].map(value => value.trim()).filter(Boolean);
-
-  // Get all names and point values from points, and names and emails from emails
-  const pointsData = points.getRange(2, 5, points.getLastRow() - 1, 2).getValues();
-  const namesData = emails.getRange(2, 1, emails.getLastRow() - 1, 3).getValues();
-  
-  // Create a mapping of full names to points
-  const pointsMap = {};
-  pointsData.forEach(([fullName, points]) => {
-    pointsMap[fullName.trim()] = points; // Store points with full name as the key
-  });
-
-  // Create a mapping of first and last names to emails
-  const emailMap = {};
-  namesData.forEach(([email, firstName, lastName]) => {
-    const fullName = `${firstName.trim()} ${lastName.trim()}`; // Combine first and last name
-    emailMap[fullName] = email; // Store email with full name as the key
-  });
-
-  // Loop through the full names array and email that member regarding their current points
-  uniqueRecipientsArray.forEach(fullName => {
-    const trimmedName = fullName.trim();
-    const points = pointsMap[trimmedName] ?? 0;
-    const email = emailMap[trimmedName]; // Get email for the full name
-
-    if (email) {
-      // Construct and send the email
-      const subject = `Your Points Update`;
-      const message = `Hello ${trimmedName},\n\nYou have ${points} points.\n\nBest,\nMcGill Students Running Club`;
-
-      MailApp.sendEmail({
-        to: email,
-        subject: subject,
-        body: message
-      });
-
-      // log confirmation for the sent email with values for each variable
-      Logger.log(`Email sent to ${trimmedName} at ${email} with ${points} points.`);
-    } else {
-      Logger.log(`No email found for ${trimmedName}.`);
-    }
-  });
-}
-
-
 function deadCode_() {
   return;
+
+  function getDateTime(timeString) {
+  var dateTime = new Date();
+
+  var parts = timeString.split(':');
+  var hours = parseInt(parts[0], 10);
+  var minutes = parseInt(parts[1], 10);
+
+  dateTime.setHours(hours, minutes, 0, 0); // Set the time
+
+  return dateTime;
+  }
+
+
+  function getThresholdTime(startTime) {
+    var dateTime = new Date();
+
+    var parts = startTime.split(':');
+    var hours = parseInt(parts[0], 10);
+    var minutes = parseInt(parts[1], 10);
+
+    dateTime.setHours(hours + 2, minutes, 0, 0); // Set the time
+    return dateTime;
+  }
 
   var emailBody = 
     "Here is a copy of your submission: \n\n- HEAD RUN: " + headRun + "\n- DISTANCE: " + distance + "\n\n------ ATTENDEES ------\n" + attendees + "\n\n*I declare all attendees have provided their waiver and paid the one-time member fee*  > " + confirmation + "\n\nComments: " + notes + "\n\nKeep up the amazing work!\n\nBest,\nMcRUN Team"
@@ -573,28 +452,4 @@ function deadCode_() {
     function(item) { Logger.log(item); }
   );
 
-
-  function getDateTime(timeString) {
-    var dateTime = new Date();
-
-    var parts = timeString.split(':');
-    var hours = parseInt(parts[0], 10);
-    var minutes = parseInt(parts[1], 10);
-
-    dateTime.setHours(hours, minutes, 0, 0); // Set the time
-
-    return dateTime;
-  }
-
-
-  function getThresholdTime(startTime) {
-    var dateTime = new Date();
-
-    var parts = startTime.split(':');
-    var hours = parseInt(parts[0], 10);
-    var minutes = parseInt(parts[1], 10);
-
-    dateTime.setHours(hours + 2, minutes, 0, 0); // Set the time
-    return dateTime;
-  }
 }
