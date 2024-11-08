@@ -1,72 +1,64 @@
-// const CLIENT_ID = '***REMOVED***';
-// const CLIENT_SECRET = '***REMOVED***';
+const STRAVA_BASE_URL = 'https://www.strava.com/api/v3/'
 
-function getOAuthService() {
-  return OAuth2.createService('Strava')
-    .setAuthorizationBaseUrl('https://www.strava.com/oauth/authorize')
-    .setTokenUrl('https://www.strava.com/oauth/token')
-    .setClientId(CLIENT_ID)
-    .setClientSecret(CLIENT_SECRET)
-    .setRedirectUri(ScriptApp.getService().getUrl())
-    .setPropertyStore(PropertiesService.getUserProperties())
-    .setScope('activity:read_all'); // Or other scopes needed
+/**
+ * Function mapping an Object which maps params to values to a query string.
+ * Ex: {"param1": val1, "param2": val2} -> "?param1=val1&param2=val2"
+ */
+
+function query_object_to_string(query_object){
+  var param_value_list = Object.entries(query_object);
+  var param_strings = param_value_list.map(([param, value]) => `${param}=${value}`);
+  var query_string = param_strings.join('&');
+  return '?' + query_string;
 }
 
-
-function authorize() {
-  const service = getOAuthService();
-  if (!service.hasAccess()) {
-      const authorizationUrl = service.getAuthorizationUrl();
-      Logger.log('Authorize the script by visiting this URL: %s', authorizationUrl);
-  } else {
-      Logger.log('Authorization successful!');
-  }
-}
-
-
-function getActivities() {
-  const service = getOAuthService();
+// call the Strava API
+function callStravaAPI(endpoint, query_object) {
+  
+  // set up the service
+  var service = getStravaService();
+  
   if (service.hasAccess()) {
-      const url = 'https://www.strava.com/api/v3/athlete/activities';
-      const response = UrlFetchApp.fetch(url, {
-          headers: {
-              Authorization: `Bearer ${service.getAccessToken()}`
-          }
-      });
-      Logger.log(response.getContentText());
-  } else {
-      Logger.log('No access yet. Run authorize() to authenticate.');
+    Logger.log('App has access.');
+    
+    // API Endpoint
+    var endpoint = STRAVA_BASE_URL + endpoint;
+    // Get string in for "?param1=val1&param2=val2&...&paramN=valN"
+    var query_string = query_object_to_string(query_object);
+    
+    var headers = {
+      Authorization: 'Bearer ' + service.getAccessToken()
+    };
+    
+    var options = {
+      headers: headers,
+      method : 'GET',
+      muteHttpExceptions: true
+    };
+    
+    // Get response from API
+    var response = JSON.parse(UrlFetchApp.fetch(endpoint + query_string, options));
+    
+    return response;
+    
+  }
+  else {
+    Logger.log("App has no access yet.");
+    
+    // open this url to gain authorization from github
+    var authorizationUrl = service.getAuthorizationUrl();
+    
+    Logger.log("Open the following URL and re-run the script: %s",
+        authorizationUrl);
   }
 }
 
-
-
-function test(){
-  var StravaApiV3 = require('strava_api_v3');
-  var defaultClient = StravaApiV3.ApiClient.instance;
-
-  // Configure OAuth2 access token for authorization: strava_oauth
-  var strava_oauth = defaultClient.authentications['strava_oauth'];
-  strava_oauth.accessToken = "***REMOVED***";
-
-  var api = new StravaApiV3.ClubsApi();
-
-  var id = ***REMOVED***; // {Long} The identifier of the club.
-
-  var opts = { 
-    'page': 1, // {Integer} Page number. Defaults to 1.
-    'perPage': 56 // {Integer} Number of items per page. Defaults to 30.
-  };
-
-  var callback = function(error, data, response) {
-    if (error) {
-      console.error(error);
-    } else {
-      console.log('API called successfully. Returned data: ' + data);
-    }
-  };
-  var res = api.getClubActivitiesById(id, opts, callback);
-
-  Logger.log(res);
-
+function strava_main()
+{
+  var endpoint = 'clubs/693906/activities'
+  var query_object = {"per_page":1};
+  var response = callStravaAPI(endpoint, query_object)
+  console.log(response)
 }
+
+
