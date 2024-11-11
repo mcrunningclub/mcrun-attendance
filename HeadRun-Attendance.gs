@@ -7,6 +7,8 @@
 function onFormSubmission() {
   addMissingFormInfo();
   formatLastestNames();
+  getUnregisteredMembers();
+  
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
   //copyToLedger();       // IN-REVIEW
@@ -21,19 +23,11 @@ function onFormSubmission() {
 function onAppSubmission() {
   removePresenceChecks();
   formatLastestNames();
+  getUnregisteredMembers();
+  
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
   //copyToLedger();       // IN-REVIEW
-}
-
-function test2() {
-  const sure = 0;
-  Logger.log(sure);
-
-  let email = "anna.malendowicz@mail.mcgill.ca";
-  const row = MembershipCollectedLibrary.findSubmissionFromEmail(email, 1, 200);
-  
-  Logger.log(row);
 }
 
 
@@ -47,7 +41,7 @@ function test2() {
  *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 17, 2023
- * @update  Oct 17, 2023
+ * @update  Nov 1, 2024
  */
 
 function onEditCheck() {
@@ -64,6 +58,8 @@ function onEditCheck() {
   if (latestPlatform == "McRUN App") {
     onAppSubmission();
   }
+
+  sortAttendanceForm();   // Sort after adding information to submission
 }
 
 
@@ -116,29 +112,6 @@ function consolidateSubmissions() {
   
   var newData = Object.values(consolidated); // Convert the consolidated object to an array of rows
   sheet.getRange(2, 1, newData.length, newData[0].length).setValues(newData); // Write the new consolidated data
-}
-
-
-/**
- * Copy newest attendance submission to ledger spreadsheet.
- * 
- * CURRENTLY IN REVIEW!
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
- * @date  Oct 30, 2023
- * @update  Oct 29, 2024
- */
-
-function copyToLedger() {
-  const sourceSheet = ATTENDANCE_SHEET;
-  const ledgerName = LEDGER_NAME;
-  const sheetUrl = LEDGER_URL;
-
-  var destinationSpreadsheet = SpreadsheetApp.openByUrl(sheetUrl);
-  var destinationSheet = destinationSpreadsheet.getSheetByName(ledgerName);
-  var sourceData = sourceSheet.getRange(sourceSheet.getLastRow(), 1, 1, 5).getValues()[0];
-
-  destinationSheet.appendRow(sourceData);
 }
 
 
@@ -287,42 +260,14 @@ function checkMissingAttendance() {
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
 
-  const remainderEmailBodyHTML = " \
-  <html> \
-    <head> \
-      <title>Missing Submission Form</title> \
-    </head> \
-    <body> \
-      <p> \
-        Hi, \
-      </p> \
-      <p> \
-        This is a friendly reminder to submit today's headrun attendance. \
-      </p> \
-      <p> \
-        <strong>Log attendance using the McRUN Appm or click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form or </strong> \
-      </p> \
-      <p> \
-        Please ignore this message if the headrun has been cancelled or your group has already submitted the attendance form. \
-      </p> \
-      <p> \
-        <br> \
-        Thank you for all your help! McRun only runs because of you.\
-      </p> \
-      <p> \
-        <br> \
-        - McRUN Bot \
-      </p> \
-      <br> \
-    </body> \
-  </html>";
+  const reminderEmailBodyHTML = REMINDER_EMAIL_HTML;
 
   var reminderEmail = {
     to: headRunnerEmail,
     bcc: emailPresident,
     cc: "mcrunningclub@ssmu.ca" + ", " + emailVPinternal,
     subject: "McRUN Missing Attendance Form - " + headRunDetail,
-    htmlBody: remainderEmailBodyHTML,
+    htmlBody: reminderEmailBodyHTML,
     noReply: true,
     name: "McRUN Attendance Bot"
   }
@@ -336,60 +281,83 @@ function checkMissingAttendance() {
 }
 
 /**
- * Find attendees that are unregistered members.
+ * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
+ * 
+ * Sets unregistered members in `NOT_FOUND_COL`.
+ * 
+ * List of members found in `Members` sheet.
  * 
  * CURRENTLY IN REVIEW!
  * 
+ * @param {number} [row=ATTENDANCE_SHEET.getLastRow()]  The row number in `ATTENDANCE_SHEET` 1-indexed.
+ *                                                      Defaults to the last row in the sheet.
+ * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Oct 30, 2024
+ * @update  Nov 1, 2024
  */
 
-function getUnregisteredMembers(){
+function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
   const sheet = ATTENDANCE_SHEET;
-  const NAMES_NOT_FOUND_COL = 14;
-  const lastRow = sheet.getLastRow();
 
-  const unfoundNameRange = sheet.getRange(lastRow, NAMES_NOT_FOUND_COL);
+  const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
 
   const numColToGet = LEVEL_COUNT;
 
   // Get attendee names starting from beginner col
-  const nameRange = sheet.getRange(lastRow, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
+  const nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
 
   // 1D Array of size 3 (Beginner, Intermediate, Advanced)
-  const allNames = nameRange.getValues()[0];
-
-  // Split names in each level into separate entry in array, then sort
-  const sortedNames = allNames
+  const allNames = nameRange
+    .getValues()[0]
     .filter(level => !level.includes("None")) // Skip levels with "none"
-    .flatMap(level => level.split('\n'))
-    .sort();
+    .flatMap(level => level.split('\n'))    // Split names in each level into separate entry in array
+  ;   
 
+  // Remove whitespace, strip accents and capitalize names
+  const sortedNames = formatAndSortNames(allNames);
+
+  // Get existing member registry in `Members`
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
-  const rangeMembers = memberSheet.getRange(2, 1, 223);
-  const members = rangeMembers.getValues().map(row => row[0]); // Get sorted member names in a 1D array
 
-  // Use the helper function
-  const unregistered = findUnregistered(sortedNames, members);
+  const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
+  const numCols = sheet.getLastColumn();
+  
+  var membersRange = memberSheet.getRange(2, 1, memberCount, numCols);
+
+  // Get array of members' full name
+  const members = membersRange.getValues()
+    .map(row => row[2])     // Get member full names in a 1D array
+    .filter(name => name)  // Remove empty rows
+  ;
+
+  const formattedMembers = formatAndSortNames(members);
+
+  // Use the helper function on sorted items
+  const unregistered = findUnregistered_(sortedNames, formattedMembers);
   unfoundNameRange.setValue(unregistered.join(", "));
 
   // Log unfound names
   unfoundNameRange.setValue(unregistered.join(", "));
 
+  return;
 }
 
 
 /**
- * Helper function to find unregistered attendees.
+ * Helper function to find unregistered attendees
  * 
  * CURRENTLY IN REVIEW!
+ * 
+ * @param {string[]} attendees  All attendees of the head run.
+ * @param {string} members  All registered members.
+ * @return {string[]}  Returns attendees not found in `members`.
  * 
  * @TODO Move this to `Membership (Main)` and call as library
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Oct 30, 2024
+ * @update  Nov 1, 2024
  */
 
 function findUnregistered_(attendees, members) {
@@ -404,7 +372,7 @@ function findUnregistered_(attendees, members) {
       if (attendee === memberName) {
         index++; // Move to the next member in sorted order
         return;  // Break out of the while loop, continue to next attendee
-        
+
       } else if (attendee < memberName) {
         unregistered.push(attendee); // Attendee not in members
         return;  // Continue to the next attendee
@@ -421,25 +389,32 @@ function findUnregistered_(attendees, members) {
 }
 
 
-/** 
- * @author ChatGPT
- */
-function copyRowToAnotherSpreadsheet_() {
-  var sourceSpreadsheet = SpreadsheetApp.openById("SourceSpreadsheetID"); // Replace with the ID of your source spreadsheet
-  var destinationSpreadsheet = SpreadsheetApp.openById("DestinationSpreadsheetID"); // Replace with the ID of your destination spreadsheet
-
-  var sourceSheet = sourceSpreadsheet.getSheetByName("SourceSheetName"); // Replace with the name of your source sheet
-  var destinationSheet = destinationSpreadsheet.getSheetByName("DestinationSheetName"); // Replace with the name of your destination sheet
-
-  var rowIndexToCopy = 2; // Replace with the row index you want to copy (e.g., row 2)
-  var sourceData = sourceSheet.getRange(rowIndexToCopy, 1, 1, sourceSheet.getLastColumn()).getValues();
-
-  destinationSheet.appendRow(sourceData[0]);
-}
-
-
 function deadCode_() {
   return;
+
+  function getDateTime(timeString) {
+  var dateTime = new Date();
+
+  var parts = timeString.split(':');
+  var hours = parseInt(parts[0], 10);
+  var minutes = parseInt(parts[1], 10);
+
+  dateTime.setHours(hours, minutes, 0, 0); // Set the time
+
+  return dateTime;
+  }
+
+
+  function getThresholdTime(startTime) {
+    var dateTime = new Date();
+
+    var parts = startTime.split(':');
+    var hours = parseInt(parts[0], 10);
+    var minutes = parseInt(parts[1], 10);
+
+    dateTime.setHours(hours + 2, minutes, 0, 0); // Set the time
+    return dateTime;
+  }
 
   var emailBody = 
     "Here is a copy of your submission: \n\n- HEAD RUN: " + headRun + "\n- DISTANCE: " + distance + "\n\n------ ATTENDEES ------\n" + attendees + "\n\n*I declare all attendees have provided their waiver and paid the one-time member fee*  > " + confirmation + "\n\nComments: " + notes + "\n\nKeep up the amazing work!\n\nBest,\nMcRUN Team"
@@ -477,28 +452,4 @@ function deadCode_() {
     function(item) { Logger.log(item); }
   );
 
-
-  function getDateTime(timeString) {
-    var dateTime = new Date();
-
-    var parts = timeString.split(':');
-    var hours = parseInt(parts[0], 10);
-    var minutes = parseInt(parts[1], 10);
-
-    dateTime.setHours(hours, minutes, 0, 0); // Set the time
-
-    return dateTime;
-  }
-
-
-  function getThresholdTime(startTime) {
-    var dateTime = new Date();
-
-    var parts = startTime.split(':');
-    var hours = parseInt(parts[0], 10);
-    var minutes = parseInt(parts[1], 10);
-
-    dateTime.setHours(hours + 2, minutes, 0, 0); // Set the time
-    return dateTime;
-  }
 }

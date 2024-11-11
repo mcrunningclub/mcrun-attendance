@@ -16,6 +16,7 @@ const DISTANCE_COL = 10;
 const COMMENTS_COL = 11;
 const IS_COPY_SENT_COL = 12;
 const PLATFORM_COL = 13;
+const NAMES_NOT_FOUND_COL = 14;
 
 const TIMEZONE = getUserTimeZone_();
 const LEVEL_COUNT = 3;  // Beginner/Easy, Intermediate, Hard
@@ -27,6 +28,37 @@ const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y7
 
 const LEDGER_NAME = 'Head Run Attendance';
 const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/edit?usp=sharing";
+
+const REMINDER_EMAIL_HTML =  " \
+  <html> \
+    <head> \
+      <title>Missing Submission Form</title> \
+    </head> \
+    <body> \
+      <p> \
+        Hi, \
+      </p> \
+      <p> \
+        This is a friendly reminder to submit today's headrun attendance. \
+      </p> \
+      <p> \
+        <strong>Log attendance using the McRUN App or click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form or </strong> \
+      </p> \
+      <p> \
+        Please ignore this message if the headrun has been cancelled or your group has already submitted the attendance form. \
+      </p> \
+      <p> \
+        <br> \
+        Thank you for all your help! McRun only runs because of you.\
+      </p> \
+      <p> \
+        <br> \
+        - McRUN Bot \
+      </p> \
+      <br> \
+    </body> \
+  </html>"
+;
 
 
 /**
