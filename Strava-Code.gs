@@ -73,18 +73,40 @@ function callStravaAPI(endpoint, query_object) {
   }
 }
 
-// TODO: Take the logic from here it put it into a function...
+function polyline_to_map(api_response, filename)
+{
+  var polyline = api_response['map']['polyline']
+  var map = Maps.newStaticMap();
+  map.addPath(polyline)
+  DriveApp.createFile(Utilities.newBlob(map.getMapImage(), 'image/png', filename));
+}
+
+function getLatestRunData() {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+  var time = sheet.getRange(lastRow, TIMESTAMP_COL).getValue();
+  var headrunners = sheet.getRange(lastRow, HEADRUNNERS).getValue();
+  console.log(time);
+  console.log(headrunners.split(' , '));
+}
 
 function strava_main()
 {
-  // var endpoint = 'activities/12832996323'
+
+  // Club activites example
+  // var endpoint = '/clubs/693906/activities'
   // var query_object = {}
   // var response = callStravaAPI(endpoint, {})
   // console.log(response)
-  var map = Maps.newStaticMap();
-  var polyline = 'orwtGj}a`MG?GEOSOIY_@OMe@ISF_@BMBMASBY?OG_@g@KEa@[QWKGKS]Qa@e@i@e@o@c@EOIAWa@KGY[ECG?i@]IMYQKSMGAGUMQW?F\\RPRJHDHPJCCWMGKMMQKGM]_@}@k@EESOsAuAEA[SQWc@UPFEEECSBIEEGUSIMa@WCEGCCGQOY_@QIEG}@k@IOWQYOQMKQSOGAGIMGe@g@WMOOCIGACGYKk@i@e@]WYMGOQ_@WIKMGcAgAj@b@ZPWWQIOQUCYUCAGBKh@Sf@GTCDG@GCGM]Wi@k@c@[KOcAu@KKAGMIOSSKQMQYe@KUOMU_@UCIY[e@o@e@c@w@e@QQWe@]YUIi@o@OG@L^JMOGCE?m@o@EAIKTYJg@r@gBD[DCDQLYJa@h@sA\\kAASKUEEMAKKMEMWm@_@IMSOUWSIOMQGG?ECE?i@MSAYKE@e@OaAOa@KI?SM]AE@g@Qa@GKE[Cg@Mm@KWMMAa@KQA_@Qa@AEEk@KEEE@[KQAEGG?EEoAWYIXDFDN?v@NPFFJL`@?PCXI\\g@rAUr@KTGX[t@CBM`@KP}@pCUd@c@pAKJEZ]r@APQTEXWl@GVGDEXWv@ORSd@G\\KPEPOZ?HUPEX@LD@FFXd@\\TRZt@f@JPVLJJ@FTTHLTNHJLHFN\\RPXJJDBNPTHT\\NHX^r@j@LRNFDJv@j@Z\\VP?FLLTJN\\LFX^LFNPJTJFFRN~@`@j@j@d@DFb@Z\\`@LHNRLBVXXL^d@XL^d@\\RFLXRR\\d@Xf@h@JFJDd@`@NTD@^VBHPNRZLDDCF@HR`@\\Zb@VNVZZPXVHNJBT\\dAbAl@ZJLJDTZVNZ\\\\TNRNLBFPH`@d@RHFPh@h@FBDJPDJJTLRZRNPZRLX\\VPPXv@b@BHTNBFNJHPN@f@h@FBPPRJ`@h@\\PXTFNPHZX`@Rn@j@HDJLPJr@n@Gb@An@@Ld@l@ZVD@PCPGFUDKNBVTRHJGBYZk@v@{BHMBQ^y@hA_Df@eBNQDSHMZ{@HWf@qAjAgDXs@Pm@R]PIb@MRCLIZItAmAT?RCT@FCTBL?LGVENTT@LRPLTDFFFNJD'
-  map.addPath(polyline)
-  DriveApp.createFile(Utilities.newBlob(map.getMapImage(), 'image/png', 'map.png'));
+  // // polyline_to_map(response, 'example.png')
+
+  // Individual athlete example
+
+  var endpoint = '/activities/12832996323'
+  var query_object = {}
+  var response = callStravaAPI(endpoint, {})
+  console.log(response)
+  polyline_to_map(response, 'example.png')
 }
 
 
