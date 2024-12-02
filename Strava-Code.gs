@@ -1,4 +1,6 @@
 const STRAVA_BASE_URL = 'https://www.strava.com/api/v3/'
+const ACTIVITIES_ENDPOINT = 'athlete/activities'
+const MAPS_FOLDER = 'run_maps'
 
 /**
 
@@ -14,7 +16,7 @@ const STRAVA_BASE_URL = 'https://www.strava.com/api/v3/'
  */
 
 function query_object_to_string(query_object){
-  if (Object.keys({}).length === 0)
+  if (Object.keys(query_object).length === 0)
   {
     return ''
   }
@@ -73,21 +75,91 @@ function callStravaAPI(endpoint, query_object) {
   }
 }
 
-function polyline_to_map(api_response, filename)
+/**
+ * Takes a response for a given activity from the Strava API and saves an image of the map to the
+ * desired location
+ * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
+ * @date  Dec 1, 2024
+ * @update  Dec 1, 2024
+ */
+
+function saveMapToFile(api_response, filename)
 {
-  var polyline = api_response['map']['polyline']
+  var polyline = api_response['map']['summary_polyline']
   var map = Maps.newStaticMap();
   map.addPath(polyline)
   DriveApp.createFile(Utilities.newBlob(map.getMapImage(), 'image/png', filename));
 }
 
-function getLatestRunData() {
+/**
+ * Finds the most recent head run submission and returns the timestamp as a Date object
+ * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
+ * @date  Dec 1, 2024
+ * @update  Dec 1, 2024
+ */
+
+function getLatestSubmissionTimestamp() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
-  var time = sheet.getRange(lastRow, TIMESTAMP_COL).getValue();
-  var headrunners = sheet.getRange(lastRow, HEADRUNNERS).getValue();
-  console.log(time);
-  console.log(headrunners.split(' , '));
+  var timestamp = sheet.getRange(lastRow, TIMESTAMP_COL).getValue();
+  return new Date(timestamp)
+}
+
+/**
+ * Converts a Date timestamp to a Unix Epoch timestamp 
+ * (the number of seconds that have elapsed since January 1, 1970)
+ * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
+ * @date  Dec 1, 2024
+ * @update  Dec 1, 2024
+ */
+
+function getUnixEpochTimestamp(timestamp)
+{
+  return Math.floor(timestamp.getTime() / 1000); 
+}
+
+/**
+ * Saves file to MAPS_FOLDER/<Unix Epoch timestamp of submisstion>.png
+ * (the number of seconds that have elapsed since January 1, 1970)
+ * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
+ * @date  Dec 1, 2024
+ * @update  Dec 1, 2024
+ */
+
+function getSaveLocation(submissionTime)
+{
+  return MAPS_FOLDER + '/' + submissionTime.toString() + '.png'
+}
+
+/**
+ * Gets the most recent head run submission and saves the map
+ * of the corresponding Strava activity to MAPS_FOLDER/<Unix Epoch timestamp of submisstion>.png
+ * 
+ * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
+ * @date  Dec 1, 2024
+ * @update  Dec 1, 2024
+ */
+
+function getMapForLatestRun()
+{
+  const sheet = ATTENDANCE_SHEET;
+  var submissionTimestamp = getLatestSubmissionTimestamp();
+  var now = new Date();
+  var subEpochTime = getUnixEpochTimestamp(submissionTimestamp);
+  var nowEpochTime = getUnixEpochTimestamp(now);
+  var query_object = {'after':subEpochTime, 'before':nowEpochTime}
+  const endpoint = ACTIVITIES_ENDPOINT
+  var response = callStravaAPI(endpoint, query_object)
+
+  if (response.length == 0) {
+    // Create an instance of ExecutionError with a custom message
+    var errorMessage = "No Strava activity has been found for the run that occured on " + submissionTimestamp.toString();    
+    throw new Error(errorMessage); // Throw the ExecutionError
+  }
+
+  var activity = response[0]
+  var saveLocation = getSaveLocation(subEpochTime)
+  saveMapToFile(activity, saveLocation) 
 }
 
 function strava_main()
@@ -98,15 +170,14 @@ function strava_main()
   // var query_object = {}
   // var response = callStravaAPI(endpoint, {})
   // console.log(response)
-  // // polyline_to_map(response, 'example.png')
+  // // saveMapToFile(response, 'example.png')
 
   // Individual athlete example
 
-  var endpoint = '/activities/12832996323'
+  var endpoint = 'athlete/activities'
   var query_object = {}
   var response = callStravaAPI(endpoint, {})
   console.log(response)
-  polyline_to_map(response, 'example.png')
 }
 
 
