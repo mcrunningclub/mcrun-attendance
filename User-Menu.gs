@@ -57,14 +57,15 @@ function onOpen() {
     .addSubMenu(ui.createMenu('Formatting Menu')
       .addItem('Sort By Timestamp', sortByTimestampUI_.name)
       .addItem('Format Sheet View', formatSheetUI_.name)
-      .addItem('Format Attendee Names', formatRowNamesUI_.name)
+      .addItem('Format Names in Row', formatRowNamesUI_.name)
       .addItem('Format All Names', formatAllNamesUI_.name)
     )
 
     .addSubMenu(ui.createMenu('Attendance Menu')
       .addItem('Remove Presence Checks', removePresenceCheckUI_.name)
-      .addItem('Find Unregistered Attendees', findUnregisteredAttendeesUI_.name)
-      .addItem('Check For Missing Attendance', checkMissingAttendanceUI_.name)
+      .addItem('Find Unregistered in Row', findUnregisteredAttendeesUI_.name)
+      .addItem('Find All Unregistered Attendees', findAllUnregisteredUI_.name)
+      .addItem('Check For Missing Submission', checkMissingAttendanceUI_.name)
       .addItem('Toggle Attendance Flag',toggleAttendanceCheckUI_.name)
     )
 
@@ -190,12 +191,16 @@ function formatSheetUI_() {
 }
 
 function formatAllNamesUI_() {
-  functionName = formatAllNamesUI_.name;
+  functionName = formatAllNames.name;
   const customMsg = "This will format all the attendees names found in this sheet. \
-  \n\nWARNING! Wide-sheet formatting will may take some time."
+  \n\nWARNING! Wide-sheet formatting may take some time."
 
   confirmAndRunUserChoice_(functionName, customMsg);
 }
+
+/**
+ * This UI function can target a specific row, or the last row if input is omitted.
+ */
 
 function formatRowNamesUI_() {
   const ui = SpreadsheetApp.getUi();
@@ -205,18 +210,18 @@ function formatRowNamesUI_() {
   const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
   const responseText = response.getResponseText().trim();
 
-  var functionName, customMsg;
+  var functionName = formatNamesInRow_.name;
+  var customMsg = "";
+
   const rowNumber = Number.parseInt(responseText);
 
   if (responseText == "") {
     // User did not enter a row number; check last row only.
-    functionName = formatLastestNames.name;
     customMsg = "This will format the names in the last row."
   }
-  else if (isValidRow(rowNumber)) {
+  else if (isValidRow_(rowNumber)) {
     // Row is valid, can continue execution.
-    functionName = formatNamesInRow_.name;
-    customMsg = `This will only format the names in ${rowNumber}.`
+    customMsg = `This will only format the names in row ${rowNumber}.`
   }
   else {
     // Input value is invalid row. Stop execution.
@@ -266,34 +271,45 @@ function toggleAttendanceCheckUI_() {
   ui.alert(header, message, ui.ButtonSet.OK);
 }
 
+function findAllUnregisteredUI_() {
+  functionName = getAllUnregisteredMembers.name;
+  const customMsg = "This will search for *all* unregistered attendees, and add them to `Not Found` column. \
+  \n\nWARNING! Wide-sheet formatting will may take some time."
+
+  confirmAndRunUserChoice_(functionName, customMsg);
+}
+
+/**
+ * This UI function can target a specific row, or the last row if input is omitted.
+ */
+
 function findUnregisteredAttendeesUI_() {
   const ui = SpreadsheetApp.getUi();
   const headerMsg = "Which row do you want to check?";
-  const textMsg = "Enter the row number, or leave empty to check all submissions.";
+  const textMsg = "Enter the row number, or leave empty to check last row.";
 
   const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
   const responseText = response.getResponseText().trim();
   const rowNumber = Number.parseInt(responseText);
+  
+  var functionName = getUnregisteredMembers_.name;    // Function searches last row if no arg provided
+  var customMsg = "";
 
-  var functionName, customMsg;
-
-  if (rowNumber == "") {
-    // User did not enter a row number; check whole sheet.
-    functionName = getAllUnregisteredMembers.name;
-    customMsg = "This will search for *all* attendees that are unregistered and add them to `Not Found` column."
+  if (responseText == "") {
+    // User did not enter a row number; check last row only.
+    customMsg = "This will search for unregistered attendees in the last row, and add them to \`Not Found\` column."
   }
-  else if (isValidRow(rowNumber)) {
+  else if (isValidRow_(rowNumber)) {
     // Row is valid, can continue execution.
-    functionName = getUnregisteredMembers_.name;
     customMsg = `This will search for unregistered attendees in row ${responseText} and add them to \`Not Found\` column.`
   }
-  else  {
-    // Entered value is invalid row. Stop execution.
+  else {
+    // Input value is invalid row. Stop execution.
     ui.alert("Incorrect row number, please try again with a valid row number.");
     return;
   }
 
-  // Run respective function depending if-statement
+  // Run respective function depending if-statement result above
   confirmAndRunUserChoice_(functionName, customMsg, rowNumber);
 }
 
@@ -331,7 +347,7 @@ function onAppSubmitUI_() {
  * @update Dec 6, 2024
  */
 
-function isValidRow(row) {
+function isValidRow_(row) {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
   const rowInt = parseInt(row);

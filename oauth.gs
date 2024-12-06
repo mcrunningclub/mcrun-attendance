@@ -5,6 +5,11 @@
  * @trigger Form Submission.
  */
 function getStravaService() {
+  // Get CLIENT_ID & CLIENT_SECRET from Script Properties
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const CLIENT_ID = scriptProperties.getProperty(SCRIPT_PROPERTY.clientID);
+  const CLIENT_SECRET = scriptProperties.getProperty(SCRIPT_PROPERTY.clientSecret);
+  
   // Create a new service called "Strava"
   return OAuth2.createService('Strava')
   // Set the endpoint URL for Strava auth

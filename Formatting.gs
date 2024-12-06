@@ -129,42 +129,29 @@ function formatSpecificColumns() {
 
 
 /**
- * Wrapper function for `formatNamesInRow` for lastest submission.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 30, 2024
- * @update  Oct 30, 2024
- */
-
-function formatLastestNames() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  formatNamesInRow(lastRow);
-}
-
-/**
  * Wrapper function for `formatNamesInRow` for *ALL* submissions.
+ * 
+ * Row number is 1-indexed in GSheet. Header row skipped.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 5, 2024
- * @update  Dec 5, 2024
+ * @update  Dec 6, 2024
  */
 
 function formatAllNames() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
 
-  for(var row=lastRow; row < 0; row++) {
-    formatNamesInRow(row);
+  for(var row=lastRow; row >= 2; row--) {
+    formatNamesInRow_(row);
   }
 }
-
 
 /**
  * Formats attendee names from `row` into uniform view, sorted and separated by newline.
  *
- * @param {integer} row  The index in the `HR Attendance` sheet (1-indexed).
+ * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
+ *                                                       Defaults to the last row in the sheet.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 24, 2024
@@ -177,7 +164,7 @@ function formatAllNames() {
  * ```
  */
 
-function formatNamesInRow(row) {
+function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
   const numColToGet = LEVEL_COUNT;
 
@@ -297,7 +284,7 @@ function createEmailCopy(emailDetails) {
 
 
 /**
- * Formats all entries in `names ` then sorts.
+ * Formats all entries in `names` then sorts.
  * 
  * Removes whitespace, strip accents and capitalize names.
  *
@@ -322,6 +309,27 @@ function formatAndSortNames(names) {
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
       .toLowerCase()
       .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
+  );
+
+  return formattedNames.sort();
+}
+
+
+function swapAndFormatName(names) {
+  const formattedNames = names.map(
+    function(name) {
+      var nameParts = name
+      .trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+      .toLowerCase()
+      .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
+      .replace(/['`’]/g, '')  // Remove apostrophes
+      .split(' ');
+
+      var firstName = nameParts[0];
+      var lastName = nameParts[nameParts.length - 1];
+      return lastName + ', ' + firstName;
+    }
   );
 
   return formattedNames.sort();

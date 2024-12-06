@@ -6,7 +6,7 @@
 
 function onFormSubmission() {
   addMissingFormInfo();
-  formatLastestNames();
+  formatNamesInRow();     // formats names in last row
   getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
@@ -22,7 +22,7 @@ function onFormSubmission() {
  */
 function onAppSubmission() {
   removePresenceChecks();
-  formatLastestNames();
+  formatNamesInRow();     // formats names in last row
   getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
@@ -129,7 +129,7 @@ function consolidateSubmissions() {
 
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
-  if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;   // REMOVE AFTER TESTING !
+  if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;
 
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
@@ -251,7 +251,7 @@ function checkMissingAttendance() {
     verifyAttendance_();
   }
   else {
-    Logger.log("`verifyAttendance()` is not allowed to run. Toggle script property");
+    throw new Error("`verifyAttendance()` is not allowed to run. Toggle script property");
   }
 
   return;
@@ -314,10 +314,6 @@ function verifyAttendance_() {
 
   MailApp.sendEmail(reminderEmail);
   return;
-
-  // Date formatting examples
-  const todayWeekDay = Utilities.formatDate(today, TIMEZONE, 'EEEE');
-  const todayDate = Utilities.formatDate(today, TIMEZONE, 'dd');
 }
 
 
@@ -340,46 +336,44 @@ function verifyAttendance_() {
 
 function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
   const sheet = ATTENDANCE_SHEET;
-
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
-
+  
+  // Get attendee names starting from beginner col to advance col
   const numColToGet = LEVEL_COUNT;
-
-  // Get attendee names starting from beginner col
   const nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
 
-  // 1D Array of size 3 (Beginner, Intermediate, Advanced)
+  // 1D Array of size `LEVEL_COUNT` (Beginner, Intermediate, Advanced -> 3)
   const allNames = nameRange
     .getValues()[0]
     .filter(level => !level.includes("None")) // Skip levels with "none"
     .flatMap(level => level.split('\n'))    // Split names in each level into separate entry in array
-  ;   
+  ;
 
   // Remove whitespace, strip accents and capitalize names
-  const sortedNames = formatAndSortNames(allNames);
+  // Swap order of attendee names to `lastName, firstName`
+  const sortedNames = swapAndFormatName(allNames);
 
   // Get existing member registry in `Members`
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
 
   const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
-  const numCols = sheet.getLastColumn();
+  const searchKeyCol = 5    // Column E
   
-  var membersRange = memberSheet.getRange(2, 1, memberCount, numCols);
+  var membersRange = memberSheet.getRange(2, searchKeyCol, memberCount);
 
-  // Get array of members' full name
+  // Get array of member names to use as search key
   const members = membersRange.getValues()
-    .map(row => row[2])     // Get member full names in a 1D array
+    .map(row => row[0])     // Get member full names in a 1D array
     .filter(name => name)  // Remove empty rows
   ;
 
-  const formattedMembers = formatAndSortNames(members);
+  const sortedMembers = formatAndSortNames(members);
 
   // Use the helper function on sorted items
-  const unregistered = findUnregistered_(sortedNames, formattedMembers);
-  unfoundNameRange.setValue(unregistered.join(", "));
+  const unregistered = findUnregistered_(sortedNames, sortedMembers);
 
   // Log unfound names
-  unfoundNameRange.setValue(unregistered.join(", "));
+  unfoundNameRange.setValue(unregistered.join("\n"));
 
   return;
 }
@@ -387,6 +381,8 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
 
 /**
  * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
+ * 
+ * Row number is 1-indexed in GSheet. Header row skipped.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 6, 2024
@@ -397,7 +393,7 @@ function getAllUnregisteredMembers() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
 
-  for(var row=lastRow; row < 0; row++) {
+  for(var row=lastRow; row >= 2; row--) {
     getUnregisteredMembers_(row);
   }
 }
@@ -416,34 +412,45 @@ function getAllUnregisteredMembers() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Nov 1, 2024
+ * @update  Dec 6, 2024
  */
 
 function findUnregistered_(attendees, members) {
   const unregistered = [];
   let index = 0;
 
-  attendees.forEach(attendee => {
-    // Move through `members` array starting from the last found `index`
+  for (const attendee of attendees) {
+    // Split attendee name into last and first name
+    const [attendeeLastName, attendeeFirstName] = attendee.split(",").map(s => s.trim());
+
+    let isFound = false;
+
+    // Check members starting from the current index
     while (index < members.length) {
       const memberName = members[index];
+      const [memberLastName, memberFirstNames] = memberName.split(",").map(s => s.trim());
+      const searchFirstNameList = memberFirstNames.split("|").map(s => s.trim());
 
-      if (attendee === memberName) {
-        index++; // Move to the next member in sorted order
-        return;  // Break out of the while loop, continue to next attendee
+      // Compare last names and check if first name matches any in the list
+      if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {
+        isFound = true;
+        index++; // Move to the next member
+        break;
+      }
 
-      } else if (attendee < memberName) {
-        unregistered.push(attendee); // Attendee not in members
-        return;  // Continue to the next attendee
+      // If attendee's last name is less than the current member's last name
+      if (attendeeLastName < memberLastName) {
+        break; // Stop searching as attendees are sorted alphabetically
       }
 
       index++;
     }
 
-    // If index exceeds `members`, mark remaining attendees as unfound
-    if (index >= members.length) unregistered.push(attendee);
-  });
+    // If attendee not found, add to unregistered array.
+    if (!isFound) {
+      unregistered.push(`${attendeeFirstName} ${attendeeLastName}`);
+    }
+  }
 
-  return unregistered;
+  return unregistered.sort(); // Return sorted list of unregistered attendees
 }
-
