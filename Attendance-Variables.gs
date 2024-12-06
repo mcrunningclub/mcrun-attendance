@@ -29,6 +29,14 @@ const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y7
 const LEDGER_NAME = 'Head Run Attendance';
 const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/edit?usp=sharing";
 
+// SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES
+const SCRIPT_PROPERTY = {
+  isCheckingAttendance : 'IS_CHECKING_ATTENDANCE',
+  clientID : 'CLIENT_ID',
+  clientSecret : 'CLIENT_SECRET',
+};
+
+
 const REMINDER_EMAIL_HTML =  " \
   <html> \
     <head> \
@@ -83,7 +91,7 @@ function getUserTimeZone_() {
  */
 
 function getCurrentUserEmail_() {
-  return Session.getActiveUser();
+  return Session.getActiveUser().toString();
 }
 
 

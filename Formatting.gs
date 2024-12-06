@@ -143,6 +143,23 @@ function formatLastestNames() {
   formatNamesInRow(lastRow);
 }
 
+/**
+ * Wrapper function for `formatNamesInRow` for *ALL* submissions.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 5, 2024
+ * @update  Dec 5, 2024
+ */
+
+function formatAllNames() {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+
+  for(var row=lastRow; row < 0; row++) {
+    formatNamesInRow(row);
+  }
+}
+
 
 /**
  * Formats attendee names from `row` into uniform view, sorted and separated by newline.
@@ -203,16 +220,6 @@ function formatNamesInRow(row) {
   }
   // Replace values with formatted names
   nameRange.setValues([namesArr]);    // setValues() requires 2D array
-}
-
-function test() {
-  var row = 36;
-  formatNamesInRow(row);
-  getUnregisteredMembers(row);
-
-  for(var row=38; row<39; row++){
-    break;
-  }
 }
 
 

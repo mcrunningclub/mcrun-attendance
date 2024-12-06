@@ -1,5 +1,3 @@
-// NOTE TO SELF: TAKE THIS OUT OF OUR CODE AND HIDE IT SOMEWHERE
- 
 /**
  * Configure the service using the OAuth2 library: https://github.com/googleworkspace/apps-script-oauth2.
  * 

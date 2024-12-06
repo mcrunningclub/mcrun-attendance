@@ -7,7 +7,7 @@
 function onFormSubmission() {
   addMissingFormInfo();
   formatLastestNames();
-  getUnregisteredMembers();
+  getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
@@ -23,7 +23,7 @@ function onFormSubmission() {
 function onAppSubmission() {
   removePresenceChecks();
   formatLastestNames();
-  getUnregisteredMembers();
+  getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
@@ -118,7 +118,7 @@ function consolidateSubmissions() {
 /**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
  * 
- * Attendees are separated by level
+ * Attendees are separated by level.
  * 
  * @trigger Attendance submissions.
  *  
@@ -129,7 +129,7 @@ function consolidateSubmissions() {
 
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
-  //if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;   // REMOVE AFTER TESTING !
+  if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;   // REMOVE AFTER TESTING !
 
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
@@ -201,7 +201,32 @@ function emailSubmission() {
 
 
 /**
+ * Toggles flag to run `checkAttendance()`.
+ * 
+ * Updates value in `ScriptProperties` bank.
+ * 
+ * @trigger User choice in custom menu.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 5, 2024
+ * @update  Dec 6, 2024
+ */
+
+function toggleAttendanceCheck_() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+
+  const isChecking = scriptProperties.getProperty(propertyName);  // !! converts str to bool
+  const toggledState = (isChecking == "true") ? "false" : "true";   // toggle bool, but save as str
+  scriptProperties.setProperty(propertyName, toggledState);    // function requires property as str
+
+  return toggledState;
+}
+
+/**
  * Check for missing submission after scheduled headrun.
+ * 
+ * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
  * 
  * @trigger 30-60 mins after schedule in `getHeadRunString()`.
  * 
@@ -214,10 +239,25 @@ function emailSubmission() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Oct 10, 2024
+ * @update  Dec 6, 2024
  */
 
 function checkMissingAttendance() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+  const isCheckingAllowed = Boolean( scriptProperties.getProperty(propertyName) );
+
+  if (isCheckingAllowed) {
+    verifyAttendance_();
+  }
+  else {
+    Logger.log("`verifyAttendance()` is not allowed to run. Toggle script property");
+  }
+
+  return;
+}
+ 
+function verifyAttendance_() {
   const sheet = ATTENDANCE_SHEET;
   
   // Gets values of all timelogs
@@ -280,6 +320,7 @@ function checkMissingAttendance() {
   const todayDate = Utilities.formatDate(today, TIMEZONE, 'dd');
 }
 
+
 /**
  * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
  * 
@@ -297,7 +338,7 @@ function checkMissingAttendance() {
  * @update  Nov 1, 2024
  */
 
-function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
+function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
   const sheet = ATTENDANCE_SHEET;
 
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
@@ -345,6 +386,24 @@ function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
 
 
 /**
+ * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 6, 2024
+ * @update  Dec 6, 2024
+ */
+
+function getAllUnregisteredMembers() {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+
+  for(var row=lastRow; row < 0; row++) {
+    getUnregisteredMembers_(row);
+  }
+}
+
+
+/**
  * Helper function to find unregistered attendees
  * 
  * CURRENTLY IN REVIEW!
@@ -388,68 +447,3 @@ function findUnregistered_(attendees, members) {
   return unregistered;
 }
 
-
-function deadCode_() {
-  return;
-
-  function getDateTime(timeString) {
-  var dateTime = new Date();
-
-  var parts = timeString.split(':');
-  var hours = parseInt(parts[0], 10);
-  var minutes = parseInt(parts[1], 10);
-
-  dateTime.setHours(hours, minutes, 0, 0); // Set the time
-
-  return dateTime;
-  }
-
-
-  function getThresholdTime(startTime) {
-    var dateTime = new Date();
-
-    var parts = startTime.split(':');
-    var hours = parseInt(parts[0], 10);
-    var minutes = parseInt(parts[1], 10);
-
-    dateTime.setHours(hours + 2, minutes, 0, 0); // Set the time
-    return dateTime;
-  }
-
-  var emailBody = 
-    "Here is a copy of your submission: \n\n- HEAD RUN: " + headRun + "\n- DISTANCE: " + distance + "\n\n------ ATTENDEES ------\n" + attendees + "\n\n*I declare all attendees have provided their waiver and paid the one-time member fee*  > " + confirmation + "\n\nComments: " + notes + "\n\nKeep up the amazing work!\n\nBest,\nMcRUN Team"
-  ;
-
-  var headRunTime = getHeadRunTime(todayWeekDay);
-  if(headRunTime.length < 1) return;  // exit if no head run today
-
-  var dateTime, thresholdTime;
-
-  for(const time of headRunTime) {
-    dateTime = getDateTime(time);   // convert to Date object
-    thresholdTime = getThresholdTime(time);  // add 2 hours
-
-    Logger.log(today);
-    Logger.log(thresholdTime);
-
-    if (today.setHours(today.getHours() + 2) ) {};
-  }
-
-  var test = new Date(submissionDates[0]).getDate();
-
-  for (var i = 0; i < data.length; i++) {
-    var cellValue = data[i][0];
-    if (cellValue instanceof Date) {
-      cellValue.setHours(0, 0, 0, 0); // Set the time to midnight for comparison
-      if (cellValue.getTime() !== today.getTime()) {
-        // If the date in the cell doesn't match today's date
-        // Send a notification email
-      }
-    }
-  }
-
-  headRunTime.forEach(
-    function(item) { Logger.log(item); }
-  );
-
-}
