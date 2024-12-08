@@ -3,7 +3,7 @@
  * 
  * Prevents unwanted data overwrite in Gsheet.
  */
-const PERM_USER_ = [ 
+const PERM_USER_ = [
   'mcrunningclub@ssmu.ca',
   'ademetriou8@gmail.com',
   'andreysebastian10.g@gmail.com',
@@ -27,7 +27,7 @@ const PERM_USER_ = [
  * @update  Dec 6, 2024
  */
 
-function logMenuAttempt_(email="") {
+function logMenuAttempt_(email = "") {
   const userEmail = email ? email : getCurrentUserEmail_();
   Logger.log(`McRUN menu access attempt by: ${userEmail}`);
 }
@@ -66,7 +66,7 @@ function onOpen() {
       .addItem('Find Unregistered in Row', findUnregisteredAttendeesUI_.name)
       .addItem('Find All Unregistered Attendees', findAllUnregisteredUI_.name)
       .addItem('Check For Missing Submission', checkMissingAttendanceUI_.name)
-      .addItem('Toggle Attendance Flag',toggleAttendanceCheckUI_.name)
+      .addItem('Turn On/Off Submission Checker', toggleAttendanceCheckUI_.name)
     )
 
     .addSubMenu(ui.createMenu('Trigger Menu')
@@ -85,7 +85,7 @@ function onOpen() {
 
 function helpUI_() {
   const ui = SpreadsheetApp.getUi();
-  
+
   const helpMessage = `
     📋 McRUN Attendance Menu Help
 
@@ -123,7 +123,7 @@ function helpUI_() {
  * @update  Dec 6, 2024
  */
 
-function confirmAndRunUserChoice_(functionName, additionalMsg="", funcArg="") {
+function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = "") {
   const ui = SpreadsheetApp.getUi();
   const userEmail = getCurrentUserEmail_();
 
@@ -131,11 +131,11 @@ function confirmAndRunUserChoice_(functionName, additionalMsg="", funcArg="") {
   if (!PERM_USER_.includes(userEmail)) {
     const warningMsgHeader = "🛑 You are not authorized 🛑"
     const warningMsgBody = "Please contact the exec team if you believe this is an error.";
-    
+
     ui.alert(warningMsgHeader, warningMsgBody, ui.ButtonSet.OK);
     return;
   }
-  
+
   // Continue execution if user is authorized
   var message = `
     ⚙️ Now executing ${functionName}().
@@ -150,8 +150,8 @@ function confirmAndRunUserChoice_(functionName, additionalMsg="", funcArg="") {
   const response = ui.alert(message, ui.ButtonSet.OK_CANCEL);
   let retValue = "";
 
-  if(response == ui.Button.OK) {
-    if(funcArg) {
+  if (response == ui.Button.OK) {
+    if (funcArg) {
       retValue = this[functionName](funcArg);   // executing function `functionName` with arg
     }
     else {
@@ -256,18 +256,20 @@ function checkMissingAttendanceUI_() {
 
 function toggleAttendanceCheckUI_() {
   const functionName = toggleAttendanceCheck_.name;
-  const customMsg = "Set flag to true to execute checkMissingAttendance()."
+  const customMsg = "Turn on to allow McRUN bot (checkMissingAttendance) to check for \
+  any missing attendance submissions.\n\nRefer to function documentation for further explanation."
 
   // Save the return value of `toggleAttendanceCheck`
-  const isCheckingAttendance = confirmAndRunUserChoice_(functionName, customMsg);
+  const isCheckingAttendance = confirmAndRunUserChoice_(functionName, customMsg);   // saved as str
 
   // Display info message and new flag value to user
   const ui = SpreadsheetApp.getUi();
-  const header = "Flag has been successfully toggled."
-  const message = isCheckingAttendance == "true" ? 
-    "Automatic function `CheckMissingAttendance` can now run to completion.\n\nToggle flag to *stop* future executions." :
-    "Automatic function `CheckMissingAttendance` will *not* be able to run.\n\nToggle flag to *allow* future executions."
+  const checkerState = isCheckingAttendance == "true" ? "on ✅" : "off ❌";
+  const header = `Submission checker has be successfully turned ${checkerState}.`;
 
+  const message = isCheckingAttendance == "true" ?
+    "McRUN Bot will automatically check for submissions. Run again to *stop* future deployments." :
+    "McRUN Bot will *not* check for submissions. Run again to *allow* automatic deployments.";
   ui.alert(header, message, ui.ButtonSet.OK);
 }
 
@@ -291,7 +293,7 @@ function findUnregisteredAttendeesUI_() {
   const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
   const responseText = response.getResponseText().trim();
   const rowNumber = Number.parseInt(responseText);
-  
+
   var functionName = getUnregisteredMembers_.name;    // Function searches last row if no arg provided
   var customMsg = "";
 
@@ -352,6 +354,6 @@ function isValidRow_(row) {
   const lastRow = sheet.getLastRow();
   const rowInt = parseInt(row);
 
-  return ( Number.isInteger(rowInt) && rowInt >= 0 && rowInt <= lastRow );
+  return (Number.isInteger(rowInt) && rowInt >= 0 && rowInt <= lastRow);
 }
 

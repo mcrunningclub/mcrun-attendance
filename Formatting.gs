@@ -174,7 +174,6 @@ function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
 
   for (var i = 0; i < namesArr.length; i++) {
     var trimmedArr = namesArr[i].trim();
-    Logger.log(trimmedArr.length);
 
     // Case 1: Cell is non-empty
     if (trimmedArr.length != 0) { 
@@ -197,7 +196,7 @@ function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
         
       // Join back with newline characters
       namesArr[i] = formattedNames.join('\n');
-      }
+    }
     
     // Case 2: Cell is empty
     else {
@@ -234,7 +233,7 @@ function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
  * ```
  */
 
-function createEmailCopy(emailDetails) {
+function createEmailCopy_(emailDetails) {
   // Check for non-empty key-value object
   const size = Object.keys(emailDetails).length;
   if (size != 6) return null;
@@ -298,11 +297,11 @@ function createEmailCopy(emailDetails) {
  * ```javascript
  * // Sample Script ➜ Format, then sort names.
  * const rawNames = ["BOb burger", "Francine deBlé"];
- * const result = formatAndSortNames(rawNames);
- * Logger.log(result)  // [Bob Burger, Francine Deble]
+ * const result = formatAndSortNames_(rawNames);
+ * Logger.log(result)  // ["Bob Burger", "Francine Deble"]
  * ```
  */
-function formatAndSortNames(names) {
+function formatAndSortNames_(names) {
   const formattedNames = names.map(name => 
     name
       .trim()
@@ -315,7 +314,27 @@ function formatAndSortNames(names) {
 }
 
 
-function swapAndFormatName(names) {
+/**
+ * Formats all entries in `names`, swaps lastName and firstName before sorting.
+ * 
+ * Removes whitespace, strip accents and capitalize names.
+ *
+ * @param {string[]} names  Array of names to format.
+ * @return {string[]}  Sorted array of formatted names.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 6, 2024
+ * @update  Dec 6, 2024
+ * 
+ * ```javascript
+ * // Sample Script ➜ Format, swap first and last name, then sort.
+ * const rawNames = ["BOb burger", "Francine deBlé"];
+ * const result = swapAndFormatName_(rawNames);
+ * Logger.log(result)  // ["Burger, Bob", "Deble, Francine"]
+ * ```
+ */
+
+function swapAndFormatName_(names) {
   const formattedNames = names.map(
     function(name) {
       var nameParts = name
@@ -334,5 +353,4 @@ function swapAndFormatName(names) {
 
   return formattedNames.sort();
 }
-
 

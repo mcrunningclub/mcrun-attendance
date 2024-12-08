@@ -178,8 +178,7 @@ function emailSubmission() {
   headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)' );
   rangeConfirmation.setValue(headrun.confirmation);
 
-  
-  const emailBodyHTML = createEmailCopy(headrun);
+  const emailBodyHTML = createEmailCopy_(headrun);
 
   var message = {
     to: headrun.toEmail,
@@ -251,7 +250,7 @@ function checkMissingAttendance() {
     verifyAttendance_();
   }
   else {
-    throw new Error("`verifyAttendance()` is not allowed to run. Toggle script property");
+    throw new Error("`verifyAttendance()` is not allowed to run. Set script property as true.");
   }
 
   return;
@@ -351,7 +350,7 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
 
   // Remove whitespace, strip accents and capitalize names
   // Swap order of attendee names to `lastName, firstName`
-  const sortedNames = swapAndFormatName(allNames);
+  const sortedNames = swapAndFormatName_(allNames);
 
   // Get existing member registry in `Members`
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
@@ -367,7 +366,7 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
     .filter(name => name)  // Remove empty rows
   ;
 
-  const sortedMembers = formatAndSortNames(members);
+  const sortedMembers = formatAndSortNames_(members);
 
   // Use the helper function on sorted items
   const unregistered = findUnregistered_(sortedNames, sortedMembers);
