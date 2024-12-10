@@ -43,8 +43,8 @@ function logMenuAttempt_(email = "") {
  * @trigger Open Google Spreadsheet.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 21, 2024
- * @update  Nov 22, 2024
+ * @date  Dec 5, 2024
+ * @update  Dec 8, 2024
  */
 
 function onOpen() {
@@ -57,7 +57,7 @@ function onOpen() {
     .addSubMenu(ui.createMenu('Formatting Menu')
       .addItem('Sort By Timestamp', sortByTimestampUI_.name)
       .addItem('Format Sheet View', formatSheetUI_.name)
-      .addItem('Format Names in Row', formatRowNamesUI_.name)
+      .addItem('Format Names in Row', formatNamesInRowUI_.name)
       .addItem('Format All Names', formatAllNamesUI_.name)
     )
 
@@ -186,13 +186,13 @@ function sortByTimestampUI_() {
 
 function formatSheetUI_() {
   const functionName = formatSpecificColumns.name;
-  const customMsg = "This will only modify the sheet formatting (view)."
+  const customMsg = "This will only modify the sheet formatting (view), and improve confirmation value."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
 function formatAllNamesUI_() {
   functionName = formatAllNames.name;
-  const customMsg = "This will format all the attendees names found in this sheet. \
+  const customMsg = "This will format all the names found in this sheet. \
   \n\nWARNING! Wide-sheet formatting may take some time."
 
   confirmAndRunUserChoice_(functionName, customMsg);
@@ -202,7 +202,7 @@ function formatAllNamesUI_() {
  * This UI function can target a specific row, or the last row if input is omitted.
  */
 
-function formatRowNamesUI_() {
+function formatNamesInRowUI_() {
   const ui = SpreadsheetApp.getUi();
   const headerMsg = "Which row do you want to format?";
   const textMsg = "Enter the row number, or leave empty for the last row.";
@@ -217,7 +217,7 @@ function formatRowNamesUI_() {
 
   if (responseText == "") {
     // User did not enter a row number; check last row only.
-    customMsg = "This will format the names in the last row."
+    customMsg = "This will only format the names in the last row."
   }
   else if (isValidRow_(rowNumber)) {
     // Row is valid, can continue execution.

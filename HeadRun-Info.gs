@@ -1,6 +1,6 @@
 // Emails of current execs
 const emailPresident = 'alexis.demetriou@mail.mcgill.ca';
-const emailVPinternal = '';
+const emailVPinternal = 'emmanuelle.blais@mail.mcgill.ca';
 
 /**
  * Return headrun day and time from headrun code input `headRunDay`.
@@ -40,12 +40,62 @@ function getHeadRunString(headRunDay) {
 
 }
 
+/**
+ * Formats headrunner names from `row` into uniform view and separated by newline.
+ * 
+ * New format is `${firstName} ${lastNameLetter}.`
+ *
+ * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
+ *                                                       Defaults to the last row in the sheet.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 10, 2024
+ * @update  Dec 10, 2024
+ * 
+ * ```javascript
+ * // Sample Script ➜ Format names in row `7`.
+ * const rowToFormat = 7;
+ * formatHeadRunnerInRow(rowToFormat);
+ * ```
+ */
+
+function formatHeadRunnerInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
+  const sheet = ATTENDANCE_SHEET;
+  const headrunnerCol = HEADRUNNERS_COL;
+
+  // Get the cell value
+  const cellValue = sheet.getRange(row, headrunnerCol).getValue();
+
+  // Split by commas or newline characters and clean up each name
+  const cleanNames = cellValue.split(/[,|\n]+/)
+  .map(name => name
+    .trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+    .toLowerCase()
+    .replace(/\b\w/g, letter => letter.toUpperCase())  // Capitalize each word
+  );
+
+  // Generate list with consistent formatting `${firstName} ${lastNameLetter}.`
+  const formattedNames = cleanNames.map(name => {
+    const [firstName, lastName = ""] = name.split(' ');  // Defaults lastName to empty string
+    const lastNameLetter = lastName ? lastName.charAt(0).toUpperCase() : '';
+    return `${firstName} ${lastNameLetter}.`;
+  }).join('\n');  // Join names with newlines
+  
+  // Remove any ending newline
+  formattedNames.trim();
+
+  // Replace with formatted names
+  sheet.getRange(row, headrunnerCol).setValue(formattedNames);
+}
+
 
 /**
  * Returns the headrunners' emails according to input `headrun`.
  * 
  * @param {string}  headrun  The headrun code representing specific headrun (e.g., `'SundayPM'`).
- * @return {string[]}  Array of headrunner emails for respective headrun. (e.g., `['headrunner1@example.com', 'headrunner2@example.com', ...]`)
+ * @return {string[]}  Array of headrunner emails for respective headrun. (e.g., `['headrunner1@example.com',           
+ *                     'headrunner2@example.com', ...]`)
  *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 13, 2023

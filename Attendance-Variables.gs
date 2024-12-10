@@ -5,7 +5,7 @@ const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SH
 // LIST OF COLUMNS IN SHEET_NAME
 const TIMESTAMP_COL = 1;
 const EMAIL_COL = 2;
-const HEADRUNNERS = 3;
+const HEADRUNNERS_COL = 3;
 const HEADRUN_COL = 4;
 const RUN_LEVEL_COL = 5;
 const ATTENDEES_BEGINNER_COL = 6;
@@ -29,7 +29,7 @@ const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y7
 const LEDGER_NAME = 'Head Run Attendance';
 const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/edit?usp=sharing";
 
-// SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES
+// SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
 const SCRIPT_PROPERTY = {
   isCheckingAttendance : 'IS_CHECKING_ATTENDANCE',
   clientID : 'CLIENT_ID',
@@ -50,7 +50,7 @@ const REMINDER_EMAIL_HTML =  " \
         This is a friendly reminder to submit today's headrun attendance. \
       </p> \
       <p> \
-        <strong>Log attendance using the McRUN App or click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form or </strong> \
+        <strong>Log attendance using the McRUN App or click <a href= https://docs.google.com/forms/d/e/1FAIpQLSf_4zdnyY4I4vSxaatAaxxgsU38hb862arFDU9wTbSpnoXdKA/viewform\> here</a> to access the F24 attendance form </strong> \
       </p> \
       <p> \
         Please ignore this message if the headrun has been cancelled or your group has already submitted the attendance form. \

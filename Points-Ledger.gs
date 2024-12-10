@@ -32,7 +32,6 @@ function copyToLedger() {
  * @update  Nov 5, 2024
  */
 
-
 function pointsEmail() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();

@@ -3,10 +3,6 @@ const ACTIVITIES_ENDPOINT = 'athlete/activities'
 const MAPS_FOLDER = 'run_maps'
 
 /**
-
- */
-
-/**
  * Maps an Object containing param, value pairs to a query string.
  * Ex: {"param1": val1, "param2": val2} -> "?param1=val1&param2=val2"
  * 

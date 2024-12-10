@@ -1,12 +1,12 @@
 /**
  * Functions to execute after form submission.
  * 
- * @trigger Form Submission.
+ * @trigger Attendance form Submission.
  */
 
 function onFormSubmission() {
   addMissingFormInfo();
-  formatNamesInRow();     // formats names in last row
+  formatNamesInRow_();     // formats names in last row
   getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
@@ -18,11 +18,11 @@ function onFormSubmission() {
 /**
  * Functions to execute after McRUN app submission.
  * 
- * @trigger McRUN App Submission.
+ * @trigger McRUN App Attendance Submission.
  */
 function onAppSubmission() {
   removePresenceChecks();
-  formatNamesInRow();     // formats names in last row
+  formatNamesInRow_();     // formats names in last row
   getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
@@ -200,9 +200,7 @@ function emailSubmission() {
 
 
 /**
- * Toggles flag to run `checkAttendance()`.
- * 
- * Updates value in `ScriptProperties` bank.
+ * Toggles flag to run `checkAttendance()` by updating value in `ScriptProperties` bank.
  * 
  * @trigger User choice in custom menu.
  * 
@@ -317,13 +315,31 @@ function verifyAttendance_() {
 
 
 /**
+ * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
+ * 
+ * Row number is 1-indexed in GSheet. Executes bottom to top. Header row skipped.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 6, 2024
+ * @update  Dec 6, 2024
+ */
+
+function getAllUnregisteredMembers() {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+
+  for(var row=lastRow; row >= 2; row--) {
+    getUnregisteredMembers_(row);
+  }
+}
+
+
+/**
  * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
  * 
  * Sets unregistered members in `NOT_FOUND_COL`.
  * 
  * List of members found in `Members` sheet.
- * 
- * CURRENTLY IN REVIEW!
  * 
  * @param {number} [row=ATTENDANCE_SHEET.getLastRow()]  The row number in `ATTENDANCE_SHEET` 1-indexed.
  *                                                      Defaults to the last row in the sheet.
@@ -352,7 +368,7 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
   // Swap order of attendee names to `lastName, firstName`
   const sortedNames = swapAndFormatName_(allNames);
 
-  // Get existing member registry in `Members`
+  // Get existing member registry in `Members` sheet
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
 
   const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
@@ -373,28 +389,6 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
 
   // Log unfound names
   unfoundNameRange.setValue(unregistered.join("\n"));
-
-  return;
-}
-
-
-/**
- * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
- * 
- * Row number is 1-indexed in GSheet. Header row skipped.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 6, 2024
- * @update  Dec 6, 2024
- */
-
-function getAllUnregisteredMembers() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  for(var row=lastRow; row >= 2; row--) {
-    getUnregisteredMembers_(row);
-  }
 }
 
 
@@ -406,8 +400,6 @@ function getAllUnregisteredMembers() {
  * @param {string[]} attendees  All attendees of the head run.
  * @param {string} members  All registered members.
  * @return {string[]}  Returns attendees not found in `members`.
- * 
- * @TODO Move this to `Membership (Main)` and call as library
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
@@ -428,7 +420,7 @@ function findUnregistered_(attendees, members) {
     while (index < members.length) {
       const memberName = members[index];
       const [memberLastName, memberFirstNames] = memberName.split(",").map(s => s.trim());
-      const searchFirstNameList = memberFirstNames.split("|").map(s => s.trim());
+      const searchFirstNameList = memberFirstNames.split("|").map(s => s.trim());   // only if preferredName exists
 
       // Compare last names and check if first name matches any in the list
       if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {

@@ -15,6 +15,8 @@ function addMissingFormInfo() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
 
+  formatConfirmationInRow_(lastRow);  // transforms bool to user-friendly message
+
   const rangeIsCopySent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
   
   // Since GForm automatically sends copy to submitter, set isCopySent `true`.
@@ -91,12 +93,14 @@ function removePresenceChecks() {
 
 /**
  * Formats certain columns of `HR Attendance` sheet.
+ * 
+ * Modifies confirmation bool into user-friendly message.
  *
  * @trigger New Google form or app submission.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Oct 23, 2024
+ * @update  Dec 8, 2024
  */
 
 function formatSpecificColumns() {
@@ -125,17 +129,68 @@ function formatSpecificColumns() {
   const range = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn());
   range.getBandings().forEach(banding => banding.remove());   // Need to remove current banding, before applying it to current range
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);    // Apply BLUE banding with distinct header and footer colours.
+
+  formatAllConfirmations();   // Modifies bool to user-friendly message
 }
 
 
 /**
- * Wrapper function for `formatNamesInRow` for *ALL* submissions.
+ * Wrapper function for `formatAllConfirmation` for *ALL* submissions.
  * 
  * Row number is 1-indexed in GSheet. Header row skipped.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 5, 2024
- * @update  Dec 6, 2024
+ * @date  Dec 8, 2024
+ * @update  Dec 8, 2024
+ */
+function formatAllConfirmations() {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+
+  for(var row=lastRow; row >= 2; row--) {
+    formatConfirmationInRow_(row);
+  }
+}
+
+/**
+ * Formats confirmation bool in `row` into user-friendly string.
+ *
+ * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
+ *                                                       Defaults to the last row in the sheet.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 8, 2024
+ * @update  Dec 8, 2024
+ * 
+ */
+
+function formatConfirmationInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
+  const sheet = ATTENDANCE_SHEET;
+  const confirmationCol = CONFIRMATION_COL;
+
+  // Get confirmation col and value using `row`
+  const rangeConfirmation = sheet.getRange(row, confirmationCol);
+  const confirmationResp = rangeConfirmation.getValue().toString();    // Options: TRUE or FALSE;
+
+  // Ensure that current value is bool to prevent overwrite
+  var isBool = (confirmationResp == 'true' || confirmationResp == 'false');
+  if(!isBool) return;
+
+  // Format and set value according to TRUE/FALSE response
+  const formattedValue = confirmationResp ? 'Yes' : 'No (explain in comment section)';
+  rangeConfirmation.setValue(formattedValue);
+}
+
+
+/**
+ * Wrapper function for `formatAttendeeNamesInRow` and `formatHeadRunnerInRow`
+ * for **ALL** submissions in GSheet.
+ * 
+ * Row number is 1-indexed in GSheet. Header row skipped.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 10, 2024
+ * @update  Dec 10, 2024
  */
 
 function formatAllNames() {
@@ -143,7 +198,45 @@ function formatAllNames() {
   const lastRow = sheet.getLastRow();
 
   for(var row=lastRow; row >= 2; row--) {
-    formatNamesInRow_(row);
+    formatAttendeeNamesInRow_(row);
+    formatHeadRunnerInRow_(row);
+  }
+}
+
+/**
+ * Wrapper function for `formatAttendeeNamesInRow` and `formatHeadRunnerInRow`.
+ * 
+ * Formats headrunner and attendee names in target `row`.
+ * 
+ * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
+ *                                                       Defaults to the last row in the sheet.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 10, 2024
+ * @update  Dec 10, 2024
+ */
+
+function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
+  formatAttendeeNamesInRow_(row);
+  formatHeadRunnerInRow_(row);
+}
+
+/**
+ * Wrapper function for `formatAttendeeNamesInRow` for *ALL* submissions.
+ * 
+ * Row number is 1-indexed in GSheet. Header row skipped.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 5, 2024
+ * @update  Dec 10, 2024
+ */
+
+function formatAllAttendeeNames() {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+
+  for(var row=lastRow; row >= 2; row--) {
+    formatAttendeeNamesInRow_(row);
   }
 }
 
@@ -164,7 +257,7 @@ function formatAllNames() {
  * ```
  */
 
-function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
+function formatAttendeeNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
   const numColToGet = LEVEL_COUNT;
 
@@ -187,6 +280,7 @@ function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
       // Remove whitespace, strip accents and capitalize names
       var formattedNames = names.map(name => name
         .trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
         .toLowerCase()
         .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
       );
