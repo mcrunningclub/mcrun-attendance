@@ -43,25 +43,22 @@ function getHeadRunString(headRunDay) {
 /**
  * Wrapper function for `formatHeadRunnerInRow` to apply on *ALL* submissions.
  * 
- * Row number is 1-indexed in GSheet. Header row skipped.
+ * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  */
 
 function formatAllHeadRunner() {
-  const sheet = ATTENDANCE_SHEET;
-  const startRow = 2  // Skip header row
-  const numRow = sheet.getLastRow() - 1;  // Remove header row from count
-
-  formatHeadRunnerInRow_(startRow, numRow);
+  runOnSheet_(formatHeadRunnerInRow_.name);
 }
 
-
 /**
- * Formats headrunner names from `row` into uniform view and separated by newline.
+ * Formats headrunner names from `row` into uniform view, separated by newline.
  * 
- * New format is `${firstName} ${lastNameLetter}.`
+ * Updated format is '`${firstName} ${lastNameLetter}.`'
  *
  * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
  *                                                       Defaults to the last row in the sheet.
+ * 
+ * @param {integer} numRow  Number of rows to format from `startRow`.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 10, 2024
@@ -71,6 +68,11 @@ function formatAllHeadRunner() {
  * // Sample Script ➜ Format names in row `7`.
  * const rowToFormat = 7;
  * formatHeadRunnerInRow(rowToFormat);
+ * 
+ * // Sample Script ➜ Format names from row `3` to `9`.
+ * const startRow = 3;
+ * const numRow = 9 - startRow;
+ * formatHeadRunnerInRow(startRow, numRow);
  * ```
  */
 
@@ -78,35 +80,38 @@ function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1
   const sheet = ATTENDANCE_SHEET;
   const headrunnerCol = HEADRUNNERS_COL;
   
-  // Get all the values in `HEADRUNNERS_COL`
+  // Get all the values in `HEADRUNNERS_COL` in bulk
   const rangeHeadRunner = sheet.getRange(startRow, headrunnerCol, numRow);
   const rawValues = rangeHeadRunner.getValues();
 
-  // Split by commas or newline characters and clean up each name
-  const cleanNames = rawValues.map(row => {
-    let headrunners = row[0].split(/[,|\n]+/); 
-    let ret = headrunners.map(name => name
+  // Callback function to clean and format a single headrunner name
+  function formatName(name) {
+    const cleanedName = name
       .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
       .toLowerCase()
-      .replace(/\b\w/g, letter => letter.toUpperCase())   // Capitalize each word
-    );
+      .replace(/\b\w/g, letter => letter.toUpperCase()); // Capitalize each proper name
+    
+    // Split into first and last names
+    const [firstName, lastName = ""] = cleanedName.split(' '); 
+    const lastInitial = lastName.charAt(0).toUpperCase();  // Get first letter of last name
+    return `${firstName} ${lastInitial}.`;  // Return formatted name
+  };
 
-    return ret;
-  });
+  // Callback function to process the raw value into the formatted format
+  function processRow(row) {
+    const headrunners = row[0]  // Get first column from 2D array
+      .split(/[,|\n]+/)         // Split by commas or newlines
+      .map(formatName)   // Format each name using formatName()
+      .join('\n');       // Join the names with a newline
+    
+    return [headrunners]; // Return as a 2D array for .setValues()
+  };
 
-  const formattedNames = cleanNames.map(names => {
-    let ret = names.map(name => {
-      const [firstName, lastName = ""] = name.split(' ');  // Defaults lastName to empty string
-      const lastNameLetter = lastName ? lastName.charAt(0).toUpperCase() : '';
-      const retString = `${firstName} ${lastNameLetter}.`;
-      return retString.trim();
-    }).join('\n'); // Join names with newlines
+  // Map over each row to process and format by applying `processRow()`
+  const formattedNames = rawValues.map(processRow);   // apply procecessRow()
 
-    return [ret];   // Every row must be 1d array for setValues
-  });
-
-  // Replace with formatted names
+  // Update the sheet with formatted names
   rangeHeadRunner.setValues(formattedNames);
 }
 
@@ -115,8 +120,8 @@ function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1
  * Returns the headrunners' emails according to input `headrun`.
  * 
  * @param {string}  headrun  The headrun code representing specific headrun (e.g., `'SundayPM'`).
- * @return {string[]}  Array of headrunner emails for respective headrun. (e.g., `['headrunner1@example.com',           
- *                     'headrunner2@example.com', ...]`)
+ * @return {string[]}  Array of headrunner emails for respective headrun. 
+ *                      (e.g., `['headrunner1@example.com', 'headrunner2@example.com', ...]`)
  *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 13, 2023
@@ -129,7 +134,6 @@ function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1
  */
 
 function getHeadRunnerEmail(headrun) {
-
   // Head Runner Emails
   const abigailFinch = 'abigail.finch@mail.mcgill.ca';
   const aidenLee = 'jihong.lee@mail.mcgill.ca';
@@ -168,7 +172,7 @@ function getHeadRunnerEmail(headrun) {
     michaelRafferty, 
     liamMurphy, 
     bridgetAndersen
-    ];
+  ];
 
   const wednesdayHeadRunner = [
     kateRichards, 
@@ -176,7 +180,7 @@ function getHeadRunnerEmail(headrun) {
     sophiaLongo, 
     camilaCognac, 
     alexanderHebiton
-    ];
+  ];
 
   const thursdayHeadRunner = [
     charlesVillegas, 
@@ -184,7 +188,7 @@ function getHeadRunnerEmail(headrun) {
     emersonDarling, 
     justinCote, 
     liamGrant
-    ];
+  ];
 
   const saturdayHeadRunner = [
     abigailFinch, 
@@ -202,7 +206,7 @@ function getHeadRunnerEmail(headrun) {
     madisonHughes, 
     pooyaPilehChiha, 
     aidenLee
-    ];
+  ];
 
   // Easier to decode from input `headrun`
   switch (headrun) {
@@ -214,22 +218,18 @@ function getHeadRunnerEmail(headrun) {
 
   default : return '';
   }
-
+  
 }
 
 
 /**
  * Wrapper function for `formatHeadRunInRow` to apply on *ALL* submissions.
  * 
- * Row number is 1-indexed in GSheet. Header row skipped.
+ * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  */
 
 function formatAllHeadRun() {
-  const sheet = ATTENDANCE_SHEET;
-  const startRow = 2;   // Skip header row
-  const numRow = sheet.getLastRow() - 1;  // Remove header row from count
-
-  formatHeadRunInRow_(startRow, numRow);    // This formats sheet from first submission to last row
+  runOnSheet_(formatHeadRunInRow_.name);
 }
 
 /**

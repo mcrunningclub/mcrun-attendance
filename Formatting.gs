@@ -130,10 +130,15 @@ function formatSpecificColumns() {
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
 }
 
+
 /**
- * Wrapper function for `formatAllConfirmation` for *ALL* submissions.
+ * Global wrapper function that runs the following on the sheet:
+ *  - **formatAllHeadRun()**
+ *  - **formatAllHeadRunner()**
+ *  - **formatAllAttendeeNames()**
+ *  - **formatAllConfirmations()**
  * 
- * Row number is 1-indexed in GSheet. Header row skipped.
+ * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 11, 2024
@@ -141,31 +146,21 @@ function formatSpecificColumns() {
  */
 
 function cleanSheetData() {
-  formatAllHeadRun();   // Removes hyphen if applicable
-  formatAllHeadRunner()  // Applies uniform formatting to members
-
-  for(var row=lastRow; row >= 2; row--) {
-    formatConfirmationInRow_(row);  // Modifies bool to user-friendly message
-    formatAttendeeNamesInRow_(row); // Applies uniform format to attendees
-  }
+  formatAllHeadRun();   // Removes hyphen-space if applicable
+  formatAllHeadRunner();  // Applies uniform formatting to headrunners
+  formatAllConfirmations();  // Modifies bool to user-friendly message
+  formatAllAttendeeNames();  // Applies uniform formatting to attendees
+  
 }
 
+
 /**
- * Wrapper function for `formatAllConfirmation` for *ALL* submissions.
+ * Wrapper function for `formatAllConfirmation` for **ALL** submissions.
  * 
- * Row number is 1-indexed in GSheet. Header row skipped.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 8, 2024
- * @update  Dec 8, 2024
+ * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  */
 function formatAllConfirmations() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  for(var row=lastRow; row >= 2; row--) {
-    formatConfirmationInRow_(row);
-  }
+  runOnSheet_(formatConfirmationInRow_.name);
 }
 
 /**
@@ -176,8 +171,7 @@ function formatAllConfirmations() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 8, 2024
- * @update  Dec 8, 2024
- * 
+ * @update  Dec 11, 2024
  */
 
 function formatConfirmationInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
@@ -197,26 +191,17 @@ function formatConfirmationInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
   rangeConfirmation.setValue(formattedValue);
 }
 
-
 /**
  * Wrapper function for `formatAttendeeNamesInRow` and `formatHeadRunnerInRow`
  * for **ALL** submissions in GSheet.
  * 
- * Row number is 1-indexed in GSheet. Header row skipped.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 10, 2024
- * @update  Dec 10, 2024
+ * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  */
 
 function formatAllNames() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  for(var row=lastRow; row >= 2; row--) {
-    formatAttendeeNamesInRow_(row);
-    formatHeadRunnerInRow_(row);
-  }
+  const funcA = formatAttendeeNamesInRow_.name;
+  const funcB = formatHeadRunnerInRow_.name;
+  runOnSheet_(funcA, funcB);  // Run both functions
 }
 
 /**
@@ -240,21 +225,13 @@ function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
 /**
  * Wrapper function for `formatAttendeeNamesInRow` for *ALL* submissions.
  * 
- * Row number is 1-indexed in GSheet. Header row skipped.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 5, 2024
- * @update  Dec 10, 2024
+ * Row number is 1-indexed in GSheet. Header row skipped. Runs head to bottom.
  */
 
 function formatAllAttendeeNames() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  for(var row=lastRow; row >= 2; row--) {
-    formatAttendeeNamesInRow_(row);
-  }
+  runOnSheet_(formatAttendeeNamesInRow_.name);
 }
+
 
 /**
  * Formats attendee names from `row` into uniform view, sorted and separated by newline.
@@ -468,5 +445,35 @@ function swapAndFormatName_(names) {
   });
 
   return formattedNames.sort();
+}
+
+
+/**
+ * Boiler plate function `functionName` to execute on complete sheet.
+ * 
+ * Also executes `functionName2` if non-empty.
+ * 
+ * @param {string}  functionName  Name of function to execute.
+ * @param {string}  [functionName2=""]  Name of function to execute.
+ *                                      Defaults to empty string.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 11, 2024
+ * @update  Dec 11, 2024
+ */
+
+function runOnSheet_(functionName, functionName2="") {
+  const sheet = ATTENDANCE_SHEET;
+  const startRow = 2  // Skip header row
+  const numRows = sheet.getLastRow();
+
+  for(var row = startRow; row <= numRows; row++) {
+    this[functionName](row);
+    
+    // Only executes `functionName2` if non-empty.
+    if(functionName2) {
+      this[functionName2](row);
+    }
+  }
 }
 

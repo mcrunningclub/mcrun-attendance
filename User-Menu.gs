@@ -57,6 +57,7 @@ function onOpen() {
     .addSubMenu(ui.createMenu('Formatting Menu')
       .addItem('Sort By Timestamp', sortByTimestampUI_.name)
       .addItem('Format Sheet View', formatSheetUI_.name)
+      .addItem('Clean Sheet Data', cleanSheetDataUI_.name)
       .addItem('Format Names in Row', formatNamesInRowUI_.name)
       .addItem('Format All Names', formatAllNamesUI_.name)
     )
@@ -76,7 +77,6 @@ function onOpen() {
   .addToUi();
 
   checkValidScriptProperties(); // verify validity of `SCRIPT_PROPERTY`
-
 }
 
 
@@ -184,6 +184,14 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
 function sortByTimestampUI_() {
   const functionName = sortAttendanceForm.name;
   const customMsg = "This sheet will be sorted by timestamp of submission."
+  confirmAndRunUserChoice_(functionName, customMsg);
+}
+
+function cleanSheetDataUI_() {
+  functionName = cleanSheetData.name;
+  const customMsg = "This will clean and formal all the sheet data. \
+  \n\nWARNING! Wide-sheet formatting may take some time."
+
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
@@ -364,7 +372,7 @@ function isValidRow_(row) {
 /**
  * Verifies that `SCRIPT_PROPERTY` bank matches script properties in 'Project Settings'.
  * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 11, 2024
  * @update Dec 11, 2024
  */
