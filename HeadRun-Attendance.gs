@@ -248,7 +248,7 @@ function checkMissingAttendance() {
     verifyAttendance_();
   }
   else {
-    throw new Error("`verifyAttendance()` is not allowed to run. Set script property as true.");
+    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
   }
 
   return;

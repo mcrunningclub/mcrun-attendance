@@ -379,7 +379,7 @@ function checkValidScriptProperties() {
 
   // Verify same size in both property banks
   if(keys.length != userDefinedProperties.length) {
-    let errorMessage = "Script Properties in 'Project Settings' does not match user-defined 'SCRIPT_PROPERTY'.";
+    let errorMessage = "Script Properties in 'Project Settings' does not match 'SCRIPT_PROPERTY' in Google Apps Script";
     ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
     
     throw Error(errorMessage);
@@ -389,7 +389,7 @@ function checkValidScriptProperties() {
   keys.forEach(key => {
     let isIncluded = userDefinedProperties.includes(key);
     if(!isIncluded) {
-      let errorMessage = `\`${key}\` in 'Project Settings' does not exist in user-defined script properties.`;
+      let errorMessage = `\`${key}\` in 'Project Settings' is not found in 'SCRIPT_PROPERTY' in Google Apps Script`;
       ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
 
       throw Error(errorMessage);

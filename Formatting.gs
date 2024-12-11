@@ -60,7 +60,7 @@ function sortAttendanceForm() {
  * 
  * Helper function for `consolidateMemberData()`.
  * 
- * @trigger New head run or mcrun event submission.
+ * @trigger New head run or McRUN attendance submission.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
@@ -115,24 +115,40 @@ function formatSpecificColumns() {
   const rangeAttendees = sheet.getRange('F2:H');
   rangeAttendees.setFontSize(9);  // Reduce font size for `Attendees` column
 
-  const rangeHeadRun = sheet.getRange('D2:D');
-  rangeHeadRun.setFontSize(11);   // Increase font size for `Head Run` column
+  const rangeHeadRun = sheet.getRange(['D2:D', 'M2:M']);
+  rangeHeadRun.setFontSize(11);   // Increase font size for `Head Run` and `Submission Platform`
 
   const rangeListToCenter = sheet.getRangeList(['L2:M']); 
   rangeListToCenter.setHorizontalAlignment('center');
   rangeListToCenter.setVerticalAlignment('middle');   // Center and align to middle
-
-  const rangePlatform = sheet.getRange('M2:M');
-  rangePlatform.setFontSize(11);  // Increase font size for `Submission Platform` column
-
-  // Gets non-empty range
+  
   const range = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn());
-  range.getBandings().forEach(banding => banding.remove());   // Need to remove current banding, before applying it to current range
-  range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);    // Apply BLUE banding with distinct header and footer colours.
 
-  formatAllConfirmations();   // Modifies bool to user-friendly message
+  // Need to remove current banding, before applying it to current range
+  // Apply BLUE banding with distinct header and footer colours.
+  range.getBandings().forEach(banding => banding.remove());
+  range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
 }
 
+/**
+ * Wrapper function for `formatAllConfirmation` for *ALL* submissions.
+ * 
+ * Row number is 1-indexed in GSheet. Header row skipped.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 11, 2024
+ * @update  Dec 11, 2024
+ */
+
+function cleanSheetData() {
+  formatAllHeadRun();   // Removes hyphen if applicable
+  formatAllHeadRunner()  // Applies uniform formatting to members
+
+  for(var row=lastRow; row >= 2; row--) {
+    formatConfirmationInRow_(row);  // Modifies bool to user-friendly message
+    formatAttendeeNamesInRow_(row); // Applies uniform format to attendees
+  }
+}
 
 /**
  * Wrapper function for `formatAllConfirmation` for *ALL* submissions.
