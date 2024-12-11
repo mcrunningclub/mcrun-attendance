@@ -242,9 +242,9 @@ function toggleAttendanceCheck_() {
 function checkMissingAttendance() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
-  const isCheckingAllowed = Boolean( scriptProperties.getProperty(propertyName) );
+  const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
 
-  if (isCheckingAllowed) {
+  if (isCheckingAllowed == "true") {
     verifyAttendance_();
   }
   else {
@@ -328,9 +328,10 @@ function getAllUnregisteredMembers() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
 
-  for(var row=lastRow; row >= 2; row--) {
+   for(var row=lastRow; row >= 2; row--) {
     getUnregisteredMembers_(row);
   }
+
 }
 
 
@@ -393,12 +394,10 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
 
 
 /**
- * Helper function to find unregistered attendees
+ * Helper function to find unregistered attendees.
  * 
- * CURRENTLY IN REVIEW!
- * 
- * @param {string[]} attendees  All attendees of the head run.
- * @param {string} members  All registered members.
+ * @param {string[]} attendees  All attendees of the head run (sorted).
+ * @param {string[]} members  All registered members (sorted).
  * @return {string[]}  Returns attendees not found in `members`.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT

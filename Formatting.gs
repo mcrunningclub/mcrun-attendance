@@ -379,29 +379,31 @@ function createEmailCopy_(emailDetails) {
 /**
  * Formats all entries in `names` then sorts.
  * 
- * Removes whitespace, strip accents and capitalize names.
+ * Removes whitespace and hyphens, strip accents, and capitalize names.
  *
  * @param {string[]} names  Array of names to format.
  * @return {string[]}  Sorted array of formatted names.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 1, 2024
- * @update  Nov 1, 2024
+ * @update  Dec 11, 2024
  * 
  * ```javascript
  * // Sample Script ➜ Format, then sort names.
- * const rawNames = ["BOb burger", "Francine deBlé"];
+ * const rawNames = ["BOb-Burger belChEr ", "Francine de-Blé"];;
  * const result = formatAndSortNames_(rawNames);
- * Logger.log(result)  // ["Bob Burger", "Francine Deble"]
+ * Logger.log(result)  // ["Bob Burger Belcher", "Francine De ble"]
  * ```
  */
 function formatAndSortNames_(names) {
   const formattedNames = names.map(name => 
     name
       .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // Strip accents
+      .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
       .toLowerCase()
-      .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
+      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each name
+      .replace(/-/g, " ")   // Replace hyphens with spaces.
   );
 
   return formattedNames.sort();
@@ -409,41 +411,45 @@ function formatAndSortNames_(names) {
 
 
 /**
+ * 
  * Formats all entries in `names`, swaps lastName and firstName before sorting.
  * 
- * Removes whitespace, strip accents and capitalize names.
+ * Removes whitespace and apostrophes, strip accents and capitalize names.
  *
  * @param {string[]} names  Array of names to format.
  * @return {string[]}  Sorted array of formatted names.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 6, 2024
- * @update  Dec 6, 2024
+ * @update  Dec 11, 2024
  * 
  * ```javascript
  * // Sample Script ➜ Format, swap first and last name, then sort.
- * const rawNames = ["BOb burger", "Francine deBlé"];
+ * const rawNames = ["BOb-Burger bulChEr ", "Francine de-Blé"];
  * const result = swapAndFormatName_(rawNames);
- * Logger.log(result)  // ["Burger, Bob", "Deble, Francine"]
+ * Logger.log(result)  // ["Bulcher, Bob Burger", "De ble, Francine"]
  * ```
  */
 
 function swapAndFormatName_(names) {
-  const formattedNames = names.map(
-    function(name) {
-      var nameParts = name
+  const formattedNames = names.map(name => {
+    let nameParts = name
       .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // Strip accents
+      .replace(/[\u2018\u2019']/g, "")  // Remove apostrophes (`, ', ’)
       .toLowerCase()
-      .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
-      .replace(/['`’]/g, '')  // Remove apostrophes
-      .split(' ');
+      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each name
+      .split(/\s+/) // Split by spaces
+    ;
 
-      var firstName = nameParts[0];
-      var lastName = nameParts[nameParts.length - 1];
-      return lastName + ', ' + firstName;
-    }
-  );
+    // Replace hyphens with spaces. Can only perform after splitting first and last name.
+    nameParts = nameParts.map(name => name.replace(/-/g, " ")); 
+
+    // If first name is not hyphenated, only left-most substring stored in first name
+    const firstName = nameParts[0];
+    const lastName = nameParts[nameParts.length - 1];
+    return `${lastName}, ${firstName}`; // Format as "LastName, FirstName"
+  });
 
   return formattedNames.sort();
 }

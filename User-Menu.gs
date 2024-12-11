@@ -66,12 +66,12 @@ function onOpen() {
       .addItem('Find Unregistered in Row', findUnregisteredAttendeesUI_.name)
       .addItem('Find All Unregistered Attendees', findAllUnregisteredUI_.name)
       .addItem('Check For Missing Submission', checkMissingAttendanceUI_.name)
-      .addItem('Turn On/Off Submission Checker', toggleAttendanceCheckUI_.name)
     )
 
     .addSubMenu(ui.createMenu('Trigger Menu')
       .addItem('Submit By Form', onFormSubmitUI_.name)
       .addItem('Submit By App', onAppSubmitUI_.name)
+      .addItem('Turn On/Off Submission Checker', toggleAttendanceCheckUI_.name)
     )
     .addToUi();
 }
