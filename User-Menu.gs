@@ -73,7 +73,10 @@ function onOpen() {
       .addItem('Submit By App', onAppSubmitUI_.name)
       .addItem('Turn On/Off Submission Checker', toggleAttendanceCheckUI_.name)
     )
-    .addToUi();
+  .addToUi();
+
+  checkValidScriptProperties(); // verify validity of `SCRIPT_PROPERTY`
+
 }
 
 
@@ -357,3 +360,39 @@ function isValidRow_(row) {
   return (Number.isInteger(rowInt) && rowInt >= 0 && rowInt <= lastRow);
 }
 
+
+/**
+ * Verifies that `SCRIPT_PROPERTY` bank matches script properties in 'Project Settings'.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
+ * @date  Dec 11, 2024
+ * @update Dec 11, 2024
+ */
+
+function checkValidScriptProperties() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const keys = scriptProperties.getKeys();
+  const userDefinedProperties = Object.values(SCRIPT_PROPERTY);
+  
+  const ui = SpreadsheetApp.getUi();
+  const errorTitle = "⚠️ WARNING TO DEVELOPER! ⚠️";
+
+  // Verify same size in both property banks
+  if(keys.length != userDefinedProperties.length) {
+    let errorMessage = "Script Properties in 'Project Settings' does not match user-defined 'SCRIPT_PROPERTY'.";
+    ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
+    
+    throw Error(errorMessage);
+  }
+
+  // Compare script properties in 'Project Settings' with user-defined 'SCRIPT_PROPERTY' object.
+  keys.forEach(key => {
+    let isIncluded = userDefinedProperties.includes(key);
+    if(!isIncluded) {
+      let errorMessage = `\`${key}\` in 'Project Settings' does not exist in user-defined script properties.`;
+      ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
+
+      throw Error(errorMessage);
+    }
+  });
+}

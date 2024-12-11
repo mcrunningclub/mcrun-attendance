@@ -115,5 +115,3 @@ function getColumnPosition() {
     Logger.log(rangeList[i].getName());
   }
 }
-
-
