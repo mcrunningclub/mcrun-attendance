@@ -225,7 +225,7 @@ function formatNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
 /**
  * Wrapper function for `formatAttendeeNamesInRow` for *ALL* submissions.
  * 
- * Row number is 1-indexed in GSheet. Header row skipped. Runs head to bottom.
+ * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  */
 
 function formatAllAttendeeNames() {
