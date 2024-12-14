@@ -109,13 +109,14 @@ function formatSpecificColumns() {
   const rangeListToBold = sheet.getRangeList(['A2:A', 'D2:D', 'L2:M']);
   rangeListToBold.setFontWeight('bold');  // Set ranges to bold
 
-  const rangeListToWrap = sheet.getRangeList(['B2:G', 'I2:K']);
+  const rangeListToWrap = sheet.getRangeList(['B2:E', 'I2:K']);
   rangeListToWrap.setWrap(true);  // Turn on wrap
 
   const rangeAttendees = sheet.getRange('F2:H');
   rangeAttendees.setFontSize(9);  // Reduce font size for `Attendees` column
+  rangeAttendees.setWrap(false);  // Turn off wrap
 
-  const rangeHeadRun = sheet.getRange(['D2:D', 'M2:M']);
+  const rangeHeadRun = sheet.getRangeList(['D2:D', 'M2:M']);
   rangeHeadRun.setFontSize(11);   // Increase font size for `Head Run` and `Submission Platform`
 
   const rangeListToCenter = sheet.getRangeList(['L2:M']); 
@@ -128,6 +129,83 @@ function formatSpecificColumns() {
   // Apply BLUE banding with distinct header and footer colours.
   range.getBandings().forEach(banding => banding.remove());
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
+}
+
+function prettifyAllAttendees() {
+  const startRow = 2  // Skip header row
+  const numRows = 4 //sheet.getLastRow();
+  const endRow = startRow + numRows;
+
+   const allAttendeesCol = [
+    ATTENDEES_BEGINNER_COL, 
+    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_ADVANCED_COL
+  ];
+
+  for(var row = startRow; row < endRow; row++) {
+    allAttendeesCol.forEach(col => prettifyAttendees(col, row));
+  }
+}
+
+
+function prettifyAttendees(column, row=ATTENDANCE_SHEET.getLastRow()) {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = ATTENDANCE_SHEET.getLastRow();
+
+  const attendeeRange = sheet.getRange(row, column);
+  const cellValue = attendeeRange.getValue();
+
+  // Get the cell's background color
+  const banding = attendeeRange.getBandings()[0];   // Only 1 banding
+  const bandingColours = {
+    'colourEvenRow': banding.getFirstRowColorObject(),
+    'colourOddRow' : banding.getSecondRowColorObject(),
+    'colourFooter' : banding.getFooterRowColorObject(),
+
+    getColour : function(row) {
+      if(row == lastRow)     {return this.colourFooter}
+      else if(row % 2 == 0)  {return this.colourEvenRow}
+      else                   {return this.colourOddRow}
+    }
+  }
+
+  let cellBackgroundColour = bandingColours.getColour(row);
+
+  // Create a RichTextValueBuilder for the cell
+  const richTextBuilder = SpreadsheetApp.newRichTextValue().setText(cellValue);
+  const newTextStyle = SpreadsheetApp.newTextStyle()
+    .setItalic(true)
+    .setForegroundColorObject(cellBackgroundColour)
+    .build();
+
+  // Split the cell value by line breaks
+  const lines = cellValue.split("\n");
+
+  // Iterate through each line and format the email portion
+  let currentIndex = 0;
+  const delimiter = ":";
+  
+  for (const line of lines) {
+    const delimiterIndex = line.indexOf(delimiter);
+    
+    if(delimiterIndex !== -1) {
+      // Find the email (after the delimiter)
+      const email = line.substring(delimiterIndex + 1).trim();
+      if(email) {
+        const start = currentIndex + delimiterIndex; // Start index of delimiter
+        const end = start + email.length + 1; // End index of the email
+
+        // Apply text color and italic formatting to the email
+        richTextBuilder.setTextStyle(start, end, newTextStyle)
+      }
+    }
+    // Update currentIndex to account for the line length and newline character
+    currentIndex += line.length + 1;
+  }
+
+  // Build and set the RichTextValue for the cell
+  const richTextValue = richTextBuilder.build();
+  attendeeRange.setRichTextValue(richTextValue);
 }
 
 
@@ -150,7 +228,6 @@ function cleanSheetData() {
   formatAllHeadRunner();  // Applies uniform formatting to headrunners
   formatAllConfirmations();  // Modifies bool to user-friendly message
   formatAllAttendeeNames();  // Applies uniform formatting to attendees
-  
 }
 
 
@@ -262,7 +339,7 @@ function formatAttendeeNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
     var trimmedArr = namesArr[i].trim();
 
     // Case 1: Cell is non-empty
-    if (trimmedArr.length != 0) { 
+    if(trimmedArr.length != 0) { 
       
       // Replace "n/a" (case insensitive) with "None"
       var cellValue = trimmedArr.replace(/n\/a/gi, "None");
@@ -323,7 +400,7 @@ function formatAttendeeNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
 function createEmailCopy_(emailDetails) {
   // Check for non-empty key-value object
   const size = Object.keys(emailDetails).length;
-  if (size != 6) return null;
+  if(size != 6) return null;
   
   const emailBodyHTML = " \
   <html> \
@@ -370,36 +447,44 @@ function createEmailCopy_(emailDetails) {
 
 
 /**
- * Formats all entries in `names` then sorts.
+ * Formats all entries in `memberMap` then sorts by searchKey.
  * 
  * Removes whitespace and hyphens, strip accents, and capitalize names.
  *
- * @param {string[]} names  Array of names to format.
+ * @param {string[][]} memberMap  Array of searchkey and their emails.
  * @return {string[]}  Sorted array of formatted names.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 1, 2024
- * @update  Dec 11, 2024
+ * @update  Dec 14, 2024
  * 
  * ```javascript
  * // Sample Script ➜ Format, then sort names.
- * const rawNames = ["BOb-Burger belChEr ", "Francine de-Blé"];;
- * const result = formatAndSortNames_(rawNames);
- * Logger.log(result)  // ["Bob Burger Belcher", "Francine De ble"]
+ * const rawData = [["Francine de-Blé", "francine.de-ble@mail.com"],    
+ *                  ["BOb-Burger belChEr ", "bob.belcher@mail.com"]];
+ * const result = formatAndSortMemberMap_(rawData);
+ * Logger.log(result)  // [["Bob Burger Belcher", "bob.belcher@mail.com"],
+ *                         [ "Francine De ble", "francine.de-ble@mail.com"]]
  * ```
  */
-function formatAndSortNames_(names) {
-  const formattedNames = names.map(name => 
-    name
+function formatAndSortMemberMap_(memberMap, searchKeyIndex, emailIndex) {
+  const formattedMap = memberMap.map(row => {
+     const memberEmail  = row[emailIndex];
+     const formattedSearchKey = row[searchKeyIndex]
       .trim()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // Strip accents
       .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
       .toLowerCase()
-      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each name
-      .replace(/-/g, " ")   // Replace hyphens with spaces.
-  );
+      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each word
+      .replace(/-/g, " ");   // Replace hyphens with spaces
 
-  return formattedNames.sort();
+    // Combine formatted searchkey and email
+    return [ formattedSearchKey, memberEmail ];
+  });
+
+  // Sort by formatted searchKey
+  formattedMap.sort((a, b) => a[0].localeCompare(b[0]));
+  return formattedMap;
 }
 
 

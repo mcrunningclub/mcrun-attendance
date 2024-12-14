@@ -56,7 +56,7 @@ function onOpen() {
 
     .addSubMenu(ui.createMenu('Formatting Menu')
       .addItem('Sort By Timestamp', sortByTimestampUI_.name)
-      .addItem('Format Sheet View', formatSheetUI_.name)
+      .addItem('Prettify Attendance Sheet', formatSheetUI_.name)
       .addItem('Clean Sheet Data', cleanSheetDataUI_.name)
       .addItem('Format Names in Row', formatNamesInRowUI_.name)
       .addItem('Format All Names', formatAllNamesUI_.name)

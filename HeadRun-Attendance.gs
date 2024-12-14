@@ -236,7 +236,7 @@ function toggleAttendanceCheck_() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Dec 6, 2024
+ * @update  Dec 13, 2024
  */
 
 function checkMissingAttendance() {
@@ -248,7 +248,7 @@ function checkMissingAttendance() {
     verifyAttendance_();
   }
   else {
-    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+    Logger.log("`verifyAttendance()` is not allowed to run. Set script property to true.");
   }
 
   return;
@@ -272,7 +272,7 @@ function verifyAttendance_() {
 
   // Error handling
   if (headRunDetail.length <= 0) {
-    // Create an instance of ExecutionError with a custom message
+    // Create an instance of Error with a custom message
     var errorMessage = "No headrunner has been found for " + headRunDay;    
     throw new Error(errorMessage); // Throw the ExecutionError
   }
@@ -347,19 +347,19 @@ function getAllUnregisteredMembers() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Nov 1, 2024
+ * @update  Dec 14, 2024
  */
 
-function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
+function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
   const sheet = ATTENDANCE_SHEET;
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
   
-  // Get attendee names starting from beginner col to advance col
+  // Get attendee names starting from beginner col to advanced col
   const numColToGet = LEVEL_COUNT;
-  const nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
+  const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
 
   // 1D Array of size `LEVEL_COUNT` (Beginner, Intermediate, Advanced -> 3)
-  const allNames = nameRange
+  const allNames = attendeeRange
     .getValues()[0]
     .filter(level => !level.includes("None")) // Skip levels with "none"
     .flatMap(level => level.split('\n'))    // Split names in each level into separate entry in array
@@ -372,24 +372,81 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
   // Get existing member registry in `Members` sheet
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
 
-  const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
-  const searchKeyCol = 5    // Column E
-  
-  var membersRange = memberSheet.getRange(2, searchKeyCol, memberCount);
+  const memberEmailCol = MEMBER_EMAIL_COL - 1;    // 1-index to 0-index
+  const memberKeyIndex = MEMBER_SEARCH_KEY_COL - 1;   // 1-index to 0-index
 
-  // Get array of member names to use as search key
-  const members = membersRange.getValues()
-    .map(row => row[0])     // Get member full names in a 1D array
-    .filter(name => name)  // Remove empty rows
+  const startCol = 1;
+  const startRow = 2;   // Skip header row
+  const numCols = MEMBER_SEARCH_KEY_COL; 
+  const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
+  
+  var memberSheetRange = memberSheet.getRange(startRow, startCol, memberCount, numCols)
+
+  // Get array of member names to use as search key, combined with email for later use
+  const memberMap = memberSheetRange.getValues()
+    .map(row => [row[memberKeyIndex], row[memberEmailCol]])  // Combine memberKey and email
+    .filter(row => row[0] && row[1])  // Filter rows with empty names or emails
   ;
 
-  const sortedMembers = formatAndSortNames_(members);
+  const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
 
   // Use the helper function on sorted items
-  const unregistered = findUnregistered_(sortedNames, sortedMembers);
+  const registeredAndUnregistered = findUnregistered_(sortedNames, cleanMemberMap);
+
+  // Separate data for registered and unregistered
+  const unregistered = registeredAndUnregistered['unregistered'];
+  const registered = registeredAndUnregistered['registered'];
 
   // Log unfound names
   unfoundNameRange.setValue(unregistered.join("\n"));
+
+  Logger.log(registered);
+  
+  // Append email to registered attendees
+  appendMemberEmail(row, registered);
+}
+
+
+function appendMemberEmail(row, memberMap) {
+  const sheet = ATTENDANCE_SHEET;
+  const numRowToGet = 1;
+  const numColToGet = LEVEL_COUNT;
+
+  // Get attendee range starting from beginner col to advanced col
+  const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, numRowToGet, numColToGet);  // Attendees columns
+
+  const allAttendees = attendeeRange.getValues()[0]; // get single row
+  const nameEmailPairs = [];    // values to set in sheet
+
+  // Iterate through levels and add emails
+  for(var col=0; col < LEVEL_COUNT; col++) {
+    let attendeesInLevel = allAttendees[col]
+      .replace(/-/g, " ")   // Replace hyphens with spaces;
+      .split('\n')  // Split by newline
+    ;   
+    let nameEmail = "";
+
+    // Skip levels with no attendees
+    if(attendeesInLevel.includes("None")) {
+      nameEmailPairs.push("None");
+      continue;
+    }
+
+    // Iterate through attendees
+    for(const name of attendeesInLevel) {
+      if(name in memberMap) {
+        let email = memberMap[name];
+        nameEmail += `${name}:${email}\n`;
+      }
+      else {
+        nameEmail += `${name}\n`;
+      }
+    }
+
+    nameEmailPairs.push(nameEmail.trim());
+  }
+
+  attendeeRange.setValues([nameEmailPairs]);
 }
 
 
@@ -397,16 +454,21 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
  * Helper function to find unregistered attendees.
  * 
  * @param {string[]} attendees  All attendees of the head run (sorted).
- * @param {string[]} members  All registered members (sorted).
- * @return {string[]}  Returns attendees not found in `members`.
+ * @param {string[][]} memberMap  All search keys of registered members (sorted) and emails.
+ * @return {Map<Map<String,String>, List>}  Returns attendees not found in `members`.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Dec 6, 2024
+ * @update  Dec 14, 2024
  */
 
-function findUnregistered_(attendees, members) {
+function findUnregistered_(attendees, memberMap) {
   const unregistered = [];
+  const registeredMap = {}    // Saves member name-email pair
+
+  const SEARCH_KEY_INDEX = 0;
+  const EMAIL_INDEX = 1;
+
   let index = 0;
 
   for (const attendee of attendees) {
@@ -416,14 +478,19 @@ function findUnregistered_(attendees, members) {
     let isFound = false;
 
     // Check members starting from the current index
-    while (index < members.length) {
-      const memberName = members[index];
-      const [memberLastName, memberFirstNames] = memberName.split(",").map(s => s.trim());
+    while (index < memberMap.length) {
+      const memberSearchKey = memberMap[index][SEARCH_KEY_INDEX];
+      const [memberLastName, memberFirstNames] = memberSearchKey.split(",").map(s => s.trim());
       const searchFirstNameList = memberFirstNames.split("|").map(s => s.trim());   // only if preferredName exists
 
       // Compare last names and check if first name matches any in the list
       if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {
         isFound = true;
+        
+        const memberKey = `${attendeeFirstName} ${attendeeLastName}`   // Create member key using full name
+        const memberEmail = memberMap[index][EMAIL_INDEX];    // Get member email
+        registeredMap[memberKey] = memberEmail;    // Push name-email pair to object
+        
         index++; // Move to the next member
         break;
       }
@@ -442,5 +509,11 @@ function findUnregistered_(attendees, members) {
     }
   }
 
-  return unregistered.sort(); // Return sorted list of unregistered attendees
+  
+  const returnObject = {
+    'registered' : registeredMap, 
+    'unregistered' : unregistered.sort()  // sorted list of unregistered attendees
+  };
+
+  return returnObject; 
 }

@@ -133,20 +133,3 @@ function pointsEmail() {
   });
 }
 
-
-/** 
- * @author ChatGPT
- */
-function copyRowToAnotherSpreadsheet_() {
-  var sourceSpreadsheet = SpreadsheetApp.openById("SourceSpreadsheetID"); // Replace with the ID of your source spreadsheet
-  var destinationSpreadsheet = SpreadsheetApp.openById("DestinationSpreadsheetID"); // Replace with the ID of your destination spreadsheet
-
-  var sourceSheet = sourceSpreadsheet.getSheetByName("SourceSheetName"); // Replace with the name of your source sheet
-  var destinationSheet = destinationSpreadsheet.getSheetByName("DestinationSheetName"); // Replace with the name of your destination sheet
-
-  var rowIndexToCopy = 2; // Replace with the row index you want to copy (e.g., row 2)
-  var sourceData = sourceSheet.getRange(rowIndexToCopy, 1, 1, sourceSheet.getLastColumn()).getValues();
-
-  destinationSheet.appendRow(sourceData[0]);
-}
-
