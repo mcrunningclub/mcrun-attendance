@@ -90,6 +90,11 @@ function removePresenceChecks() {
   rangeAttendance.getRange().uncheck(); // remove all Presence checks
 }
 
+function prettifySheet() {
+  formatSpecificColumns();
+  hideAllAttendeeEmail();
+}
+
 
 /**
  * Formats certain columns of `HR Attendance` sheet.
@@ -100,7 +105,7 @@ function removePresenceChecks() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Dec 8, 2024
+ * @update  Dec 14, 2024
  */
 
 function formatSpecificColumns() {
@@ -129,83 +134,6 @@ function formatSpecificColumns() {
   // Apply BLUE banding with distinct header and footer colours.
   range.getBandings().forEach(banding => banding.remove());
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
-}
-
-function prettifyAllAttendees() {
-  const startRow = 2  // Skip header row
-  const numRows = 4 //sheet.getLastRow();
-  const endRow = startRow + numRows;
-
-   const allAttendeesCol = [
-    ATTENDEES_BEGINNER_COL, 
-    ATTENDEES_INTERMEDIATE_COL, 
-    ATTENDEES_ADVANCED_COL
-  ];
-
-  for(var row = startRow; row < endRow; row++) {
-    allAttendeesCol.forEach(col => prettifyAttendees(col, row));
-  }
-}
-
-
-function prettifyAttendees(column, row=ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = ATTENDANCE_SHEET.getLastRow();
-
-  const attendeeRange = sheet.getRange(row, column);
-  const cellValue = attendeeRange.getValue();
-
-  // Get the cell's background color
-  const banding = attendeeRange.getBandings()[0];   // Only 1 banding
-  const bandingColours = {
-    'colourEvenRow': banding.getFirstRowColorObject(),
-    'colourOddRow' : banding.getSecondRowColorObject(),
-    'colourFooter' : banding.getFooterRowColorObject(),
-
-    getColour : function(row) {
-      if(row == lastRow)     {return this.colourFooter}
-      else if(row % 2 == 0)  {return this.colourEvenRow}
-      else                   {return this.colourOddRow}
-    }
-  }
-
-  let cellBackgroundColour = bandingColours.getColour(row);
-
-  // Create a RichTextValueBuilder for the cell
-  const richTextBuilder = SpreadsheetApp.newRichTextValue().setText(cellValue);
-  const newTextStyle = SpreadsheetApp.newTextStyle()
-    .setItalic(true)
-    .setForegroundColorObject(cellBackgroundColour)
-    .build();
-
-  // Split the cell value by line breaks
-  const lines = cellValue.split("\n");
-
-  // Iterate through each line and format the email portion
-  let currentIndex = 0;
-  const delimiter = ":";
-  
-  for (const line of lines) {
-    const delimiterIndex = line.indexOf(delimiter);
-    
-    if(delimiterIndex !== -1) {
-      // Find the email (after the delimiter)
-      const email = line.substring(delimiterIndex + 1).trim();
-      if(email) {
-        const start = currentIndex + delimiterIndex; // Start index of delimiter
-        const end = start + email.length + 1; // End index of the email
-
-        // Apply text color and italic formatting to the email
-        richTextBuilder.setTextStyle(start, end, newTextStyle)
-      }
-    }
-    // Update currentIndex to account for the line length and newline character
-    currentIndex += line.length + 1;
-  }
-
-  // Build and set the RichTextValue for the cell
-  const richTextValue = richTextBuilder.build();
-  attendeeRange.setRichTextValue(richTextValue);
 }
 
 
@@ -343,14 +271,18 @@ function formatAttendeeNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
       
       // Replace "n/a" (case insensitive) with "None"
       var cellValue = trimmedArr.replace(/n\/a/gi, "None");
+
+      // Exit if cell contains email and ':' delimiter, meaning already formatted.
+      if(cellValue.includes('@') && cellValue.includes(':')) return;
         
       // Split by commas or newline characters
-      var names = cellValue.split(/[,|\n]+/); 
+      var names = cellValue.split(/[,|\n]+/);
 
       // Remove whitespace, strip accents and capitalize names
       var formattedNames = names.map(name => name
         .trim()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+        .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
         .toLowerCase()
         .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
       );
@@ -476,7 +408,6 @@ function formatAndSortMemberMap_(memberMap, searchKeyIndex, emailIndex) {
       .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
       .toLowerCase()
       .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each word
-      .replace(/-/g, " ");   // Replace hyphens with spaces
 
     // Combine formatted searchkey and email
     return [ formattedSearchKey, memberEmail ];
@@ -521,7 +452,7 @@ function swapAndFormatName_(names) {
     ;
 
     // Replace hyphens with spaces. Can only perform after splitting first and last name.
-    nameParts = nameParts.map(name => name.replace(/-/g, " ")); 
+    nameParts = nameParts.map(name => name.replace(/-/g, " "));
 
     // If first name is not hyphenated, only left-most substring stored in first name
     const firstName = nameParts[0];

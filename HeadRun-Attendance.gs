@@ -11,7 +11,7 @@ function onFormSubmission() {
   
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-  //copyToLedger();       // IN-REVIEW
+
 }
 
 
@@ -27,7 +27,6 @@ function onAppSubmission() {
   
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-  //copyToLedger();       // IN-REVIEW
 }
 
 
@@ -317,23 +316,16 @@ function verifyAttendance_() {
 /**
  * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
  * 
- * Row number is 1-indexed in GSheet. Executes bottom to top. Header row skipped.
+ * Row number is 1-indexed in GSheet. Executes top to bottom. Header row skipped.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 6, 2024
- * @update  Dec 6, 2024
+ * @update  Dec 14, 2024
  */
 
 function getAllUnregisteredMembers() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-   for(var row=lastRow; row >= 2; row--) {
-    getUnregisteredMembers_(row);
-  }
-
+  runOnSheet_(getUnregisteredMembers_.name);
 }
-
 
 /**
  * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
@@ -350,7 +342,7 @@ function getAllUnregisteredMembers() {
  * @update  Dec 14, 2024
  */
 
-function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
+function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
   const sheet = ATTENDANCE_SHEET;
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
   
@@ -359,11 +351,16 @@ function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
   const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
 
   // 1D Array of size `LEVEL_COUNT` (Beginner, Intermediate, Advanced -> 3)
-  const allNames = attendeeRange
-    .getValues()[0]
-    .filter(level => !level.includes("None")) // Skip levels with "none"
-    .flatMap(level => level.split('\n'))    // Split names in each level into separate entry in array
-  ;
+  // If email appended to name, remove before creating list of all attendees
+  const allNames = attendeeRange.getValues()[0]
+  .filter(level => !level.includes("None")) // Skip levels with "None"
+  .flatMap(level =>
+    level.split('\n')                       // Split names in each level into separate entry in array
+      .map(entry => entry.includes(':')
+        ? entry.split(':')[0].trim()        // Remove email from entry if applicable
+        : entry.trim()                      // Otherwise, trim name only
+      )
+  );
 
   // Remove whitespace, strip accents and capitalize names
   // Swap order of attendee names to `lastName, firstName`
@@ -400,53 +397,11 @@ function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
   // Log unfound names
   unfoundNameRange.setValue(unregistered.join("\n"));
 
-  Logger.log(registered);
-  
   // Append email to registered attendees
   appendMemberEmail(row, registered);
-}
 
-
-function appendMemberEmail(row, memberMap) {
-  const sheet = ATTENDANCE_SHEET;
-  const numRowToGet = 1;
-  const numColToGet = LEVEL_COUNT;
-
-  // Get attendee range starting from beginner col to advanced col
-  const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, numRowToGet, numColToGet);  // Attendees columns
-
-  const allAttendees = attendeeRange.getValues()[0]; // get single row
-  const nameEmailPairs = [];    // values to set in sheet
-
-  // Iterate through levels and add emails
-  for(var col=0; col < LEVEL_COUNT; col++) {
-    let attendeesInLevel = allAttendees[col]
-      .replace(/-/g, " ")   // Replace hyphens with spaces;
-      .split('\n')  // Split by newline
-    ;   
-    let nameEmail = "";
-
-    // Skip levels with no attendees
-    if(attendeesInLevel.includes("None")) {
-      nameEmailPairs.push("None");
-      continue;
-    }
-
-    // Iterate through attendees
-    for(const name of attendeesInLevel) {
-      if(name in memberMap) {
-        let email = memberMap[name];
-        nameEmail += `${name}:${email}\n`;
-      }
-      else {
-        nameEmail += `${name}\n`;
-      }
-    }
-
-    nameEmailPairs.push(nameEmail.trim());
-  }
-
-  attendeeRange.setValues([nameEmailPairs]);
+  // Hide emails in row, and highlight unregistered attendee
+  hideAttendeeEmailInRow_(row);
 }
 
 
@@ -487,9 +442,9 @@ function findUnregistered_(attendees, memberMap) {
       if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {
         isFound = true;
         
-        const memberKey = `${attendeeFirstName} ${attendeeLastName}`   // Create member key using full name
+        // Create entry using existing memberSearchKey
         const memberEmail = memberMap[index][EMAIL_INDEX];    // Get member email
-        registeredMap[memberKey] = memberEmail;    // Push name-email pair to object
+        registeredMap[memberSearchKey] = memberEmail;    // Push name-email pair to object
         
         index++; // Move to the next member
         break;
@@ -503,9 +458,9 @@ function findUnregistered_(attendees, memberMap) {
       index++;
     }
 
-    // If attendee not found, add to unregistered array.
+    // If attendee not found, add to unregistered array, and put back hyphen in names
     if (!isFound) {
-      unregistered.push(`${attendeeFirstName} ${attendeeLastName}`);
+      unregistered.push(`${attendeeFirstName.replace(' ', '-')} ${attendeeLastName.replace(' ', '-')}`);
     }
   }
 

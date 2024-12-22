@@ -56,7 +56,7 @@ function onOpen() {
 
     .addSubMenu(ui.createMenu('Formatting Menu')
       .addItem('Sort By Timestamp', sortByTimestampUI_.name)
-      .addItem('Prettify Attendance Sheet', formatSheetUI_.name)
+      .addItem('Prettify Attendance Sheet', prettifySheetUI_.name)
       .addItem('Clean Sheet Data', cleanSheetDataUI_.name)
       .addItem('Format Names in Row', formatNamesInRowUI_.name)
       .addItem('Format All Names', formatAllNamesUI_.name)
@@ -195,9 +195,9 @@ function cleanSheetDataUI_() {
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
-function formatSheetUI_() {
-  const functionName = formatSpecificColumns.name;
-  const customMsg = "This will only modify the sheet formatting (view), and improve confirmation value."
+function prettifySheetUI_() {
+  const functionName = prettifySheet.name;
+  const customMsg = "This will improve the sheet formatting, and hide the attendee emails."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 

@@ -29,7 +29,8 @@ const MASTER_NAME = 'MASTER';
 const SEMESTER_NAME = 'Fall 2024';
 const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y70sI-FAktCiSWqEmkDxfZWz0lFu4/edit?usp=sharing";
 
-const LEDGER_NAME = 'Head Run Attendance';
+// LEDGER SPREADSHEET
+const LEDGET_SHEET_NAME = 'Event Log';
 const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/edit?usp=sharing";
 
 // SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
