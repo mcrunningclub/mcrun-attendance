@@ -29,9 +29,8 @@ function copyToLedger() {
  * 
  * @author [Charles Villegas](<charles.villegas@mail.mcgill.ca>) & ChatGPT
  * @date  Nov 5, 2024
- * @update  Nov 5, 2024
+ * @update  Jan 7, 2025
  */
-
 
 function pointsEmail() {
   const sheet = ATTENDANCE_SHEET;
@@ -63,23 +62,19 @@ function pointsEmail() {
   const uniqueRecipientsArray = [...uniqueRecipients].map(value => value.trim()).filter(Boolean);
 
   // Get all names and point values from points, and names and emails from emails
-  const pointsData = points.getRange(2, 2, points.getLastRow() - 1, 6).getValues();
+  const pointsData = points.getRange(2, 1, points.getLastRow() - 1, 6).getValues();
   
   // Create a mapping of full names to points
   const pointsMap = {};
-  pointsData.forEach(([email, , , , fullName, points]) => {
+  pointsData.forEach(([email, , , ,fullName, points]) => {
     pointsMap[fullName.trim()] = [email, points]; // Store points with full name as the key
   });
-
-  let count = 0
 
   // Loop through the full names array and email that member regarding their current points
   uniqueRecipientsArray.forEach(fullName => {
     const trimmedName = fullName.trim();
 
     if (!pointsMap[trimmedName]) return;     // skips to next iteration if no email is found
-    if (count > 0) return;
-    count++;
 
     const points = pointsMap[trimmedName][1] ?? 0;
     const email = pointsMap[trimmedName][0]; // Get email for the full name
@@ -92,33 +87,24 @@ function pointsEmail() {
       const pointsEmailHTML = `
         <!DOCTYPE html>
         <html>
-          <head>
-            <style>
-              body {
-                font-family: Arial, Helvetica, sans-serif;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                margin: 10%;
-                text-align: center;
-              }
-            </style>
-          </head>
-          <body style="color: black; background-color: white;">
-            <h1>Hello, ${firstName}!</h1>
-            <h3>You currently have:</h3>
-            <h2 style="color: #BF2C34;">${points} points</h2>
-            <p>Thanks for running with us, hope you keep up the great pace!</p>
-            <p>Best, <br>McGill Students Running Club</p>
+          <body style="font-family: Arial, Helvetica, sans-serif;">
+            <div style="margin: 10% 5%; text-align: center">
+                <img src="https://mcrun.ssmu.ca/wp-content/uploads/2023/04/McRun-Logo-Circular.png" style="width: 20%" >
+                <div style="text-align: left; width: max-content; margin: 0 auto">
+                <h1>Hello, ${firstName}!</h1>
+                <h3>You currently have:</h3>
+                <h2>${points} points</h2>
+                <p>Thanks for running with us, hope you keep up the great pace!</p>
+                <p>- McGill Students Running Club</p>
+                </div>
+            </div>
           </body>
         </html>
       `;
       
       
       MailApp.sendEmail({
-        to: "charles.villegas@mail.mcgill.ca",
+        to: email,
         subject: subject,
         htmlBody: pointsEmailHTML
       });
