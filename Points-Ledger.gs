@@ -161,6 +161,15 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
 }
 
 
+function transferAllSubmissions() {
+  const startRow = 50; // ATTENDANCE_SHEET.getLastRow()
+
+  for (let row = startRow; row > 1; row--) {
+    transferSubmissionToLedger(row);
+  }
+}
+
+
 function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
   
@@ -171,8 +180,8 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
   var ledgerLastRow = ledgerSheet.getLastRow();   // Increment per event transfer
 
   // Select columns to transfer from `sheet`
-  const startCol = EMAIL_COL;
-  const numCol = DISTANCE_COL - EMAIL_COL + 1;  // GSheet is 1-indexed
+  const startCol = TIMESTAMP_COL;
+  const numCol = DISTANCE_COL - startCol + 1;  // GSheet is 1-indexed
   const numRow = 1;
 
   // Range is `EMAIL_COL` to `DISTANCE_COL`
@@ -199,12 +208,13 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
       formattedNow,           // Import Timestamp
       values[HEADRUN_COL],    // Event name
       values[TIMESTAMP_COL],  // Event Timestamp
-      attendees,              // Member Emails
+      values[level],          // Member Emails
       values[DISTANCE_COL],   // Distance
-      // Note: Points added in `Points Ledger`
+      // Note: Points col added in `Points Ledger`
     ]
 
-    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow++, 1);
+    const colSizeOfTransfer = eventToTransfer.length;
+    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow++, 1, 1, colSizeOfTransfer);
     rangeNewLog.setValues([eventToTransfer]);
   }
   
