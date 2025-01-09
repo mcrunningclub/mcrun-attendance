@@ -110,8 +110,12 @@ function prettifySheet() {
 
 function formatSpecificColumns() {
   const sheet = ATTENDANCE_SHEET;
+
+  // Freeze first column and first row
+  sheet.setFrozenColumns(1);
+  sheet.setFrozenRows(1);
   
-  const rangeListToBold = sheet.getRangeList(['A2:A', 'D2:D', 'L2:M']);
+  const rangeListToBold = sheet.getRangeList(['A1:N1','A2:A', 'D2:D', 'L2:M']);
   rangeListToBold.setFontWeight('bold');  // Set ranges to bold
 
   const rangeListToWrap = sheet.getRangeList(['B2:E', 'I2:K']);
@@ -134,6 +138,30 @@ function formatSpecificColumns() {
   // Apply BLUE banding with distinct header and footer colours.
   range.getBandings().forEach(banding => banding.remove());
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
+
+
+  const sizeMap = {
+    [TIMESTAMP_COL] : 150,
+    [EMAIL_COL] : 240,
+    [HEADRUNNERS_COL] : 240,
+    [HEADRUN_COL] : 155,
+    [RUN_LEVEL_COL] : 155,
+    [ATTENDEES_BEGINNER_COL] : 160,
+    [ATTENDEES_INTERMEDIATE_COL] : 160,
+    [ATTENDEES_ADVANCED_COL] : 160,
+    [CONFIRMATION_COL] : 300,
+    [DISTANCE_COL] : 160,
+    [COMMENTS_COL] : 355,
+    [IS_COPY_SENT_COL] : 135,
+    [PLATFORM_COL] : 160,
+    [NAMES_NOT_FOUND_COL] : 225,
+  }
+
+  // Resize columns by corresponding pixel size
+  for (const [col, width] of Object.entries(sizeMap)) {
+    sheet.setColumnWidth(col, width);
+  }
+
 }
 
 

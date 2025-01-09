@@ -66,6 +66,7 @@ function appendMemberEmail(row, memberMap) {
 
 
 function hideAllAttendeeEmail() {
+  const sheet = ATTENDANCE_SHEET;
   const startRow = 2  // Skip header row
   const numRows = sheet.getLastRow() - 1;   // Remove header row from count
   const endRow = startRow + numRows;
