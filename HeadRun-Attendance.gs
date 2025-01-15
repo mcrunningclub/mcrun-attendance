@@ -11,7 +11,6 @@ function onFormSubmission() {
   
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-
 }
 
 
@@ -303,6 +302,7 @@ function verifyAttendance_() {
   // Returns string content from populated html template
   const reminderEmailBodyHTML = template.evaluate().getContent();  
 
+
   var reminderEmail = {
     to: headRunnerEmail,
     bcc: emailPresident,
@@ -319,6 +319,11 @@ function verifyAttendance_() {
 
 /**
  * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
+ * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
+ * 
+ * Sets unregistered members in `NOT_FOUND_COL`.
+ * 
+ * List of members found in `Members` sheet.
  * 
  * Row number is 1-indexed in GSheet. Executes top to bottom. Header row skipped.
  * 
@@ -365,7 +370,7 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
         : entry.trim()                      // Otherwise, trim name only
       )
   );
-
+  
   // Remove whitespace, strip accents and capitalize names
   // Swap order of attendee names to `lastName, firstName`
   const sortedNames = swapAndFormatName_(allNames);
@@ -461,6 +466,7 @@ function findUnregistered_(attendees, memberMap) {
 
       index++;
     }
+
 
     // If attendee not found, add to unregistered array, and put back hyphen in names
     if (!isFound) {

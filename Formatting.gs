@@ -271,6 +271,7 @@ function formatAllAttendeeNames() {
  *
  * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
  *                                                       Defaults to the last row in the sheet.
+
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 24, 2024
@@ -330,6 +331,16 @@ function formatAttendeeNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
   }
   // Replace values with formatted names
   nameRange.setValues([namesArr]);    // setValues() requires 2D array
+}
+
+function test() {
+  var row = 36;
+  formatNamesInRow(row);
+  getUnregisteredMembers(row);
+
+  for(var row=38; row<39; row++){
+    break;
+  }
 }
 
 
@@ -497,3 +508,34 @@ function runOnSheet_(functionName, functionName2="") {
   }
 }
 
+
+/**
+ * Formats all entries in `names ` then sorts.
+ * 
+ * Removes whitespace, strip accents and capitalize names.
+ *
+ * @param {string[]} names  Array of names to format.
+ * @return {string[]}  Sorted array of formatted names.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Nov 1, 2024
+ * @update  Nov 1, 2024
+ * 
+ * ```javascript
+ * // Sample Script ➜ Format, then sort names.
+ * const rawNames = ["BOb burger", "Francine deBlé"];
+ * const result = formatAndSortNames(rawNames);
+ * Logger.log(result)  // [Bob Burger, Francine Deble]
+ * ```
+ */
+function formatAndSortNames(names) {
+  const formattedNames = names.map(name => 
+    name
+      .trim()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
+      .toLowerCase()
+      .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
+  );
+
+  return formattedNames.sort();
+}
