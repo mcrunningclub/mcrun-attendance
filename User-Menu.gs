@@ -1,6 +1,6 @@
 /**
  * Users authorized to use the McRUN menu.
- * 
+ *
  * Prevents unwanted data overwrite in Gsheet.
  */
 const PERM_USER_ = [
@@ -13,14 +13,14 @@ const PERM_USER_ = [
 
 /**
  * Log user attempting to use custom McRUN menu.
- * 
+ *
  * If input empty, then extract email using `getCurrentUserEmail_()`.
- * 
+ *
  * @trigger User choice in custom menu.
- * 
- * @param {string} [email=""]  Email of active user. 
+ *
+ * @param {string} [email=""]  Email of active user.
  *                             Defaults to empty string.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 21, 2024
  * @update  Dec 6, 2024
@@ -33,14 +33,14 @@ function logMenuAttempt_(email = "") {
 
 /**
  * Creates custom menu to run frequently used scripts in Google App Script.
- * 
+ *
  * Extracting function name using `name` property to allow for refactoring.
- * 
- * Cannot check if user authorized here, or custom menu will not be 
+ *
+ * Cannot check if user authorized here, or custom menu will not be
  * displayed due to Google Apps Script limitation.
- * 
+ *
  * @trigger Open Google Spreadsheet.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 5, 2024
  * @update  Dec 8, 2024
@@ -73,7 +73,7 @@ function onOpen() {
       .addItem('Submit By App', onAppSubmitUI_.name)
       .addItem('Turn On/Off Submission Checker', toggleAttendanceCheckUI_.name)
     )
-  .addToUi();
+    .addToUi();
 
   checkValidScriptProperties(); // verify validity of `SCRIPT_PROPERTY`
 }
@@ -81,7 +81,7 @@ function onOpen() {
 
 /**
  * Displays a help message for the custom McRUN menu.
- * 
+ *
  * Accessible to all users.
  */
 
@@ -105,21 +105,21 @@ function helpUI_() {
 
 /**
  * Boiler plate function to display custom UI to user.
- * 
+ *
  * Executes function `functionName` with optional argument `funcArg`.
- * 
+ *
  * Verifies if user is authorized before executing script.
- * 
+ *
  * @trigger User choice in custom menu.
- * 
+ *
  * @param {string}  functionName  Name of function to execute.
  * @param {string}  [additionalMsg=""]  Custom message for executing function.
  *                                      Defaults to empty string.
  * @param {string}  [funcArg=""]  Function argument to pass with `functionName`.
  *                                Defaults to empty string.
- * 
+ *
  * @return {string}  Return value of the executed function.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 5, 2024
  * @update  Dec 6, 2024
@@ -141,7 +141,7 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
   // Continue execution if user is authorized
   var message = `
     ⚙️ Now executing ${functionName}().
-  
+
     🚨 Press cancel to stop.
   `;
 
@@ -172,11 +172,11 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
 }
 
 
-/** 
+/**
  * Scripts for `Formatting` menu items.
- * 
+ *
  * Extracting function name using `name` property to allow for refactoring.
- * 
+ *
  * Some functions include a custom message for user.
  */
 
@@ -244,11 +244,11 @@ function formatNamesInRowUI_() {
 }
 
 
-/** 
+/**
  * Scripts for `Attendance` menu items.
- * 
+ *
  * Extracting function name using `name` property to allow for refactoring.
- * 
+ *
  * Some functions include a custom message for user.
  */
 
@@ -326,11 +326,11 @@ function findUnregisteredAttendeesUI_() {
 }
 
 
-/** 
+/**
  * Scripts for `Triggers` menu items.
- * 
+ *
  * Extracting function name using `name` property to allow for refactoring.
- * 
+ *
  * Some functions include a custom message for user.
  */
 
@@ -349,11 +349,11 @@ function onAppSubmitUI_() {
 
 /**
  * Returns true if row is int and found in `ATTENDANCE_SHEET`.
- * 
+ *
  * Helper function for UI functions for McRUN menu.
- * 
+ *
  * @param {number}  The row number in `ATTENDANCE_SHEET` 1-indexed.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Dec 6, 2024
  * @update Dec 6, 2024
@@ -370,7 +370,7 @@ function isValidRow_(row) {
 
 /**
  * Verifies that `SCRIPT_PROPERTY` bank matches script properties in 'Project Settings'.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 11, 2024
  * @update Dec 11, 2024
@@ -380,22 +380,22 @@ function checkValidScriptProperties() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const keys = scriptProperties.getKeys();
   const userDefinedProperties = Object.values(SCRIPT_PROPERTY);
-  
+
   const ui = SpreadsheetApp.getUi();
   const errorTitle = "⚠️ WARNING TO DEVELOPER! ⚠️";
 
   // Verify same size in both property banks
-  if(keys.length != userDefinedProperties.length) {
+  if (keys.length != userDefinedProperties.length) {
     let errorMessage = "Script Properties in 'Project Settings' does not match 'SCRIPT_PROPERTY' in Google Apps Script";
     ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
-    
+
     throw Error(errorMessage);
   }
 
   // Compare script properties in 'Project Settings' with user-defined 'SCRIPT_PROPERTY' object.
   keys.forEach(key => {
     let isIncluded = userDefinedProperties.includes(key);
-    if(!isIncluded) {
+    if (!isIncluded) {
       let errorMessage = `\`${key}\` in 'Project Settings' is not found in 'SCRIPT_PROPERTY' in Google Apps Script`;
       ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
 

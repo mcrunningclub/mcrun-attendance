@@ -5,15 +5,14 @@ const MAPS_FOLDER = 'run_maps'
 /**
  * Maps an Object containing param, value pairs to a query string.
  * Ex: {"param1": val1, "param2": val2} -> "?param1=val1&param2=val2"
- * 
+ *
  * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
  * @date  Nov 7, 2024
  * @update  Nov 7, 2024
  */
 
-function query_object_to_string(query_object){
-  if (Object.keys(query_object).length === 0)
-  {
+function query_object_to_string(query_object) {
+  if (Object.keys(query_object).length === 0) {
     return ''
   }
 
@@ -26,48 +25,48 @@ function query_object_to_string(query_object){
 /**
  * Makes an API request to the given endpoint with the given query
  *  Ex: 'clubs/693906/activities', {"param1": val1, "param2": val2} -> API response
- * 
+ *
  * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
  * @date  Nov 7, 2024
  * @update  Nov 7, 2024
  */
 function callStravaAPI(endpoint, query_object) {
-  
+
   // set up the service
   var service = getStravaService();
-  
+
   if (service.hasAccess()) {
     Logger.log('App has access.');
-    
+
     // API Endpoint
     var endpoint = STRAVA_BASE_URL + endpoint;
     // Get string in for "?param1=val1&param2=val2&...&paramN=valN"
     var query_string = query_object_to_string(query_object);
-    
+
     var headers = {
       Authorization: 'Bearer ' + service.getAccessToken()
     };
-    
+
     var options = {
       headers: headers,
-      method : 'GET',
+      method: 'GET',
       muteHttpExceptions: true
     };
-    
+
     // Get response from API
     var response = JSON.parse(UrlFetchApp.fetch(endpoint + query_string, options));
-    
+
     return response;
-    
+
   }
   else {
     Logger.log("App has no access yet.");
-    
+
     // open this url to gain authorization from github
     var authorizationUrl = service.getAuthorizationUrl();
-    
+
     Logger.log("Open the following URL and re-run the script: %s",
-        authorizationUrl);
+      authorizationUrl);
   }
 }
 
@@ -79,8 +78,7 @@ function callStravaAPI(endpoint, query_object) {
  * @update  Dec 1, 2024
  */
 
-function saveMapToFile(api_response, filename)
-{
+function saveMapToFile(api_response, filename) {
   var polyline = api_response['map']['summary_polyline']
   var map = Maps.newStaticMap();
   map.addPath(polyline)
@@ -98,20 +96,19 @@ function getLatestSubmissionTimestamp() {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
   var timestamp = sheet.getRange(lastRow, TIMESTAMP_COL).getValue();
-  return new Date(timestamp)
+  return new Date(timestamp);
 }
 
 /**
- * Converts a Date timestamp to a Unix Epoch timestamp 
+ * Converts a Date timestamp to a Unix Epoch timestamp
  * (the number of seconds that have elapsed since January 1, 1970)
  * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
  * @date  Dec 1, 2024
  * @update  Dec 1, 2024
  */
 
-function getUnixEpochTimestamp(timestamp)
-{
-  return Math.floor(timestamp.getTime() / 1000); 
+function getUnixEpochTimestamp(timestamp) {
+  return Math.floor(timestamp.getTime() / 1000);
 }
 
 /**
@@ -122,44 +119,41 @@ function getUnixEpochTimestamp(timestamp)
  * @update  Dec 1, 2024
  */
 
-function getSaveLocation(submissionTime)
-{
+function getSaveLocation(submissionTime) {
   return MAPS_FOLDER + '/' + submissionTime.toString() + '.png'
 }
 
 /**
  * Gets the most recent head run submission and saves the map
  * of the corresponding Strava activity to MAPS_FOLDER/<Unix Epoch timestamp of submisstion>.png
- * 
+ *
  * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
  * @date  Dec 1, 2024
  * @update  Dec 1, 2024
  */
 
-function getMapForLatestRun()
-{
+function getMapForLatestRun() {
   const sheet = ATTENDANCE_SHEET;
   var submissionTimestamp = getLatestSubmissionTimestamp();
   var now = new Date();
   var subEpochTime = getUnixEpochTimestamp(submissionTimestamp);
   var nowEpochTime = getUnixEpochTimestamp(now);
-  var query_object = {'after':subEpochTime, 'before':nowEpochTime}
+  var query_object = { 'after': subEpochTime, 'before': nowEpochTime }
   const endpoint = ACTIVITIES_ENDPOINT
   var response = callStravaAPI(endpoint, query_object)
 
   if (response.length == 0) {
     // Create an instance of ExecutionError with a custom message
-    var errorMessage = "No Strava activity has been found for the run that occured on " + submissionTimestamp.toString();    
+    var errorMessage = "No Strava activity has been found for the run that occured on " + submissionTimestamp.toString();
     throw new Error(errorMessage); // Throw the ExecutionError
   }
 
   var activity = response[0]
   var saveLocation = getSaveLocation(subEpochTime)
-  saveMapToFile(activity, saveLocation) 
+  saveMapToFile(activity, saveLocation)
 }
 
-function strava_main()
-{
+function strava_main() {
 
   // Club activites example
   // var endpoint = '/clubs/693906/activities'

@@ -35,22 +35,22 @@ const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhK
 
 // SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
 const SCRIPT_PROPERTY = {
-  isCheckingAttendance : 'IS_CHECKING_ATTENDANCE',
-  clientID : 'CLIENT_ID',
-  clientSecret : 'CLIENT_SECRET',
+  isCheckingAttendance: 'IS_CHECKING_ATTENDANCE',
+  clientID: 'CLIENT_ID',
+  clientSecret: 'CLIENT_SECRET',
 };
 
 // NAME OF HTML TEMPLATES. ENSURE CORRECT FILE NAME!!
 const COPY_EMAIL_HTML_FILE = 'Confirmation-Email';
 const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';
 
-const ATTENDANCE_GFORM_LINK = 'https://docs.google.com/forms/d/1QVBKZ8aRaQ__w78HJzMrkq2ps_B_om7bW5D6vQL0-as/edit';
+const ATTENDANCE_GFORM_LINK = "https://docs.google.com/forms/d/1QVBKZ8aRaQ__w78HJzMrkq2ps_B_om7bW5D6vQL0-as/edit";
 //const ATTENDANCE_FORM_TITLE = FormApp.openByUrl(ATTENDANCE_GFORM_LINK).getTitle();  // Gets name of GForm
 
 
 /**
  * Returns timezone for currently running script.
- * 
+ *
  * Prevents incorrect time formatting during time changes like Daylight Savings Time.
  *
  * @return {string}  Timezone as geographical location (e.g.`'America/Montreal'`).
@@ -63,9 +63,9 @@ function getUserTimeZone_() {
 
 /**
  * Returns email of current user executing Google Apps Script functions.
- * 
+ *
  * Prevents incorrect account executing Google automations (e.g. McRUN bot.)
- * 
+ *
  * @return {string}  Email of current user.
  */
 
@@ -76,11 +76,11 @@ function getCurrentUserEmail_() {
 
 /**
  * Registers column positions from `ATTENDANCE_SHEET`.
- * 
+ *
  * Prevents user from updating column variables manually.
- * 
+ *
  * CURRENTLY IN REVIEW!
- *  
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 23, 2024
  * @update  Oct 23, 2024
@@ -90,7 +90,7 @@ function getColumnPosition() {
   var rangeList = ATTENDANCE_SHEET.getNamedRanges();
   var dRange = ATTENDANCE_SHEET.getNamedRanges()[0].getRange();
 
-  for (var i=0; i < rangeList.length; i++){
+  for (var i = 0; i < rangeList.length; i++) {
     Logger.log(rangeList[i].getName());
   }
 }

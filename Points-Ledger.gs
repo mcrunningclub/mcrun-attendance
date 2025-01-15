@@ -1,11 +1,11 @@
 /**
  * Appends email to attendee name if found. Otherwise, do not add to name.
- * 
+ *
  * Loops through all levels found in `row`. Sets new cell values in the end.
- * 
+ *
  * @param {integer} row  Row in `ATTENDANCE_SHEET` to append email.
  * @param {string[][]} memberMap  All search keys of registered members (sorted) and emails.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Dec 14, 2024
  * @update  Dec 14, 2024
@@ -35,11 +35,11 @@ function appendMemberEmail(row, memberMap) {
     }
 
     const memberSearchKey = memberMap[index][SEARCH_KEY_INDEX];
-    
+
 
     // Compare last names and check if first name matches any in the list
     if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {return;}
-      
+
 
     // Format each attendee with their email if available
 
@@ -79,8 +79,8 @@ function hideAllAttendeeEmail() {
 
 function hideAttendeeEmailInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
   const allAttendeesCol = [
-    ATTENDEES_BEGINNER_COL, 
-    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_BEGINNER_COL,
+    ATTENDEES_INTERMEDIATE_COL,
     ATTENDEES_ADVANCED_COL
   ];
 
@@ -131,10 +131,10 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
   // Iterate through each line and format the email portion
   let currentIndex = 0;
   const delimiter = ":";
-  
+
   for (const line of lines) {
     const delimiterIndex = line.indexOf(delimiter);
-    
+
     if(delimiterIndex !== -1) {
       // Find the email (after the delimiter)
       const email = line.substring(delimiterIndex + 1).trim();
@@ -172,7 +172,7 @@ function transferAllSubmissions() {
 
 function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
-  
+
   // `Points Ledger` Google Sheet
   const sheetURL = LEDGER_URL;
   const ss = SpreadsheetApp.openByUrl(sheetURL);
@@ -195,15 +195,15 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
   const formattedNow = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm');
 
   // TODO : APPEND HEADRUN LEVEL TO EVENT NAME (USED TO DETERMINE POINTS TO GIVE)
-  
+
   const allAttendeesCol = [
-    ATTENDEES_BEGINNER_COL, 
-    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_BEGINNER_COL,
+    ATTENDEES_INTERMEDIATE_COL,
     ATTENDEES_ADVANCED_COL
   ].filter(level => !values[level].includes("None")) // Skip levels with "None"
- 
+
   for(var level of allAttendeesCol) {
-    
+
     // Format in `Event Log` sheet in `Points Ledger`
     // Import-Timestamp   Event   Event-TS   MemberEmail   Distance   Points
     const eventToTransfer = [
@@ -219,15 +219,15 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
     const rangeNewLog = ledgerSheet.getRange(ledgerLastRow++, 1, 1, colSizeOfTransfer);
     rangeNewLog.setValues([eventToTransfer]);
   }
-  
+
 }
 
 
 /**
  * Function to send email to each member updating them on their points
- * 
+ *
  * @trigger The 1st and 14th of every month
- * 
+ *
  * @author [Charles Villegas](<charles.villegas@mail.mcgill.ca>) & ChatGPT
  * @date  Nov 5, 2024
  * @update  Jan 7, 2025
@@ -243,8 +243,8 @@ function pointsEmail() {
 
   // Define the columns to check for attendees
   const attendeeColumns = [
-    ATTENDEES_BEGINNER_COL, 
-    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_BEGINNER_COL,
+    ATTENDEES_INTERMEDIATE_COL,
     ATTENDEES_ADVANCED_COL
   ];
 
@@ -264,7 +264,7 @@ function pointsEmail() {
 
   // Get all names and point values from points, and names and emails from emails
   const pointsData = points.getRange(2, 1, points.getLastRow() - 1, 6).getValues();
-  
+
   // Create a mapping of full names to points
   const pointsMap = {};
   pointsData.forEach(([email, , , ,fullName, points]) => {
@@ -302,14 +302,14 @@ function pointsEmail() {
           </body>
         </html>
       `;
-      
-      
+
+
       MailApp.sendEmail({
         to: email,
         subject: subject,
         htmlBody: pointsEmailHTML
       });
-      
+
 
       // log confirmation for the sent email with values for each variable
       Logger.log(`Email sent to ${trimmedName} at ${email} with ${points} points.`);

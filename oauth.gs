@@ -1,7 +1,7 @@
 /**
  * Configure the service using the OAuth2 library: https://github.com/googleworkspace/apps-script-oauth2.
- * 
- * 
+ *
+ *
  * @trigger Form Submission.
  */
 function getStravaService() {
@@ -9,7 +9,7 @@ function getStravaService() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const CLIENT_ID = scriptProperties.getProperty(SCRIPT_PROPERTY.clientID);
   const CLIENT_SECRET = scriptProperties.getProperty(SCRIPT_PROPERTY.clientSecret);
-  
+
   // Create a new service called "Strava"
   return OAuth2.createService('Strava')
   // Set the endpoint URL for Strava auth
@@ -27,7 +27,7 @@ function getStravaService() {
     // Set the scopes to request (space-separated for Google services).
     .setScope('activity:read_all');
 }
- 
+
 // handle the callback
 function authCallback(request) {
   var stravaService = getStravaService();

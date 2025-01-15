@@ -1,6 +1,6 @@
 /**
  * Functions to execute after form submission.
- * 
+ *
  * @trigger Attendance form Submission.
  */
 
@@ -8,7 +8,7 @@ function onFormSubmission() {
   addMissingFormInfo();
   formatNamesInRow_();     // formats names in last row
   getUnregisteredMembers_();
-  
+
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
 }
@@ -16,14 +16,14 @@ function onFormSubmission() {
 
 /**
  * Functions to execute after McRUN app submission.
- * 
+ *
  * @trigger McRUN App Attendance Submission.
  */
 function onAppSubmission() {
   removePresenceChecks();
   formatNamesInRow_();     // formats names in last row
   getUnregisteredMembers_();
-  
+
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
 }
@@ -31,19 +31,19 @@ function onAppSubmission() {
 
 /**
  * Verifies if new submission in `HR Attendance` sheet from app.
- * 
- * Since app cannot create a trigger when submitting, `onAppSubmission()` 
- * will only run if latest submission is less than `[timeLimit]` old. 
- * 
+ *
+ * Since app cannot create a trigger when submitting, `onAppSubmission()`
+ * will only run if latest submission is less than `[timeLimit]` old.
+ *
  * @trigger Edit time in `HR Attendance` sheet.
- *  
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 17, 2023
  * @update  Nov 1, 2024
  */
 
 function onEditCheck() {
-  Utilities.sleep(5*1000);  // Let latest submission sync for 5 seconds
+  Utilities.sleep(5 * 1000);  // Let latest submission sync for 5 seconds
 
   const sheet = ATTENDANCE_SHEET;
   const timestamp = new Date(sheet.getRange(sheet.getLastRow(), 1).getValue());
@@ -63,9 +63,9 @@ function onEditCheck() {
 
 /**
  * Consolidate multiple submission of same headrun into single row.
- * 
+ *
  * CURRENTLY IN REVIEW!
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 24, 2024
  * @update  Oct 24, 2024
@@ -75,18 +75,18 @@ function consolidateSubmissions() {
   const sheet = ATTENDANCE_SHEET;
 
   // Data range, assuming headers are on row 1
-  var dataRange = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()); 
+  var dataRange = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn());
   var data = dataRange.getValues();
 
   // Create a map to store consolidated rows
   var consolidated = {};
-  
+
   for (var i = 0; i < data.length; i++) {
     var date = new Date(data[i][0]).toDateString(); // Convert the timestamp in column A (1st column) to a date string
     var matchString = data[i][3]; // Column D (4th column)
-    
+
     var key = date + '|' + matchString; // Create a unique key for matching
-    
+
     // If a row with the same key already exists, consolidate the data
     if (consolidated[key]) {
       for (var j = 1; j < data[i].length; j++) {
@@ -104,10 +104,10 @@ function consolidateSubmissions() {
       consolidated[key] = data[i];
     }
   }
-  
+
   // Clear the existing data and set the consolidated rows
   sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clear(); // Clear data range
-  
+
   var newData = Object.values(consolidated); // Convert the consolidated object to an array of rows
   sheet.getRange(2, 1, newData.length, newData[0].length).setValues(newData); // Write the new consolidated data
 }
@@ -115,11 +115,11 @@ function consolidateSubmissions() {
 
 /**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
- * 
+ *
  * Attendees are separated by level.
- * 
+ *
  * @trigger Attendance submissions.
- *  
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
  * @update  Oct 30, 2024
@@ -127,7 +127,7 @@ function consolidateSubmissions() {
 
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
-  if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;
+  if (getCurrentUserEmail() != 'mcrunningclub@ssmu.ca') return;
 
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
@@ -143,37 +143,37 @@ function emailSubmission() {
 
   // Replace newline with comma-space
   const allAttendees = [
-    ATTENDEES_BEGINNER_COL, 
-    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_BEGINNER_COL,
+    ATTENDEES_INTERMEDIATE_COL,
     ATTENDEES_ADVANCED_COL
   ].map(level => values[level].replaceAll('\n', ', '));
 
   // Read only (cannot edit values in sheet)
-  const headrun = { 
-    name:         values[HEADRUN_COL],
-    distance:     values[DISTANCE_COL],
-    attendees:    allAttendees,
-    toEmail:      values[EMAIL_COL],
+  const headrun = {
+    name: values[HEADRUN_COL],
+    distance: values[DISTANCE_COL],
+    attendees: allAttendees,
+    toEmail: values[EMAIL_COL],
     confirmation: values[CONFIRMATION_COL],
-    notes:        values[COMMENTS_COL]
+    notes: values[COMMENTS_COL]
   };
 
   // Read and edit sheet values
   const rangeConfirmation = sheet.getRange(lastRow, CONFIRMATION_COL);
   const rangeIsCopySent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
-  
+
   // Only send if submitter wants copy && email has not been sent yet
-  if(rangeIsCopySent.getValue()) return;
+  if (rangeIsCopySent.getValue()) return;
 
   // Replace newline delimiter with comma-space if non-empty or matches "None"
   const attendeesStr = headrun.attendees.toString();
 
-  if(attendeesStr.length > 1) {
+  if (attendeesStr.length > 1) {
     headrun.attendees = attendeesStr.replaceAll('\n', ', ');
   }
   else headrun.attendees = 'None';  // otherwise replace empty string by 'none'
-  
-  headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)' );
+
+  headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)');
   rangeConfirmation.setValue(headrun.confirmation);
 
   const emailBodyHTML = createEmailCopy_(headrun);
@@ -199,9 +199,9 @@ function emailSubmission() {
 
 /**
  * Toggles flag to run `checkAttendance()` by updating value in `ScriptProperties` bank.
- * 
+ *
  * @trigger User choice in custom menu.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 5, 2024
  * @update  Dec 6, 2024
@@ -220,18 +220,18 @@ function toggleAttendanceCheck_() {
 
 /**
  * Check for missing submission after scheduled headrun.
- * 
+ *
  * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
- * 
+ *
  * @trigger 30-60 mins after schedule in `getHeadRunString()`.
- * 
+ *
  * CURRENTLY IN REVIEW!
- * 
+ *
  * @UPDATE-EACH-SEMESTER `getHeadRunString()`, `getHeadRunnerEmail()`.
- * 
+ *
  * @TODO  change to `checkMissingAttendance(var headRunAMorPM)`.
  * @TODO  modify headrun source to GSheet-> i.e. modify `getHeadRunString()` and `getHeadRunnerEmail()`.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
  * @update  Jan 15, 2025
@@ -248,10 +248,10 @@ function checkMissingAttendance() {
 
   verifyAttendance_();
 }
- 
+
 function verifyAttendance_() {
   const sheet = ATTENDANCE_SHEET;
-  
+
   // Gets values of all timelogs
   var numRows = sheet.getLastRow() - 1;
   var submissionDates = sheet.getRange(2, TIMESTAMP_COL, numRows).getValues();
@@ -268,7 +268,7 @@ function verifyAttendance_() {
   // Error handling
   if (headRunDetail.length <= 0) {
     // Create an instance of Error with a custom message
-    var errorMessage = "No headrunner has been found for " + headRunDay;    
+    var errorMessage = "No headrunner has been found for " + headRunDay;
     throw new Error(errorMessage); // Throw the ExecutionError
   }
 
@@ -276,7 +276,7 @@ function verifyAttendance_() {
   // Exit loop when submission found or until list exhausted
   var isSubmitted = false;
 
-  for(var i = numRows-1; i>= 0 && !isSubmitted; i--) {
+  for (var i = numRows - 1; i >= 0 && !isSubmitted; i--) {
     var submissionDate = Utilities.formatDate(new Date(submissionDates[i]), TIMEZONE, 'yyyy-MM-dd a');
 
     // Get detailed head run to compare with today's headRunString
@@ -287,7 +287,7 @@ function verifyAttendance_() {
   }
 
   // Verify if form has been submitted. Otherwise send an email reminder.
-  if (isSubmitted) return;    
+  if (isSubmitted) return;
 
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
@@ -300,8 +300,7 @@ function verifyAttendance_() {
   template.SEMESTER = SEMESTER_NAME;
 
   // Returns string content from populated html template
-  const reminderEmailBodyHTML = template.evaluate().getContent();  
-
+  const reminderEmailBodyHTML = template.evaluate().getContent();
 
   var reminderEmail = {
     to: headRunnerEmail,
@@ -319,14 +318,9 @@ function verifyAttendance_() {
 
 /**
  * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
- * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
- * 
- * Sets unregistered members in `NOT_FOUND_COL`.
- * 
- * List of members found in `Members` sheet.
- * 
+ *
  * Row number is 1-indexed in GSheet. Executes top to bottom. Header row skipped.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 6, 2024
  * @update  Dec 14, 2024
@@ -338,23 +332,23 @@ function getAllUnregisteredMembers() {
 
 /**
  * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
- * 
+ *
  * Sets unregistered members in `NOT_FOUND_COL`.
- * 
+ *
  * List of members found in `Members` sheet.
- * 
+ *
  * @param {number} [row=ATTENDANCE_SHEET.getLastRow()]  The row number in `ATTENDANCE_SHEET` 1-indexed.
  *                                                      Defaults to the last row in the sheet.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
  * @update  Dec 14, 2024
  */
 
-function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
+function getUnregisteredMembers_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
-  
+
   // Get attendee names starting from beginner col to advanced col
   const numColToGet = LEVEL_COUNT;
   const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
@@ -362,15 +356,15 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
   // 1D Array of size `LEVEL_COUNT` (Beginner, Intermediate, Advanced -> 3)
   // If email appended to name, remove before creating list of all attendees
   const allNames = attendeeRange.getValues()[0]
-  .filter(level => !level.includes("None")) // Skip levels with "None"
-  .flatMap(level =>
-    level.split('\n')                       // Split names in each level into separate entry in array
-      .map(entry => entry.includes(':')
-        ? entry.split(':')[0].trim()        // Remove email from entry if applicable
-        : entry.trim()                      // Otherwise, trim name only
-      )
-  );
-  
+    .filter(level => !level.includes("None")) // Skip levels with "None"
+    .flatMap(level =>
+      level.split('\n')                       // Split names in each level into separate entry in array
+        .map(entry => entry.includes(':')
+          ? entry.split(':')[0].trim()        // Remove email from entry if applicable
+          : entry.trim()                      // Otherwise, trim name only
+        )
+    );
+
   // Remove whitespace, strip accents and capitalize names
   // Swap order of attendee names to `lastName, firstName`
   const sortedNames = swapAndFormatName_(allNames);
@@ -383,16 +377,16 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
 
   const startCol = 1;
   const startRow = 2;   // Skip header row
-  const numCols = MEMBER_SEARCH_KEY_COL; 
+  const numCols = MEMBER_SEARCH_KEY_COL;
   const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
-  
+
   var memberSheetRange = memberSheet.getRange(startRow, startCol, memberCount, numCols)
 
   // Get array of member names to use as search key, combined with email for later use
   const memberMap = memberSheetRange.getValues()
     .map(row => [row[memberKeyIndex], row[memberEmailCol]])  // Combine memberKey and email
     .filter(row => row[0] && row[1])  // Filter rows with empty names or emails
-  ;
+    ;
 
   const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
 
@@ -416,11 +410,11 @@ function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
 
 /**
  * Helper function to find unregistered attendees.
- * 
+ *
  * @param {string[]} attendees  All attendees of the head run (sorted).
  * @param {string[][]} memberMap  All search keys of registered members (sorted) and emails.
  * @return {Map<Map<String,String>, List>}  Returns attendees not found in `members`.
- * 
+ *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
  * @update  Dec 14, 2024
@@ -450,11 +444,11 @@ function findUnregistered_(attendees, memberMap) {
       // Compare last names and check if first name matches any in the list
       if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {
         isFound = true;
-        
+
         // Create entry using existing memberSearchKey
         const memberEmail = memberMap[index][EMAIL_INDEX];    // Get member email
         registeredMap[memberSearchKey] = memberEmail;    // Push name-email pair to object
-        
+
         index++; // Move to the next member
         break;
       }
@@ -467,18 +461,17 @@ function findUnregistered_(attendees, memberMap) {
       index++;
     }
 
-
     // If attendee not found, add to unregistered array, and put back hyphen in names
     if (!isFound) {
       unregistered.push(`${attendeeFirstName.replace(' ', '-')} ${attendeeLastName.replace(' ', '-')}`);
     }
   }
 
-  
+
   const returnObject = {
-    'registered' : registeredMap, 
-    'unregistered' : unregistered.sort()  // sorted list of unregistered attendees
+    'registered': registeredMap,
+    'unregistered': unregistered.sort()  // sorted list of unregistered attendees
   };
 
-  return returnObject; 
+  return returnObject;
 }
