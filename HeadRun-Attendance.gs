@@ -137,7 +137,7 @@ function emailSubmission() {
   // Save values in 0-indexed array, then transform into 1-indexed by appending empty
   // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
   const values = latestSubmission.getValues()[0];
-  values.unshift("");   // append "" to front
+  values.unshift('');   // append '' to front for 1-indexed access
 
   var timestamp = new Date(values[TIMESTAMP_COL]);
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
@@ -235,7 +235,7 @@ function toggleAttendanceCheck_() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Dec 13, 2024
+ * @update  Jan 15, 2025
  */
 
 function checkMissingAttendance() {
@@ -243,14 +243,11 @@ function checkMissingAttendance() {
   const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
   const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
 
-  if (isCheckingAllowed == "true") {
-    verifyAttendance_();
-  }
-  else {
-    Logger.log("`verifyAttendance()` is not allowed to run. Set script property to true.");
+  if (isCheckingAllowed !== "true") {
+    throw Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
   }
 
-  return;
+  verifyAttendance_();
 }
  
 function verifyAttendance_() {
@@ -296,7 +293,15 @@ function verifyAttendance_() {
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
 
-  const reminderEmailBodyHTML = REMINDER_EMAIL_HTML;
+  // Load HTML template and replace placeholders
+  const templateName = REMINDER_EMAIL_HTML_FILE;
+  const template = HtmlService.createTemplateFromFile(templateName);
+
+  template.LINK = ATTENDANCE_GFORM_LINK;
+  template.SEMESTER = SEMESTER_NAME;
+
+  // Returns string content from populated html template
+  const reminderEmailBodyHTML = template.evaluate().getContent();  
 
   var reminderEmail = {
     to: headRunnerEmail,
@@ -309,7 +314,6 @@ function verifyAttendance_() {
   }
 
   MailApp.sendEmail(reminderEmail);
-  return;
 }
 
 

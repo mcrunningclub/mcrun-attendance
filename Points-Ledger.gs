@@ -194,6 +194,8 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
 
   const formattedNow = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm');
 
+  // TODO : APPEND HEADRUN LEVEL TO EVENT NAME (USED TO DETERMINE POINTS TO GIVE)
+  
   const allAttendeesCol = [
     ATTENDEES_BEGINNER_COL, 
     ATTENDEES_INTERMEDIATE_COL, 

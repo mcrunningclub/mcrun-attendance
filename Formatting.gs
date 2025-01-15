@@ -139,22 +139,22 @@ function formatSpecificColumns() {
   range.getBandings().forEach(banding => banding.remove());
   range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
 
-
+  // Link pixel size to column index
   const sizeMap = {
-    [TIMESTAMP_COL] : 150,
-    [EMAIL_COL] : 240,
-    [HEADRUNNERS_COL] : 240,
-    [HEADRUN_COL] : 155,
-    [RUN_LEVEL_COL] : 155,
-    [ATTENDEES_BEGINNER_COL] : 160,
-    [ATTENDEES_INTERMEDIATE_COL] : 160,
-    [ATTENDEES_ADVANCED_COL] : 160,
-    [CONFIRMATION_COL] : 300,
-    [DISTANCE_COL] : 160,
-    [COMMENTS_COL] : 355,
-    [IS_COPY_SENT_COL] : 135,
-    [PLATFORM_COL] : 160,
-    [NAMES_NOT_FOUND_COL] : 225,
+    [TIMESTAMP_COL]: 150,
+    [EMAIL_COL]: 240,
+    [HEADRUNNERS_COL]: 240,
+    [HEADRUN_COL]: 155,
+    [RUN_LEVEL_COL]: 155,
+    [ATTENDEES_BEGINNER_COL]: 160,
+    [ATTENDEES_INTERMEDIATE_COL]: 160,
+    [ATTENDEES_ADVANCED_COL]: 160,
+    [CONFIRMATION_COL]: 300,
+    [DISTANCE_COL]: 160,
+    [COMMENTS_COL]: 355,
+    [IS_COPY_SENT_COL]: 135,
+    [PLATFORM_COL]: 160,
+    [NAMES_NOT_FOUND_COL]: 225,
   }
 
   // Resize columns by corresponding pixel size
@@ -360,49 +360,25 @@ function formatAttendeeNamesInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
 function createEmailCopy_(emailDetails) {
   // Check for non-empty key-value object
   const size = Object.keys(emailDetails).length;
-  if(size != 6) return null;
-  
-  const emailBodyHTML = " \
-  <html> \
-    <head> \
-      <title>Submission Details</title> \
-    </head> \
-    <body> \
-      <p> \
-        Hi, \
-      </p> \
-      <p> \
-        Here is a copy of the latest submission: \
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Head Run: </strong>" + emailDetails.name + "\
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Distance: </strong>" + emailDetails.distance + "\
-      </p> \
-      <p>\
-        <strong>&nbsp;&nbsp;&nbsp;Attendees: </strong>" + emailDetails.attendees + "\
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Submitted by: </strong> " + emailDetails.toEmail + "\
-      </p> \
-      <p> \
-          &nbsp;&nbsp; \
-        <strong><em>I declare all attendees have provided their waiver and paid the one-time member fee: </em></strong>" + 
-          emailDetails.confirmation + " \
-      </p> \
-      <p> \
-        <strong>&nbsp;&nbsp;&nbsp;Comments: </strong> " + emailDetails.notes + "\
-      </p> \
-      <p> \
-        <br> \
-        - McRUN Bot \
-      </p> \
-    </body> \
-  </html>";
-  
-  return emailBodyHTML;
 
+  if(size != 6) {
+    const objectPrint = JSON.stringify(emailDetails);
+    throw Error(`Confirmation email cannot be created due to incorrect mapping of \`emailDetails\` argument: 
+      ${objectPrint}`);
+  }
+
+  // Load HTML template and replace placeholders
+  const templateName = COPY_EMAIL_HTML_FILE;
+  const template = HtmlService.createTemplateFromFile(templateName);
+
+  template.NAME = emailDetails.name;
+  template.DISTANCE = emailDetails.distance;
+  template.ATTENDEES = emailDetails.attendees;
+  template.EMAIL = emailDetails.toEmail;
+  template.CONFIRMATION = emailDetails.confirmation;
+  template.NOTES = emailDetails.notes;
+
+  return template.evaluate().getContent();  // Returns string content from populated html template
 }
 
 
