@@ -1,24 +1,225 @@
 /**
- * Copy newest attendance submission to ledger spreadsheet.
+ * Appends email to attendee name if found. Otherwise, do not add to name.
  * 
- * CURRENTLY IN REVIEW!
+ * Loops through all levels found in `row`. Sets new cell values in the end.
+ * 
+ * @param {integer} row  Row in `ATTENDANCE_SHEET` to append email.
+ * @param {string[][]} memberMap  All search keys of registered members (sorted) and emails.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
- * @date  Oct 30, 2023
- * @update  Oct 29, 2024
+ * @date  Dec 14, 2024
+ * @update  Dec 14, 2024
  */
 
-function copyToLedger() {
-  return;
-  const sourceSheet = ATTENDANCE_SHEET;
-  const ledgerName = LEDGER_NAME;
-  const sheetUrl = LEDGER_URL;
+function appendMemberEmail(row, memberMap) {
+  const sheet = ATTENDANCE_SHEET;
+  const numRowToGet = 1;
+  const numColToGet = LEVEL_COUNT;
 
-  var destinationSpreadsheet = SpreadsheetApp.openByUrl(sheetUrl);
-  var destinationSheet = destinationSpreadsheet.getSheetByName(ledgerName);
-  var sourceData = sourceSheet.getRange(sourceSheet.getLastRow(), 1, 1, 5).getValues()[0];
+  // Get attendee range starting from beginner col to advanced col
+  const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, numRowToGet, numColToGet);  // Attendees columns
 
-  destinationSheet.appendRow(sourceData);
+  const allAttendees = attendeeRange.getValues()[0]; // Single row of attendees
+  const updatedAttendees = [];    // Resulting values to set in sheet
+
+  // Iterate through levels and add emails
+  for(let col=0; col < numColToGet; col++) {
+    let attendeesInLevel = allAttendees[col]
+      .split('\n')  // Split by newline
+    ;
+
+    // Skip levels with no attendees
+    if(attendeesInLevel.includes("None")) {
+      updatedAttendees.push("None");
+      continue;
+    }
+
+    const memberSearchKey = memberMap[index][SEARCH_KEY_INDEX];
+    
+
+    // Compare last names and check if first name matches any in the list
+    if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {return;}
+      
+
+    // Format each attendee with their email if available
+
+
+
+    const formattedAttendee = attendeesInLevel.map(name => {
+
+      const [memberLastName, memberFirstNames] = memberSearchKey.split(",").map(s => s.trim());
+      const searchFirstNameList = memberFirstNames.split("|").map(s => s.trim());   // only if preferredName exists
+
+      if (name in memberMap) {
+        return `${name}:${memberMap[name]}`;
+      }
+      return name; // Leave the name as-is if no email found
+    });
+
+    // Join back into a string and add to the results
+    updatedAttendees.push(formattedAttendee.join('\n'));
+  }
+
+  // Write the updated attendees back to the sheet
+  attendeeRange.setValues([updatedAttendees]);
+}
+
+
+function hideAllAttendeeEmail() {
+  const sheet = ATTENDANCE_SHEET;
+  const startRow = 2  // Skip header row
+  const numRows = sheet.getLastRow() - 1;   // Remove header row from count
+  const endRow = startRow + numRows;
+
+  for(var row = startRow; row < endRow; row++) {
+    hideAttendeeEmailInRow_(row);
+  }
+}
+
+
+function hideAttendeeEmailInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
+  const allAttendeesCol = [
+    ATTENDEES_BEGINNER_COL, 
+    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_ADVANCED_COL
+  ];
+
+  allAttendeesCol.forEach(col => hideAttendeeEmailInCell_(col, row));
+}
+
+
+function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = ATTENDANCE_SHEET.getLastRow();
+
+  const attendeeRange = sheet.getRange(row, column);
+  const cellValue = attendeeRange.getValue();
+
+  if(cellValue == "None") return;   // No attendees for this level
+
+  // Get the cell's background color
+  const banding = attendeeRange.getBandings()[0];   // Only 1 banding
+  const bandingColours = {
+    'colourEvenRow': banding.getFirstRowColorObject(),
+    'colourOddRow' : banding.getSecondRowColorObject(),
+    'colourFooter' : banding.getFooterRowColorObject(),
+
+    getColour : function(row) {
+      if(row == lastRow)     {return this.colourFooter}
+      else if(row % 2 == 0)  {return this.colourEvenRow}
+      else                   {return this.colourOddRow}
+    }
+  }
+
+  let cellBackgroundColour = bandingColours.getColour(row);
+
+  // Create a RichTextValueBuilder for the cell
+  const richTextBuilder = SpreadsheetApp.newRichTextValue().setText(cellValue);
+  const isRegisteredTextStyle = SpreadsheetApp.newTextStyle()
+    .setItalic(true)
+    .setForegroundColorObject(cellBackgroundColour)
+    .build()
+  ;
+  const isUnregisteredTextStyle = SpreadsheetApp.newTextStyle()
+    .setForegroundColor('red')
+    .build()
+  ;
+
+  // Split the cell value by line breaks
+  const lines = cellValue.split("\n");
+
+  // Iterate through each line and format the email portion
+  let currentIndex = 0;
+  const delimiter = ":";
+  
+  for (const line of lines) {
+    const delimiterIndex = line.indexOf(delimiter);
+    
+    if(delimiterIndex !== -1) {
+      // Find the email (after the delimiter)
+      const email = line.substring(delimiterIndex + 1).trim();
+      if(email) {
+        const start = currentIndex + delimiterIndex; // Start index of delimiter
+        const end = start + email.length + 1; // End index of the email
+
+        // Apply text color and italic formatting to the email
+        richTextBuilder.setTextStyle(start, end, isRegisteredTextStyle);
+      }
+    }
+    else {
+      const start = currentIndex;
+      const end = start + line.length + (line.includes('\n') ? 1 : 0);
+      richTextBuilder.setTextStyle(start, end, isUnregisteredTextStyle);
+    }
+    // Update currentIndex to account for the line length and newline character
+    currentIndex += line.length + 1;
+  }
+
+  // Build and set the RichTextValue for the cell
+  const richTextValue = richTextBuilder.build();
+  attendeeRange.setRichTextValue(richTextValue);
+}
+
+
+function transferAllSubmissions() {
+  const startRow = 50; // ATTENDANCE_SHEET.getLastRow()
+
+  for (let row = startRow; row > 1; row--) {
+    transferSubmissionToLedger(row);
+  }
+}
+
+
+function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
+  const sheet = ATTENDANCE_SHEET;
+  
+  // `Points Ledger` Google Sheet
+  const sheetURL = LEDGER_URL;
+  const ss = SpreadsheetApp.openByUrl(sheetURL);
+  const ledgerSheet = ss.getSheetByName(LEDGET_SHEET_NAME);
+  var ledgerLastRow = ledgerSheet.getLastRow();   // Increment per event transfer
+
+  // Select columns to transfer from `sheet`
+  const startCol = TIMESTAMP_COL;
+  const numCol = DISTANCE_COL - startCol + 1;  // GSheet is 1-indexed
+  const numRow = 1;
+
+  // Range is `EMAIL_COL` to `DISTANCE_COL`
+  rangeSubmission = sheet.getRange(row, startCol, numRow, numCol);
+
+  // Save values in 0-indexed array, then transform into 1-indexed by appending empty
+  // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
+  const values = rangeSubmission.getValues()[0];
+  values.unshift("");   // append "" to front
+
+  const formattedNow = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm');
+
+  // TODO : APPEND HEADRUN LEVEL TO EVENT NAME (USED TO DETERMINE POINTS TO GIVE)
+  
+  const allAttendeesCol = [
+    ATTENDEES_BEGINNER_COL, 
+    ATTENDEES_INTERMEDIATE_COL, 
+    ATTENDEES_ADVANCED_COL
+  ].filter(level => !values[level].includes("None")) // Skip levels with "None"
+ 
+  for(var level of allAttendeesCol) {
+    
+    // Format in `Event Log` sheet in `Points Ledger`
+    // Import-Timestamp   Event   Event-TS   MemberEmail   Distance   Points
+    const eventToTransfer = [
+      formattedNow,           // Import Timestamp
+      values[HEADRUN_COL],    // Event name
+      values[TIMESTAMP_COL],  // Event Timestamp
+      values[level],          // Member Emails
+      values[DISTANCE_COL],   // Distance
+      // Note: Points col added in `Points Ledger`
+    ]
+
+    const colSizeOfTransfer = eventToTransfer.length;
+    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow++, 1, 1, colSizeOfTransfer);
+    rangeNewLog.setValues([eventToTransfer]);
+  }
+  
 }
 
 
@@ -117,21 +318,3 @@ function pointsEmail() {
     }
   });
 }
-
-
-/** 
- * @author ChatGPT
- */
-function copyRowToAnotherSpreadsheet_() {
-  var sourceSpreadsheet = SpreadsheetApp.openById("SourceSpreadsheetID"); // Replace with the ID of your source spreadsheet
-  var destinationSpreadsheet = SpreadsheetApp.openById("DestinationSpreadsheetID"); // Replace with the ID of your destination spreadsheet
-
-  var sourceSheet = sourceSpreadsheet.getSheetByName("SourceSheetName"); // Replace with the name of your source sheet
-  var destinationSheet = destinationSpreadsheet.getSheetByName("DestinationSheetName"); // Replace with the name of your destination sheet
-
-  var rowIndexToCopy = 2; // Replace with the row index you want to copy (e.g., row 2)
-  var sourceData = sourceSheet.getRange(rowIndexToCopy, 1, 1, sourceSheet.getLastColumn()).getValues();
-
-  destinationSheet.appendRow(sourceData[0]);
-}
-

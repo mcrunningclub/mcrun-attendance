@@ -1,33 +1,31 @@
 /**
  * Functions to execute after form submission.
  * 
- * @trigger Form Submission.
+ * @trigger Attendance form Submission.
  */
 
 function onFormSubmission() {
   addMissingFormInfo();
-  formatLastestNames();
-  getUnregisteredMembers();
+  formatNamesInRow_();     // formats names in last row
+  getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-  //copyToLedger();       // IN-REVIEW
 }
 
 
 /**
  * Functions to execute after McRUN app submission.
  * 
- * @trigger McRUN App Submission.
+ * @trigger McRUN App Attendance Submission.
  */
 function onAppSubmission() {
   removePresenceChecks();
-  formatLastestNames();
-  getUnregisteredMembers();
+  formatNamesInRow_();     // formats names in last row
+  getUnregisteredMembers_();
   
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-  //copyToLedger();       // IN-REVIEW
 }
 
 
@@ -118,7 +116,7 @@ function consolidateSubmissions() {
 /**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
  * 
- * Attendees are separated by level
+ * Attendees are separated by level.
  * 
  * @trigger Attendance submissions.
  *  
@@ -129,7 +127,7 @@ function consolidateSubmissions() {
 
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
-  //if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;   // REMOVE AFTER TESTING !
+  if ( getCurrentUserEmail() != 'mcrunningclub@ssmu.ca' ) return;
 
   const sheet = ATTENDANCE_SHEET;
   const lastRow = sheet.getLastRow();
@@ -138,7 +136,7 @@ function emailSubmission() {
   // Save values in 0-indexed array, then transform into 1-indexed by appending empty
   // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
   const values = latestSubmission.getValues()[0];
-  values.unshift("");   // append "" to front
+  values.unshift('');   // append '' to front for 1-indexed access
 
   var timestamp = new Date(values[TIMESTAMP_COL]);
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
@@ -178,8 +176,7 @@ function emailSubmission() {
   headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)' );
   rangeConfirmation.setValue(headrun.confirmation);
 
-  
-  const emailBodyHTML = createEmailCopy(headrun);
+  const emailBodyHTML = createEmailCopy_(headrun);
 
   var message = {
     to: headrun.toEmail,
@@ -201,7 +198,30 @@ function emailSubmission() {
 
 
 /**
+ * Toggles flag to run `checkAttendance()` by updating value in `ScriptProperties` bank.
+ * 
+ * @trigger User choice in custom menu.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 5, 2024
+ * @update  Dec 6, 2024
+ */
+
+function toggleAttendanceCheck_() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+
+  const isChecking = scriptProperties.getProperty(propertyName);  // !! converts str to bool
+  const toggledState = (isChecking == "true") ? "false" : "true";   // toggle bool, but save as str
+  scriptProperties.setProperty(propertyName, toggledState);    // function requires property as str
+
+  return toggledState;
+}
+
+/**
  * Check for missing submission after scheduled headrun.
+ * 
+ * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
  * 
  * @trigger 30-60 mins after schedule in `getHeadRunString()`.
  * 
@@ -214,10 +234,22 @@ function emailSubmission() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Oct 10, 2024
+ * @update  Jan 15, 2025
  */
 
 function checkMissingAttendance() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+  const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
+
+  if (isCheckingAllowed !== "true") {
+    throw Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+  }
+
+  verifyAttendance_();
+}
+ 
+function verifyAttendance_() {
   const sheet = ATTENDANCE_SHEET;
   
   // Gets values of all timelogs
@@ -235,7 +267,7 @@ function checkMissingAttendance() {
 
   // Error handling
   if (headRunDetail.length <= 0) {
-    // Create an instance of ExecutionError with a custom message
+    // Create an instance of Error with a custom message
     var errorMessage = "No headrunner has been found for " + headRunDay;    
     throw new Error(errorMessage); // Throw the ExecutionError
   }
@@ -260,7 +292,16 @@ function checkMissingAttendance() {
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
 
-  const reminderEmailBodyHTML = REMINDER_EMAIL_HTML;
+  // Load HTML template and replace placeholders
+  const templateName = REMINDER_EMAIL_HTML_FILE;
+  const template = HtmlService.createTemplateFromFile(templateName);
+
+  template.LINK = ATTENDANCE_GFORM_LINK;
+  template.SEMESTER = SEMESTER_NAME;
+
+  // Returns string content from populated html template
+  const reminderEmailBodyHTML = template.evaluate().getContent();  
+
 
   var reminderEmail = {
     to: headRunnerEmail,
@@ -273,11 +314,26 @@ function checkMissingAttendance() {
   }
 
   MailApp.sendEmail(reminderEmail);
-  return;
+}
 
-  // Date formatting examples
-  const todayWeekDay = Utilities.formatDate(today, TIMEZONE, 'EEEE');
-  const todayDate = Utilities.formatDate(today, TIMEZONE, 'dd');
+
+/**
+ * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
+ * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
+ * 
+ * Sets unregistered members in `NOT_FOUND_COL`.
+ * 
+ * List of members found in `Members` sheet.
+ * 
+ * Row number is 1-indexed in GSheet. Executes top to bottom. Header row skipped.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 6, 2024
+ * @update  Dec 14, 2024
+ */
+
+function getAllUnregisteredMembers() {
+  runOnSheet_(getUnregisteredMembers_.name);
 }
 
 /**
@@ -287,169 +343,142 @@ function checkMissingAttendance() {
  * 
  * List of members found in `Members` sheet.
  * 
- * CURRENTLY IN REVIEW!
- * 
  * @param {number} [row=ATTENDANCE_SHEET.getLastRow()]  The row number in `ATTENDANCE_SHEET` 1-indexed.
  *                                                      Defaults to the last row in the sheet.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Nov 1, 2024
+ * @update  Dec 14, 2024
  */
 
-function getUnregisteredMembers(row=ATTENDANCE_SHEET.getLastRow()){
+function getUnregisteredMembers_(row=ATTENDANCE_SHEET.getLastRow()){
   const sheet = ATTENDANCE_SHEET;
-
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
-
+  
+  // Get attendee names starting from beginner col to advanced col
   const numColToGet = LEVEL_COUNT;
+  const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
 
-  // Get attendee names starting from beginner col
-  const nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
-
-  // 1D Array of size 3 (Beginner, Intermediate, Advanced)
-  const allNames = nameRange
-    .getValues()[0]
-    .filter(level => !level.includes("None")) // Skip levels with "none"
-    .flatMap(level => level.split('\n'))    // Split names in each level into separate entry in array
-  ;   
-
+  // 1D Array of size `LEVEL_COUNT` (Beginner, Intermediate, Advanced -> 3)
+  // If email appended to name, remove before creating list of all attendees
+  const allNames = attendeeRange.getValues()[0]
+  .filter(level => !level.includes("None")) // Skip levels with "None"
+  .flatMap(level =>
+    level.split('\n')                       // Split names in each level into separate entry in array
+      .map(entry => entry.includes(':')
+        ? entry.split(':')[0].trim()        // Remove email from entry if applicable
+        : entry.trim()                      // Otherwise, trim name only
+      )
+  );
+  
   // Remove whitespace, strip accents and capitalize names
-  const sortedNames = formatAndSortNames(allNames);
+  // Swap order of attendee names to `lastName, firstName`
+  const sortedNames = swapAndFormatName_(allNames);
 
-  // Get existing member registry in `Members`
+  // Get existing member registry in `Members` sheet
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
 
-  const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
-  const numCols = sheet.getLastColumn();
-  
-  var membersRange = memberSheet.getRange(2, 1, memberCount, numCols);
+  const memberEmailCol = MEMBER_EMAIL_COL - 1;    // 1-index to 0-index
+  const memberKeyIndex = MEMBER_SEARCH_KEY_COL - 1;   // 1-index to 0-index
 
-  // Get array of members' full name
-  const members = membersRange.getValues()
-    .map(row => row[2])     // Get member full names in a 1D array
-    .filter(name => name)  // Remove empty rows
+  const startCol = 1;
+  const startRow = 2;   // Skip header row
+  const numCols = MEMBER_SEARCH_KEY_COL; 
+  const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
+  
+  var memberSheetRange = memberSheet.getRange(startRow, startCol, memberCount, numCols)
+
+  // Get array of member names to use as search key, combined with email for later use
+  const memberMap = memberSheetRange.getValues()
+    .map(row => [row[memberKeyIndex], row[memberEmailCol]])  // Combine memberKey and email
+    .filter(row => row[0] && row[1])  // Filter rows with empty names or emails
   ;
 
-  const formattedMembers = formatAndSortNames(members);
+  const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
 
   // Use the helper function on sorted items
-  const unregistered = findUnregistered_(sortedNames, formattedMembers);
-  unfoundNameRange.setValue(unregistered.join(", "));
+  const registeredAndUnregistered = findUnregistered_(sortedNames, cleanMemberMap);
+
+  // Separate data for registered and unregistered
+  const unregistered = registeredAndUnregistered['unregistered'];
+  const registered = registeredAndUnregistered['registered'];
 
   // Log unfound names
-  unfoundNameRange.setValue(unregistered.join(", "));
+  unfoundNameRange.setValue(unregistered.join("\n"));
 
-  return;
+  // Append email to registered attendees
+  appendMemberEmail(row, registered);
+
+  // Hide emails in row, and highlight unregistered attendee
+  hideAttendeeEmailInRow_(row);
 }
 
 
 /**
- * Helper function to find unregistered attendees
+ * Helper function to find unregistered attendees.
  * 
- * CURRENTLY IN REVIEW!
- * 
- * @param {string[]} attendees  All attendees of the head run.
- * @param {string} members  All registered members.
- * @return {string[]}  Returns attendees not found in `members`.
- * 
- * @TODO Move this to `Membership (Main)` and call as library
+ * @param {string[]} attendees  All attendees of the head run (sorted).
+ * @param {string[][]} memberMap  All search keys of registered members (sorted) and emails.
+ * @return {Map<Map<String,String>, List>}  Returns attendees not found in `members`.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Nov 1, 2024
+ * @update  Dec 14, 2024
  */
 
-function findUnregistered_(attendees, members) {
+function findUnregistered_(attendees, memberMap) {
   const unregistered = [];
+  const registeredMap = {}    // Saves member name-email pair
+
+  const SEARCH_KEY_INDEX = 0;
+  const EMAIL_INDEX = 1;
+
   let index = 0;
 
-  attendees.forEach(attendee => {
-    // Move through `members` array starting from the last found `index`
-    while (index < members.length) {
-      const memberName = members[index];
+  for (const attendee of attendees) {
+    // Split attendee name into last and first name
+    const [attendeeLastName, attendeeFirstName] = attendee.split(",").map(s => s.trim());
 
-      if (attendee === memberName) {
-        index++; // Move to the next member in sorted order
-        return;  // Break out of the while loop, continue to next attendee
+    let isFound = false;
 
-      } else if (attendee < memberName) {
-        unregistered.push(attendee); // Attendee not in members
-        return;  // Continue to the next attendee
+    // Check members starting from the current index
+    while (index < memberMap.length) {
+      const memberSearchKey = memberMap[index][SEARCH_KEY_INDEX];
+      const [memberLastName, memberFirstNames] = memberSearchKey.split(",").map(s => s.trim());
+      const searchFirstNameList = memberFirstNames.split("|").map(s => s.trim());   // only if preferredName exists
+
+      // Compare last names and check if first name matches any in the list
+      if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {
+        isFound = true;
+        
+        // Create entry using existing memberSearchKey
+        const memberEmail = memberMap[index][EMAIL_INDEX];    // Get member email
+        registeredMap[memberSearchKey] = memberEmail;    // Push name-email pair to object
+        
+        index++; // Move to the next member
+        break;
+      }
+
+      // If attendee's last name is less than the current member's last name
+      if (attendeeLastName < memberLastName) {
+        break; // Stop searching as attendees are sorted alphabetically
       }
 
       index++;
     }
 
-    // If index exceeds `members`, mark remaining attendees as unfound
-    if (index >= members.length) unregistered.push(attendee);
-  });
 
-  return unregistered;
-}
-
-
-function deadCode_() {
-  return;
-
-  function getDateTime(timeString) {
-  var dateTime = new Date();
-
-  var parts = timeString.split(':');
-  var hours = parseInt(parts[0], 10);
-  var minutes = parseInt(parts[1], 10);
-
-  dateTime.setHours(hours, minutes, 0, 0); // Set the time
-
-  return dateTime;
-  }
-
-
-  function getThresholdTime(startTime) {
-    var dateTime = new Date();
-
-    var parts = startTime.split(':');
-    var hours = parseInt(parts[0], 10);
-    var minutes = parseInt(parts[1], 10);
-
-    dateTime.setHours(hours + 2, minutes, 0, 0); // Set the time
-    return dateTime;
-  }
-
-  var emailBody = 
-    "Here is a copy of your submission: \n\n- HEAD RUN: " + headRun + "\n- DISTANCE: " + distance + "\n\n------ ATTENDEES ------\n" + attendees + "\n\n*I declare all attendees have provided their waiver and paid the one-time member fee*  > " + confirmation + "\n\nComments: " + notes + "\n\nKeep up the amazing work!\n\nBest,\nMcRUN Team"
-  ;
-
-  var headRunTime = getHeadRunTime(todayWeekDay);
-  if(headRunTime.length < 1) return;  // exit if no head run today
-
-  var dateTime, thresholdTime;
-
-  for(const time of headRunTime) {
-    dateTime = getDateTime(time);   // convert to Date object
-    thresholdTime = getThresholdTime(time);  // add 2 hours
-
-    Logger.log(today);
-    Logger.log(thresholdTime);
-
-    if (today.setHours(today.getHours() + 2) ) {};
-  }
-
-  var test = new Date(submissionDates[0]).getDate();
-
-  for (var i = 0; i < data.length; i++) {
-    var cellValue = data[i][0];
-    if (cellValue instanceof Date) {
-      cellValue.setHours(0, 0, 0, 0); // Set the time to midnight for comparison
-      if (cellValue.getTime() !== today.getTime()) {
-        // If the date in the cell doesn't match today's date
-        // Send a notification email
-      }
+    // If attendee not found, add to unregistered array, and put back hyphen in names
+    if (!isFound) {
+      unregistered.push(`${attendeeFirstName.replace(' ', '-')} ${attendeeLastName.replace(' ', '-')}`);
     }
   }
 
-  headRunTime.forEach(
-    function(item) { Logger.log(item); }
-  );
+  
+  const returnObject = {
+    'registered' : registeredMap, 
+    'unregistered' : unregistered.sort()  // sorted list of unregistered attendees
+  };
 
+  return returnObject; 
 }
