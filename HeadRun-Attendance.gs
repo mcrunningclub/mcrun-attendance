@@ -234,7 +234,7 @@ function toggleAttendanceCheck_() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Jan 15, 2025
+ * @update  Jan 24, 2025
  */
 
 function checkMissingAttendance() {
@@ -243,7 +243,8 @@ function checkMissingAttendance() {
   const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
 
   if (isCheckingAllowed !== "true") {
-    throw Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+    Logger.log("Error: `verifyAttendance()` is not allowed to run. Set script property to true.");
+    return;
   }
 
   verifyAttendance_();

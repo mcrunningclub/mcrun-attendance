@@ -274,7 +274,6 @@ function pointsEmail() {
   // Loop through the full names array and email that member regarding their current points
   uniqueRecipientsArray.forEach(fullName => {
     const trimmedName = fullName.trim();
-
     if (!pointsMap[trimmedName]) return;     // skips to next iteration if no email is found
 
     const points = pointsMap[trimmedName][1] ?? 0;
