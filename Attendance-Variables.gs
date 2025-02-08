@@ -1,5 +1,5 @@
 // SHEET CONSTANTS
-const SHEET_NAME = 'HR Attendance F24';
+const SHEET_NAME = 'HR Attendance W25';
 const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
 
 // LIST OF COLUMNS IN SHEET_NAME
