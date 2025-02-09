@@ -12,6 +12,7 @@
  */
 
 function appendMemberEmail(row, memberMap) {
+  return;
   const sheet = ATTENDANCE_SHEET;
   const numRowToGet = 1;
   const numColToGet = LEVEL_COUNT;

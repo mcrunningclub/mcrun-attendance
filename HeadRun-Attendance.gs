@@ -39,7 +39,7 @@ function onAppSubmission() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 17, 2023
- * @update  Nov 1, 2024
+ * @update  Feb 9, 2025
  */
 
 function onEditCheck() {
@@ -49,11 +49,17 @@ function onEditCheck() {
   const timestamp = new Date(sheet.getRange(sheet.getLastRow(), 1).getValue());
   const timeLimit = 45 * 1000   // 45 sec = 45 * 1000 millisec
 
-  if (Date.now() - timestamp > timeLimit) return;   // exit if over time limit
+  // Exit if over time limit
+  if (Date.now() - timestamp > timeLimit) {
+    Logger.log(`Timestamp: ${timestamp} is older than ${timeLimit}.
+    onEditCheck() exited.`)
+    return;
+  }
 
   const latestPlatform = sheet.getRange(sheet.getLastRow(), PLATFORM_COL).getValue();
 
   if (latestPlatform == "McRUN App") {
+    Logger.log(`Latest Platform: ${latestPlatform}`);
     onAppSubmission();
   }
 

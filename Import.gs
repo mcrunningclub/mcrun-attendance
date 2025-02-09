@@ -1,5 +1,5 @@
 // IMPORT SHEET CONSTANTS
-const IMPORT_SHEET_ID = '82376152';
+const IMPORT_SHEET_ID = 82376152;
 const IMPORT_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetById(IMPORT_SHEET_ID);
 
 // MAPPING FROM MASTER ATTENDANCE SHEET TO SEMESTER SHEET
@@ -17,34 +17,47 @@ const IMPORT_MAP = {
 
 // USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
 function onChange(e) {
-  // Get details of edit event's sheet
-  console.log(e);
-  const thisSource = e.source;
-  
-  // Try-catch to prevent errors when sheetId cannot be found
   try {
-    const thisSheetID = thisSource.getSheetId();
-    const thisLastRow = thisSource.getLastRow();
+    //console.log(e);   // Log event details
+    const thisSource = e.source;
+    const thisSheetID = thisSource.getSheetId()
 
-    if (thisSheetID == IMPORT_SHEET_ID) {
-      const importSheet = thisSource.getSheetById(thisSheetID);
-      const registrationObj = importSheet.getRange(thisLastRow, 1).getValue();
-
-      const lastRow = copyToSemesterSheet(registrationObj);
-      // TRIGGER CODE BELOW
-      //....................
-
+    // Exit early if the event is not related to the import sheet
+    if (thisSheetID != IMPORT_SHEET_ID) {
+      Logger.log(`Early exit. thisSheetID: ${thisSheetID} !== IMPORT_SHEET_ID ${IMPORT_SHEET_ID}`);
+      return;
     }
+
+    const importSheet = thisSource.getSheetById(thisSheetID);
+    if (!importSheet) throw new Error(`Import sheet ID ${thisSheetID} not found.`);
+    
+    const thisLastRow = thisSource.getLastRow();
+    const thisColSize = thisSource.getLastColumn();
+    const latestImport = importSheet.getRange(thisLastRow, 1, 1, thisColSize).getValues()[0];   // Get last row
+
+    let registrationObj;
+
+    // Case 1: JSON-formatted import (single-column)
+    if (latestImport[1] === "") {
+      Logger.log("Entered case 1!")
+      registrationObj = latestImport[0];
+    }
+
+    // Case 2: Multi-column import (e.g., from Zapier)
+    else {
+      Logger.log("Entered case 2!")
+      const keys = importSheet.getRange(1, 1, 1, thisColSize).getValues()[0];  // Get header row
+      registrationObj = packageAttendance(keys, latestImport);
+    }
+
+    const lastRow = copyToSemesterSheet(registrationObj);
+    
+    // TRIGGER CODE BELOW
+    //....................
   }
   catch (error) {
-    console.log(error);
+    console.error("Error in onChange:", error);
   }
-
-}
-
-function transferLastImport() {
-  const thisLastRow = IMPORT_SHEET.getLastRow();
-  transferThisRow(thisLastRow);
 }
 
 function transferThisRow(row) {
@@ -53,12 +66,17 @@ function transferThisRow(row) {
   onFormSubmit(lastRow);
 }
 
+function transferLastImport() {
+  const thisLastRow = IMPORT_SHEET.getLastRow();
+  transferThisRow(thisLastRow);
+}
+
 
 /** 
  * Transfer new attendance submission from `Import` to semester sheet.
  * 
- * @param {Object} attendance  Information on attendance submission.
-
+ * @param {string} attendance   Attendance information as JSON string.
+ * 
  * @param {integer} [row=getLastSubmission()]  Target row in `Attendance_Sheet`.
  * 
  * @return {integer}  Latest row in `Attendance_Sheet`.
@@ -79,6 +97,8 @@ function copyToSemesterSheet(attendance, row=ATTENDANCE_SHEET.getLastRow()) {
   const colSize = attendanceSheet.getLastColumn();
 
   const valuesByIndex = Array(colSize);   // Array.length = colSize
+
+  // Format 
 
   for (const [key, value] of Object.entries(attendanceObj)) {
     if (key in importMap) {
@@ -124,6 +144,24 @@ function getLastSubmission_() {
 
   return lastRow;
 }
+
+
+
+function packageAttendance(keyArr, valArr) {
+  if (keyArr.length !== valArr.length) {
+    const errMessage = `keyArr and valArr must have the same length.
+      keyArr: ${keyArr}
+      valArr: ${valArr}`
+    ;
+    throw new Error(errMessage);
+  }
+
+  // Create JSON string
+  const obj = Object.fromEntries(keyArr.map((key, i) => [key, valArr[i]]));
+  return JSON.stringify(obj);
+}
+
+
 
 
 function testMigrate() {

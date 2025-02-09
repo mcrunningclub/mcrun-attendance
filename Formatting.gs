@@ -203,7 +203,7 @@ function formatAllConfirmations() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 8, 2024
- * @update  Dec 11, 2024
+ * @update  Feb 9, 2025
  */
 
 function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
@@ -219,7 +219,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   if (!isBool) return;
 
   // Format and set value according to TRUE/FALSE response
-  const formattedValue = confirmationResp ? 'Yes' : 'No (explain in comment section)';
+  const formattedValue = (confirmationResp === 'true') ? 'Yes' : 'No (explain in comment section)';
   rangeConfirmation.setValue(formattedValue);
 }
 
