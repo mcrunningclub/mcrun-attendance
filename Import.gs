@@ -98,7 +98,7 @@ function onChange(e) {
 
   }
   catch (error) {
-    throw new Error(`Error in onChange: ${error}`);
+    throw new Error(`(onChange): ${error}`);
   }
 }
 
@@ -177,6 +177,7 @@ function copyToSemesterSheet(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow()) 
   return startRow;
 }
 
+
 /** 
  * Create JSON-formatted string of key-value pairs for attendance submission.
  * 
@@ -228,25 +229,5 @@ function formatTimestamp(raw) {
     TIMEZONE, 
     'yyyy-MM-dd hh:mm:ss'
   );
-}
-
-
-
-
-function testMigrate() {
-  const ex = `{
-    "timestamp":"2025-02-08 10:07:41",
-    "headrunners":"Isabella V.;Liam G.;Liam M.;Theo G.;Zisheng H.",
-    "headRun":"Saturday - 10:00AM",
-    "runLevel":"Beginner",
-    "attendees":"Dante D'Alessandro:dante.dalessandro@mail.mcgill.ca;Lisa Stewart:lisa.stewart@mail.mcgill.ca;Romeo Hor:romeo.hor@mail.mcgill.ca;Solal Michon:solal.michon@mail.mcgill.ca;Lakshya Sethi:lakshya.sethi@mail.mcgill.ca",
-    "confirmation":true,
-    "distance":"5k",
-    "comments":"",
-    "platform":"McRUN App"
-  }`;
-
-  const newRowIndex = copyToSemesterSheet(ex);
-  Logger.log(newRowIndex);
 }
 

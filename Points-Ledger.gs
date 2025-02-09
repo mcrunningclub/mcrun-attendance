@@ -8,7 +8,7 @@
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Dec 14, 2024
- * @update  Dec 14, 2024
+ * @update  Feb 9, 2025
  */
 
 function appendMemberEmail(row, memberMap) {
@@ -24,10 +24,8 @@ function appendMemberEmail(row, memberMap) {
 
   // Iterate through levels and add emails
   for(let col=0; col < numColToGet; col++) {
-    let attendeesInLevel = allAttendees[col]
-      .split('\n')  // Split by newline
-    ;
-
+    let attendeesInLevel = allAttendees[col].split('\n');  // Split by newline
+    
     // Skip levels with no attendees
     if(attendeesInLevel.includes(EMPTY_ATTENDEE_FLAG)) {
       updatedAttendees.push(EMPTY_ATTENDEE_FLAG);

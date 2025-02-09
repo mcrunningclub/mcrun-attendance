@@ -1,31 +1,38 @@
 /**
  * Adds `Google Form` as source of attendance submission.
  *
+ * @trigger New Google Form submission.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 17, 2023
+ * @update  Feb 9, 2025
+ *
+ */
+
+function addMissingPlatform_(row=ATTENDANCE_SHEET.getLastRow()) {
+  const sheet = ATTENDANCE_SHEET;
+  const rangePlatform = sheet.getRange(row, PLATFORM_COL);
+  rangePlatform.setValue('Google Form');
+}
+
+
+/**
  * Sets sendEmail column to `true` so emailSubmission() can proceed.
  *
  * @trigger New Google Form submission.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 17, 2023
- * @update  Oct 17, 2023
+ * @date  Feb 9, 2025
+ * @update  Feb 9, 2025
  *
  */
 
-function addMissingFormInfo() {
+function setCopySent_(row=ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  formatConfirmationInRow_(lastRow);  // transforms bool to user-friendly message
-
-  const rangeIsCopySent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
+  const rangeIsCopySent = sheet.getRange(row, IS_COPY_SENT_COL);
 
   // Since GForm automatically sends copy to submitter, set isCopySent `true`.
-  rangeIsCopySent
-    .insertCheckboxes()
-    .setValue(true);
-
-  const rangePlatform = sheet.getRange(lastRow, PLATFORM_COL);
-  rangePlatform.setValue('Google Form');
+  rangeIsCopySent.insertCheckboxes().setValue(true);
 }
 
 
@@ -104,7 +111,7 @@ function prettifySheet() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Dec 14, 2024
+ * @update  Feb 9, 2025
  */
 
 function formatSpecificColumns() {
@@ -146,7 +153,7 @@ function formatSpecificColumns() {
     [EMAIL_COL]: 240,
     [HEADRUNNERS_COL]: 240,
     [HEADRUN_COL]: 155,
-    [RUN_LEVEL_COL]: 155,
+    [RUN_LEVEL_COL]: 170,
     [ATTENDEES_BEGINNER_COL]: 160,
     [ATTENDEES_INTERMEDIATE_COL]: 160,
     [ATTENDEES_ADVANCED_COL]: 160,
