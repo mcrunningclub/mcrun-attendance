@@ -78,7 +78,7 @@ function hideAllAttendeeEmail() {
 }
 
 
-function hideAttendeeEmailInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
+function hideAttendeeEmailInRow(row=ATTENDANCE_SHEET.getLastRow()) {
   const allAttendeesCol = [
     ATTENDEES_BEGINNER_COL,
     ATTENDEES_INTERMEDIATE_COL,
@@ -96,7 +96,7 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
   const attendeeRange = sheet.getRange(row, column);
   const cellValue = attendeeRange.getValue();
 
-  if(cellValue == "None") return;   // No attendees for this level
+  if(!cellValue || cellValue.toLowerCase() === "none") return;   // No attendees for this level
 
   // Get the cell's background color
   const banding = attendeeRange.getBandings()[0];   // Only 1 banding

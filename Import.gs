@@ -15,107 +15,6 @@ const IMPORT_MAP = {
   'attendees' : ATTENDEES_BEGINNER_COL,
 }
 
-// USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
-function onChange(e) {
-  try {
-    //console.log(e);   // Log event details
-    const thisSource = e.source;
-    const thisSheetID = thisSource.getSheetId()
-
-    // Exit early if the event is not related to the import sheet
-    if (thisSheetID != IMPORT_SHEET_ID) {
-      Logger.log(`Early exit. thisSheetID: ${thisSheetID} !== IMPORT_SHEET_ID ${IMPORT_SHEET_ID}`);
-      return;
-    }
-
-    const importSheet = thisSource.getSheetById(thisSheetID);
-    if (!importSheet) throw new Error(`Import sheet ID ${thisSheetID} not found.`);
-    
-    const thisLastRow = thisSource.getLastRow();
-    const thisColSize = thisSource.getLastColumn();
-    const latestImport = importSheet.getRange(thisLastRow, 1, 1, thisColSize).getValues()[0];   // Get last row
-
-    let registrationObj;
-
-    // Case 1: JSON-formatted import (single-column)
-    if (latestImport[1] === "") {
-      Logger.log("Entered case 1!")
-      registrationObj = latestImport[0];
-    }
-
-    // Case 2: Multi-column import (e.g., from Zapier)
-    else {
-      Logger.log("Entered case 2!")
-      const keys = importSheet.getRange(1, 1, 1, thisColSize).getValues()[0];  // Get header row
-      registrationObj = packageAttendance(keys, latestImport);
-    }
-
-    const lastRow = copyToSemesterSheet(registrationObj);
-    
-    // TRIGGER CODE BELOW
-    //....................
-  }
-  catch (error) {
-    console.error("Error in onChange:", error);
-  }
-}
-
-function transferThisRow(row) {
-  const registrationObj = IMPORT_SHEET.getRange(row, 1).getValue();
-  const lastRow = copyToSemesterSheet(registrationObj);
-  onFormSubmit(lastRow);
-}
-
-function transferLastImport() {
-  const thisLastRow = IMPORT_SHEET.getLastRow();
-  transferThisRow(thisLastRow);
-}
-
-
-/** 
- * Transfer new attendance submission from `Import` to semester sheet.
- * 
- * @param {string} attendance   Attendance information as JSON string.
- * 
- * @param {integer} [row=getLastSubmission()]  Target row in `Attendance_Sheet`.
- * 
- * @return {integer}  Latest row in `Attendance_Sheet`.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Feb 8, 2025
- * @update  Feb 8, 2025
- * 
- */
-
-function copyToSemesterSheet(attendance, row=ATTENDANCE_SHEET.getLastRow()) {
-  const attendanceSheet = ATTENDANCE_SHEET;
-  const importMap = IMPORT_MAP;
-
-  const attendanceObj = JSON.parse(attendance);
-
-  const startRow = row + 1;
-  const colSize = attendanceSheet.getLastColumn();
-
-  const valuesByIndex = Array(colSize);   // Array.length = colSize
-
-  // Format 
-
-  for (const [key, value] of Object.entries(attendanceObj)) {
-    if (key in importMap) {
-      let indexInMain = importMap[key] - 1;   // Set 1-index to 0-index for `setValues()`
-      let holder = String(value).replace(/,+\s*$/, '');   // Remove trailing commas and spaces
-      valuesByIndex[indexInMain] = holder.replace(/;/g, '\n');    // Replace semi-colon with newline
-    }
-  }
-
-  // Set values of registration
-  const rangeToImport = attendanceSheet.getRange(startRow, 1, 1, colSize);
-  rangeToImport.setValues([valuesByIndex]);
-
-  return startRow;
-}
-
-
 /**
  * Find row index of last submission in reverse using while-loop.
  * 
@@ -146,6 +45,127 @@ function getLastSubmission_() {
 }
 
 
+// USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
+// TRIGGERED BY ZAPIER AUTOMATION.
+function onChange(e) {
+  try {
+    //console.log(e);   // Log event details
+    const thisSource = e.source;
+    const thisSheetID = thisSource.getSheetId()
+
+    // Exit early if the event is not related to the import sheet
+    if (thisSheetID != IMPORT_SHEET_ID) {
+      console.log(`Early exit. thisSheetID: ${thisSheetID} !== IMPORT_SHEET_ID ${IMPORT_SHEET_ID}`);
+      return;
+    }
+
+    const importSheet = thisSource.getSheetById(thisSheetID);
+    if (!importSheet) throw new Error(`Import sheet ID ${thisSheetID} not found.`);
+    
+    const thisLastRow = thisSource.getLastRow();
+    const thisColSize = thisSource.getLastColumn();
+    const latestImport = importSheet.getRange(thisLastRow, 1, 1, thisColSize).getValues()[0];   // Get last row
+
+    let registrationObj;
+
+    // Case 1: JSON-formatted import (single-column)
+    if (latestImport[1] === "") {
+      console.log("Entered case 1 in `onChange()`!");
+      registrationObj = latestImport[0];
+    }
+
+    // Case 2: Multi-column import (e.g., from Zapier)
+    else {
+      console.log("Entered case 2 in `onChange()`!");
+      const keys = importSheet.getRange(1, 1, 1, thisColSize).getValues()[0];  // Get header row
+      registrationObj = packageAttendance(keys, latestImport);
+    }
+
+    const lastRow = copyToSemesterSheet(registrationObj);
+    
+    // TRIGGER FUNCTION
+    if((registrationObj['platform']).toLowerCase === 'mcrun app'){
+      console.log("Entering `onAppSubmission()` now...");
+      onAppSubmission(lastRow);
+    }
+
+  }
+  catch (error) {
+    throw new Error("Error in onChange:", error);
+  }
+}
+
+function transferThisRow(row) {
+  const registrationObj = IMPORT_SHEET.getRange(row, 1).getValue();
+  const lastRow = copyToSemesterSheet(registrationObj);
+  onFormSubmit(lastRow);
+}
+
+function transferLastImport() {
+  const thisLastRow = IMPORT_SHEET.getLastRow();
+  transferThisRow(thisLastRow);
+}
+
+
+/** 
+ * Transfer new attendance submission from `Import` to semester sheet.
+ * 
+ * @param {string} attendance   Attendance information as JSON string.
+ * 
+ * @param {integer} [row=getLastSubmission()]  Target row in `Attendance_Sheet`.
+ * 
+ * @return {integer}  Latest row in `Attendance_Sheet`.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Feb 8, 2025
+ * @update  Feb 9, 2025
+ * 
+ */
+
+function copyToSemesterSheet(attendance, row=ATTENDANCE_SHEET.getLastRow()) {
+  const attendanceSheet = ATTENDANCE_SHEET;
+  const importMap = IMPORT_MAP;
+
+  const attendanceObj = JSON.parse(attendance);
+
+  const startRow = row + 1;
+  const colSize = attendanceSheet.getLastColumn();
+
+  const valuesByIndex = Array(colSize);   // Array.length = colSize
+
+  // Format timestamp correctly and replace
+  const timestampValue = attendanceObj['timestamp'];
+  attendanceObj['timestamp'] = formatTimestamp(timestampValue);
+
+  for (const [key, value] of Object.entries(attendanceObj)) {
+    if (key in importMap) {
+      let indexInMain = importMap[key] - 1;   // Set 1-index to 0-index for `setValues()`
+      let holder = String(value).replace(/,+\s*$/, '');   // Remove trailing commas and spaces
+      valuesByIndex[indexInMain] = holder.replace(/;/g, '\n');    // Replace semi-colon with newline
+    }
+  }
+
+  // Set values of registration
+  const rangeToImport = attendanceSheet.getRange(startRow, 1, 1, colSize);
+  rangeToImport.setValues([valuesByIndex]);
+
+  return startRow;
+}
+
+/** 
+ * Create JSON-formatted string of key-value pairs for attendance submission.
+ * 
+ * @param {string[]} keyArr  Array of keys storing header row values.
+ * 
+ * @param {string[]} valArr  Values of attendance submission to map.
+ * 
+ * @return {string}  A JSON string of attendance submission as key-value pairs.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Feb 9, 2025
+ * @update  Feb 9, 2025
+ * 
+ */
 
 function packageAttendance(keyArr, valArr) {
   if (keyArr.length !== valArr.length) {
@@ -159,6 +179,30 @@ function packageAttendance(keyArr, valArr) {
   // Create JSON string
   const obj = Object.fromEntries(keyArr.map((key, i) => [key, valArr[i]]));
   return JSON.stringify(obj);
+}
+
+
+/** 
+ * Format timestamp to format as `yyyy-MM-dd hh:mm:ss`.
+ * 
+ * Raw format cannot be understood by GSheet.
+ * 
+ * @param {string} raw  Datetime value to be formatted.
+ * 
+ * @return {Date}  A Date object with correct format.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Feb 9, 2025
+ * @update  Feb 9, 2025
+ * 
+ */
+
+function formatTimestamp(raw) {
+  return Utilities.formatDate(
+    new Date(raw), 
+    TIMEZONE, 
+    'yyyy-MM-dd hh:mm:ss'
+  );
 }
 
 

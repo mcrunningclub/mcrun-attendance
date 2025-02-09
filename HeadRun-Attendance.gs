@@ -19,12 +19,12 @@ function onFormSubmission() {
  *
  * @trigger McRUN App Attendance Submission.
  */
-function onAppSubmission() {
-  removePresenceChecks();
-  formatNamesInRow_();     // formats names in last row
-  getUnregisteredMembers_();
+function onAppSubmission(row=ATTENDANCE_SHEET.getLastRow()) {
+  //removePresenceChecks();
+  formatConfirmationInRow_(row);
 
   //emailSubmission();    // IN-REVIEW
+  hideAttendeeEmailInRow_(row);
   formatSpecificColumns();
 }
 
@@ -58,7 +58,7 @@ function onEditCheck() {
 
   const latestPlatform = sheet.getRange(sheet.getLastRow(), PLATFORM_COL).getValue();
 
-  if (latestPlatform == "McRUN App") {
+  if (latestPlatform.toLowerCase() === "mcrun app") {
     Logger.log(`Latest Platform: ${latestPlatform}`);
     onAppSubmission();
   }
