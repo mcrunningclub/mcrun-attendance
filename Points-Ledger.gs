@@ -12,7 +12,6 @@
  */
 
 function appendMemberEmail(row, memberMap) {
-  return;
   const sheet = ATTENDANCE_SHEET;
   const numRowToGet = 1;
   const numColToGet = LEVEL_COUNT;
@@ -35,17 +34,14 @@ function appendMemberEmail(row, memberMap) {
       continue;
     }
 
-    const memberSearchKey = memberMap[index][SEARCH_KEY_INDEX];
+    const memberSearchKey = memberMap[SEARCH_KEY_INDEX];
 
 
     // Compare last names and check if first name matches any in the list
-    if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {return;}
+    //if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {return;}
 
 
     // Format each attendee with their email if available
-
-
-
     const formattedAttendee = attendeesInLevel.map(name => {
 
       const [memberLastName, memberFirstNames] = memberSearchKey.split(",").map(s => s.trim());
@@ -78,7 +74,7 @@ function hideAllAttendeeEmail() {
 }
 
 
-function hideAttendeeEmailInRow(row=ATTENDANCE_SHEET.getLastRow()) {
+function hideAttendeeEmailInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
   const allAttendeesCol = [
     ATTENDEES_BEGINNER_COL,
     ATTENDEES_INTERMEDIATE_COL,
@@ -96,7 +92,7 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
   const attendeeRange = sheet.getRange(row, column);
   const cellValue = attendeeRange.getValue();
 
-  if(!cellValue || cellValue.toLowerCase() === EMPTY_ATTENDEE_FLAG) return;   // No attendees for this level
+  if(!cellValue || cellValue === EMPTY_ATTENDEE_FLAG) return;   // No attendees for this level
 
   // Get the cell's background color
   const banding = attendeeRange.getBandings()[0];   // Only 1 banding

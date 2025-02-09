@@ -225,7 +225,7 @@ function formatNamesInRowUI_() {
 
   const rowNumber = Number.parseInt(responseText);
 
-  if (responseText == "") {
+  if (responseText === "") {
     // User did not enter a row number; check last row only.
     customMsg = "This will only format the names in the last row."
   }
@@ -304,7 +304,7 @@ function findUnregisteredAttendeesUI_() {
   const responseText = response.getResponseText().trim();
   const rowNumber = Number.parseInt(responseText);
 
-  var functionName = getUnregisteredMembers_.name;    // Function searches last row if no arg provided
+  var functionName = getUnregisteredMembersInRow_.name;    // Function searches last row if no arg provided
   var customMsg = "";
 
   if (responseText == "") {

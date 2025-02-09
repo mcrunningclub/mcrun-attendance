@@ -7,7 +7,7 @@
 function onFormSubmission() {
   addMissingFormInfo();
   formatNamesInRow_();     // formats names in last row
-  getUnregisteredMembers_();
+  getUnregisteredMembersInRow_();
 
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
@@ -26,6 +26,7 @@ function onAppSubmission(row=ATTENDANCE_SHEET.getLastRow()) {
   //emailSubmission();    // IN-REVIEW
   hideAttendeeEmailInRow_(row);
   formatSpecificColumns();
+  hideAttendeeEmailInRow_(row-1); // Rehide emails because second-last col is not footer anymore
 }
 
 
@@ -334,7 +335,7 @@ function verifyAttendance_() {
  */
 
 function getAllUnregisteredMembers() {
-  runOnSheet_(getUnregisteredMembers_.name);
+  runOnSheet_(getUnregisteredMembersInRow_.name);
 }
 
 /**
@@ -352,7 +353,7 @@ function getAllUnregisteredMembers() {
  * @update  Dec 14, 2024
  */
 
-function getUnregisteredMembers_(row = ATTENDANCE_SHEET.getLastRow()) {
+function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
 
@@ -482,3 +483,9 @@ function findUnregistered_(attendees, memberMap) {
 
   return returnObject;
 }
+
+
+
+/**
+ * 
+ */

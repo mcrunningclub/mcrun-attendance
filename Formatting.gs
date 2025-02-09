@@ -120,7 +120,7 @@ function formatSpecificColumns() {
   const rangeListToWrap = sheet.getRangeList(['B2:E', 'I2:K']);
   rangeListToWrap.setWrap(true);  // Turn on wrap
 
-  const rangeAttendees = sheet.getRange('F2:H');
+  const rangeAttendees = sheet.getRangeList(['C2:C', 'F2:H']);
   rangeAttendees.setFontSize(9);  // Reduce font size for `Attendees` column
   rangeAttendees.setWrap(false);  // Turn off wrap
 
@@ -129,7 +129,9 @@ function formatSpecificColumns() {
 
   const rangeListToCenter = sheet.getRangeList(['L2:M']);
   rangeListToCenter.setHorizontalAlignment('center');
-  rangeListToCenter.setVerticalAlignment('middle');   // Center and align to middle
+  
+  const rangeListToMiddle = sheet.getRangeList(['F2:H', 'L2:M']);
+  rangeListToMiddle.setVerticalAlignment('middle');   // Center and align to middle
 
   const range = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn());
 
@@ -254,6 +256,7 @@ function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   formatHeadRunnerInRow_(row);
 }
 
+
 /**
  * Wrapper function for `formatAttendeeNamesInRow` for *ALL* submissions.
  *
@@ -293,14 +296,14 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   for (var i = 0; i < namesArr.length; i++) {
     var trimmedArr = namesArr[i].trim();
 
-    // Case 1: Cell is non-empty
-    if (trimmedArr.length != 0) {
+    // Case 1: Cell is non-empty and does not contains "None"
+    if (trimmedArr.length != 0 && trimmedArr !== EMPTY_ATTENDEE_FLAG) {
 
       // Replace "n/a" (case insensitive) with EMPTY_ATTENDEE_FLAG value : "None"
       var cellValue = trimmedArr.replace(/n\/a/gi, EMPTY_ATTENDEE_FLAG);
 
       // Exit if cell contains email and ':' delimiter, meaning already formatted.
-      if (cellValue.includes('@') && cellValue.includes(':')) return;
+      if (cellValue.includes('@') && cellValue.includes(':')) continue;
 
       // Split by commas or newline characters
       var names = cellValue.split(/[,|\n]+/);
