@@ -30,8 +30,8 @@ function appendMemberEmail(row, memberMap) {
     ;
 
     // Skip levels with no attendees
-    if(attendeesInLevel.includes("None")) {
-      updatedAttendees.push("None");
+    if(attendeesInLevel.includes(EMPTY_ATTENDEE_FLAG)) {
+      updatedAttendees.push(EMPTY_ATTENDEE_FLAG);
       continue;
     }
 
@@ -96,7 +96,7 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
   const attendeeRange = sheet.getRange(row, column);
   const cellValue = attendeeRange.getValue();
 
-  if(!cellValue || cellValue.toLowerCase() === "none") return;   // No attendees for this level
+  if(!cellValue || cellValue.toLowerCase() === EMPTY_ATTENDEE_FLAG) return;   // No attendees for this level
 
   // Get the cell's background color
   const banding = attendeeRange.getBandings()[0];   // Only 1 banding
@@ -201,7 +201,7 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
     ATTENDEES_BEGINNER_COL,
     ATTENDEES_INTERMEDIATE_COL,
     ATTENDEES_ADVANCED_COL
-  ].filter(level => !values[level].includes("None")) // Skip levels with "None"
+  ].filter(level => !values[level].includes(EMPTY_ATTENDEE_FLAG)) // Skip levels with "None"
 
   for(var level of allAttendeesCol) {
 

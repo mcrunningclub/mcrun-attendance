@@ -145,6 +145,26 @@ function copyToSemesterSheet(attendance, row=ATTENDANCE_SHEET.getLastRow()) {
     }
   }
 
+  // Process attendees for all run levels
+  const attendeeMap = {
+    'beginner': ATTENDEES_BEGINNER_COL,
+    'easy': ATTENDEES_BEGINNER_COL,
+    'intermediate': ATTENDEES_INTERMEDIATE_COL,
+    'advanced':  ATTENDEES_ADVANCED_COL,
+  };
+
+  // Get formatted runLevel and attendees value by index
+  const runLevelIndex = importMap['runLevel'];
+  const runLevel = valuesByIndex[runLevelIndex];
+
+  const attendeeIndex = importMap['attendees'];
+  const attendees = valuesByIndex[attendeeIndex];
+
+  for (const [level, levelIndex] of Object.entries(attendeeMap)) {
+    const arrIndex = levelIndex - 1;   // Transform 1-index to 0-index for array
+    valuesByIndex[arrIndex] = (runLevel === level) ? attendees : EMPTY_ATTENDEE_FLAG;
+  }
+
   // Set values of registration
   const rangeToImport = attendanceSheet.getRange(startRow, 1, 1, colSize);
   rangeToImport.setValues([valuesByIndex]);

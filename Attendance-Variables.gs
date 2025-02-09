@@ -20,6 +20,7 @@ const NAMES_NOT_FOUND_COL = 14;
 
 const TIMEZONE = getUserTimeZone_();
 const LEVEL_COUNT = 3;  // Beginner/Easy, Intermediate, Hard
+const EMPTY_ATTENDEE_FLAG = 'None';
 
 const MEMBER_EMAIL_COL = 1;   // Found in 'Members' sheet
 const MEMBER_SEARCH_KEY_COL = 6;  // Found in 'Members' sheet

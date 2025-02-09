@@ -296,8 +296,8 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
     // Case 1: Cell is non-empty
     if (trimmedArr.length != 0) {
 
-      // Replace "n/a" (case insensitive) with "None"
-      var cellValue = trimmedArr.replace(/n\/a/gi, "None");
+      // Replace "n/a" (case insensitive) with EMPTY_ATTENDEE_FLAG value : "None"
+      var cellValue = trimmedArr.replace(/n\/a/gi, EMPTY_ATTENDEE_FLAG);
 
       // Exit if cell contains email and ':' delimiter, meaning already formatted.
       if (cellValue.includes('@') && cellValue.includes(':')) return;
@@ -323,7 +323,7 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
     // Case 2: Cell is empty
     else {
-      namesArr[i] = "None";
+      namesArr[i] = EMPTY_ATTENDEE_FLAG;
     }
 
   }

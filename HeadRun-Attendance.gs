@@ -177,7 +177,7 @@ function emailSubmission() {
   if (attendeesStr.length > 1) {
     headrun.attendees = attendeesStr.replaceAll('\n', ', ');
   }
-  else headrun.attendees = 'None';  // otherwise replace empty string by 'none'
+  else headrun.attendees = EMPTY_ATTENDEE_FLAG;  // otherwise replace empty string by 'none'
 
   headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)');
   rangeConfirmation.setValue(headrun.confirmation);
@@ -363,7 +363,7 @@ function getUnregisteredMembers_(row = ATTENDANCE_SHEET.getLastRow()) {
   // 1D Array of size `LEVEL_COUNT` (Beginner, Intermediate, Advanced -> 3)
   // If email appended to name, remove before creating list of all attendees
   const allNames = attendeeRange.getValues()[0]
-    .filter(level => !level.includes("None")) // Skip levels with "None"
+    .filter(level => !level.includes(EMPTY_ATTENDEE_FLAG)) // Skip levels with "None"
     .flatMap(level =>
       level.split('\n')                       // Split names in each level into separate entry in array
         .map(entry => entry.includes(':')
