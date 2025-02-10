@@ -32,9 +32,9 @@ function onAppSubmission(row=ATTENDANCE_SHEET.getLastRow()) {
 
   //emailSubmission();    // IN-REVIEW
   formatSpecificColumns();
-
+  
+  formatHeadRunnerInRow_(row);
   hideAttendeeEmailInRow_(row);
-  hideAttendeeEmailInRow_(row-1); // Rehide emails because second-last col is not footer anymore
   sortAttendanceForm();
 }
 

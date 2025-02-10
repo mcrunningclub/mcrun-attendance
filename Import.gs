@@ -52,60 +52,86 @@ function onChange(e) {
     //console.log(e);   // Log event details
     const thisSource = e.source;
     const thisChange = e.changeType;
-    const thisSheetID = thisSource.getSheetId()
+    const thisSheetID = thisSource.getSheetId();
 
     // Exit early if the event is not related to the import sheet
-    if (thisChange !== 'INSERT_ROW' || thisSheetID != IMPORT_SHEET_ID) {
-      console.log(
-        'Early exit.', 
-        `Type of change: ${thisChange}`, 
-        `thisSheetID: ${thisSheetID} !== IMPORT_SHEET_ID ${IMPORT_SHEET_ID}`
+    if (thisChange !== ['INSERT_ROW'] || thisSheetID != IMPORT_SHEET_ID) {
+      console.log(`
+        Early exit. Either e.changeType or source.sheetId() not as expected.
+        Type of change: ${thisChange}. Expected 'INSERT_ROW'
+        thisSheetID: ${thisSheetID}. Expected ${IMPORT_SHEET_ID}`
       );
-      
+      return;
+    }
+    
+    // Verify if this source valid
+    if (!thisSource) {
+      console.log(`thisSource is not defined. Value: ${thisSource}`);
       return;
     }
 
-    const importSheet = thisSource.getSheetById(thisSheetID);
-    if (!importSheet) throw new Error(`Import sheet ID ${thisSheetID} not found.`);
-    
-    const thisLastRow = thisSource.getLastRow();
-    const thisColSize = thisSource.getLastColumn();
-    const latestImport = importSheet.getRange(thisLastRow, 1, 1, thisColSize).getValues()[0];   // Get last row
-
-    let submissionStr;
-
-    // Case 1: JSON-formatted import (single-column)
-    if (latestImport[1] === "") {
-      console.log("Entered case 1 in `onChange()`!");
-      submissionStr = latestImport[0];
-    }
-
-    // Case 2: Multi-column import (e.g., from Zapier)
-    else {
-      console.log("Entered case 2 in `onChange()`!");
-      const keys = importSheet.getRange(1, 1, 1, thisColSize).getValues()[0];  // Get header row
-      submissionStr = packageAttendance(keys, latestImport);
-    }
-
-    const attendanceObj = JSON.parse(submissionStr)
-    const lastRow = copyToSemesterSheet(attendanceObj);
-    
-    // TRIGGER FUNCTION
-    if((attendanceObj['platform']).toLowerCase() === 'mcrun app'){
-      console.log("Entering `onAppSubmission()` now...");
-      onAppSubmission(lastRow);
-    }
+    // Success! Process new valid row...
+    processOnChange(thisSource);
 
   }
   catch (error) {
+    console.error(e);
     throw new Error(`(onChange): ${error}`);
   }
 }
 
+
+/** 
+ * Process latest imported attendance submission via McRUN app.
+ * 
+ * Verifies if import is JSON-formatted string or GSheet multi-column import.
+ * 
+ * @param {SpreadsheetApp.Sheet} sourceSheet  Sheet with latest submission.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Feb 10, 2025
+ * @update  Feb 10, 2025
+ * 
+ */
+
+function processOnChange(sourceSheet) {
+  const thisLastRow = sourceSheet.getLastRow();
+  const thisColSize = sourceSheet.getLastColumn();
+  const latestImport = sourceSheet.getRange(thisLastRow, 1, 1, thisColSize).getValues()[0];   // Get last row
+
+  let submissionStr;
+
+  // Case 1: JSON-formatted import (single-column)
+  if (latestImport[1] === "") {
+    console.log("Entered case 1 in onChange()!", `thisLastRow: ${thisLastRow}`);
+    submissionStr = (latestImport[0] !== "") 
+      ? latestImport[0] 
+      : sourceSheet.getRange(thisLastRow - 1, 1, 1, thisColSize).getValues()[0];    // Try with second-last row
+  }
+
+  // Case 2: Multi-column import (e.g., from Zapier)
+  else {
+    console.log("Entered case 2 in `onChange()`!");
+    const keys = sourceSheet.getRange(1, 1, 1, thisColSize).getValues()[0];  // Get header row
+    submissionStr = packageAttendance(keys, latestImport);
+  }
+
+  const attendanceObj = JSON.parse(submissionStr)
+  const lastSemesterRow = copyToSemesterSheet(attendanceObj);
+  
+  // TRIGGER MAINTENANCE FUNCTIONS
+  if((attendanceObj['platform']).toLowerCase() === 'mcrun app'){
+    console.log("Entering onAppSubmission() now...");
+    onAppSubmission(lastSemesterRow);
+  }
+
+}
+
+
 function transferThisRow(row) {
   const registrationObj = IMPORT_SHEET.getRange(row, 1).getValue();
-  const lastRow = copyToSemesterSheet(registrationObj);
-  onFormSubmit(lastRow);
+  const latestSemesterRow = copyToSemesterSheet(registrationObj);
+  onFormSubmit(latestSemesterRow);
 }
 
 function transferLastImport() {
