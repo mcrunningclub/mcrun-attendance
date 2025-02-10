@@ -35,9 +35,8 @@ function getHeadRunString(headRunDay) {
     case 'SaturdayAM' : return 'Saturday - 10am';
     case 'SundayPM'   : return 'Sunday - 6pm';
 
-  default : return '';
+    default : throw new Error(`No headrunner has been found for ${headRunDay}`);
   }
-
 }
 
 /**

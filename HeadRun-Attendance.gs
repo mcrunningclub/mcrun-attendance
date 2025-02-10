@@ -39,6 +39,35 @@ function onAppSubmission(row=ATTENDANCE_SHEET.getLastRow()) {
 }
 
 /**
+ * Find row index of last submission in reverse using while-loop.
+ * 
+ * Used to prevent native `sheet.getLastRow()` from returning empty row.
+ * 
+ * @return {integer}  Returns 1-index of last row in GSheet.
+ *  
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Feb 8, 2025
+ * @update  Feb 8, 2025
+ */
+
+function getLastSubmission_() {
+  const sheet = ATTENDANCE_SHEET;
+  const startRow = 1;
+  const numRow = sheet.getLastRow();
+  
+  // Fetch all values in the TIMESTAMP_COL
+  const values = sheet.getRange(startRow, COLUMN_MAP.TIMESTAMP, numRow).getValues();
+  let lastRow = values.length;
+
+  // Loop through the values in reverse order
+  while (values[lastRow - 1][0] === "") {
+    lastRow--;
+  }
+
+  return lastRow;
+}
+
+/**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
  *
  * Attendees are separated by level.
@@ -179,9 +208,9 @@ function verifyAttendance_() {
   const sheet = ATTENDANCE_SHEET;
 
   // Gets values of all timelogs
-  var numRows = sheet.getLastRow() - 1;
-  var submissionDates = sheet.getRange(2, TIMESTAMP_COL, numRows).getValues();
-  var submissionHeadRuns = sheet.getRange(2, HEADRUN_COL, numRows).getValues();
+  const numRows = sheet.getLastRow() - 1;
+  const submissionDates = sheet.getRange(2, TIMESTAMP_COL, numRows).getValues();
+  const submissionHeadRuns = sheet.getRange(2, HEADRUN_COL, numRows).getValues();
 
   // Get date at trigger time and compare with timestamp of existing submissions
   const today = new Date();
@@ -191,30 +220,26 @@ function verifyAttendance_() {
   const headRunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
   const headRunDetail = getHeadRunString(headRunDay); // e.g 'Monday - 9am'
 
-  // Error handling
-  if (headRunDetail.length <= 0) {
-    // Create an instance of Error with a custom message
-    var errorMessage = "No headrunner has been found for " + headRunDay;
-    throw new Error(errorMessage); // Throw the ExecutionError
-  }
-
   // Start checking from end of head run attendance submissions
   // Exit loop when submission found or until list exhausted
-  var isSubmitted = false;
-
-  for (var i = numRows - 1; i >= 0 && !isSubmitted; i--) {
-    var submissionDate = Utilities.formatDate(new Date(submissionDates[i]), TIMEZONE, 'yyyy-MM-dd a');
+  for (let isSubmitted = false, i = numRows-1; i >= 0 && !isSubmitted; i--) {
+    const submissionDate = Utilities.formatDate(new Date(submissionDates[i]), TIMEZONE, 'yyyy-MM-dd a');
 
     // Get detailed head run to compare with today's headRunString
     if (submissionDate === formattedToday) {
-      var submissionHeadRun = submissionHeadRuns[i].join();
+      const submissionHeadRun = submissionHeadRuns[i].join();
       isSubmitted = (submissionHeadRun === headRunDetail);
     }
   }
 
   // Verify if form has been submitted. Otherwise send an email reminder.
-  if (isSubmitted) return;
+  if (!isSubmitted) {
+    sendEmailReminder(headRunDetail, headRunDay)
+  }
+}
 
+
+function sendEmailReminder(headRunDetail, headRunDay) {
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
 

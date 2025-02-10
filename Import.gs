@@ -15,43 +15,20 @@ const IMPORT_MAP = {
   'attendees' : ATTENDEES_BEGINNER_COL,
 }
 
-/**
- * Find row index of last submission in reverse using while-loop.
- * 
- * Used to prevent native `sheet.getLastRow()` from returning empty row.
- * 
- * @return {integer}  Returns 1-index of last row in GSheet.
- *  
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Feb 8, 2025
- * @update  Feb 8, 2025
- */
-
-function getLastSubmission_() {
-  const sheet = ATTENDANCE_SHEET;
-  const startRow = 1;
-  const numRow = sheet.getLastRow();
-  
-  // Fetch all values in the TIMESTAMP_COL
-  const values = sheet.getRange(startRow, COLUMN_MAP.TIMESTAMP, numRow).getValues();
-  let lastRow = values.length;
-
-  // Loop through the values in reverse order
-  while (values[lastRow - 1][0] === "") {
-    lastRow--;
-  }
-
-  return lastRow;
-}
-
-
 // USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
-// TRIGGERED BY ZAPIER AUTOMATION.
+// TRIGGERED BY ZAPIER AUTOMATION OR BY MASTER ATTENDANCE SHEET
 function onChange(e) {
   try {
     //console.log(e);   // Log event details
     const thisSource = e.source;
     const thisChange = e.changeType;
+
+    // Verify if thisSource valid
+    if (!thisSource) {
+      console.log(`thisSource is not defined. Value: ${thisSource}`);
+      return;
+    }
+    
     const thisSheetID = thisSource.getSheetId();
 
     // Exit early if the event is not related to the import sheet
@@ -63,12 +40,6 @@ function onChange(e) {
       );
       return;
     }
-    
-    // Verify if this source valid
-    if (!thisSource) {
-      console.log(`thisSource is not defined. Value: ${thisSource}`);
-      return;
-    }
 
     // Success! Process new valid row...
     processOnChange(thisSource);
@@ -76,7 +47,9 @@ function onChange(e) {
   }
   catch (error) {
     console.error(e);
-    throw new Error(`(onChange): ${error}`);
+    if (!(error.message).includes('Please select an active sheet first.')) {
+      throw new Error(error);
+    }
   }
 }
 
