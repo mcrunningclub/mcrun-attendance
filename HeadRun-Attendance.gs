@@ -134,8 +134,8 @@ function emailSubmission() {
 
   var message = {
     to: headrun.toEmail,
-    bcc: emailPresident,
-    cc: "mcrunningclub@ssmu.ca" + ", " + emailVPinternal,
+    bcc: PRESIDENT_EMAIL,
+    cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
     subject: "McRUN Attendance Form (" + formattedDate + ")",
     htmlBody: emailBodyHTML,
     noReply: true,
@@ -218,7 +218,7 @@ function verifyAttendance_() {
 
   // Formats trigger datetime to get head runner emails
   const headRunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
-  const headRunDetail = getHeadRunString(headRunDay); // e.g 'Monday - 9am'
+  const headRunTitle = getHeadRunString(headRunDay); // e.g 'Monday - 9am'
 
   // Start checking from end of head run attendance submissions
   // Exit loop when submission found or until list exhausted
@@ -228,18 +228,18 @@ function verifyAttendance_() {
     // Get detailed head run to compare with today's headRunString
     if (submissionDate === formattedToday) {
       const submissionHeadRun = submissionHeadRuns[i].join();
-      isSubmitted = (submissionHeadRun === headRunDetail);
+      isSubmitted = (submissionHeadRun === headRunTitle);
     }
   }
 
   // Verify if form has been submitted. Otherwise send an email reminder.
   if (!isSubmitted) {
-    sendEmailReminder(headRunDetail, headRunDay)
+    sendEmailReminder(headRunTitle, headRunDay)
   }
 }
 
 
-function sendEmailReminder(headRunDetail, headRunDay) {
+function sendEmailReminder(headRunTitle, headRunDay) {
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
 
@@ -255,9 +255,9 @@ function sendEmailReminder(headRunDetail, headRunDay) {
 
   var reminderEmail = {
     to: headRunnerEmail,
-    bcc: emailPresident,
-    cc: "mcrunningclub@ssmu.ca" + ", " + emailVPinternal,
-    subject: "McRUN Missing Attendance Form - " + headRunDetail,
+    bcc: PRESIDENT_EMAIL,
+    cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
+    subject: "McRUN Missing Attendance Form - " + headRunTitle,
     htmlBody: reminderEmailBodyHTML,
     noReply: true,
     name: "McRUN Attendance Bot"

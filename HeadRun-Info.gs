@@ -1,6 +1,6 @@
 // Emails of current execs
-const emailPresident = 'alexis.demetriou@mail.mcgill.ca';
-const emailVPinternal = 'emmanuelle.blais@mail.mcgill.ca';
+const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
+const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 
 /**
  * Return headrun day and time from headrun code input `headRunDay`.
@@ -134,77 +134,77 @@ function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1
 
 function getHeadRunnerEmail(headrun) {
   // Head Runner Emails
-  const abigailFinch = 'abigail.finch@mail.mcgill.ca';
   const aidenLee = 'jihong.lee@mail.mcgill.ca';
+const alyssaAbouChakra = 'alyssa.abouchakra@mail.mcgill.ca';
+const camilacognac = 'camila.cognac@mail.mcgill.ca';
+const charlesVillegas = 'charles.villegas@mail.mcgill.ca';
+const edmundPaquin = 'edmund.paquin@mail.mcgill.ca';
+const isabellaVignuzzi = 'isabella.vignuzzi@mail.mcgill.ca';
+const kateRichards = 'katherine.richards@mail.mcgill.ca';
+const liamGrant = 'liam.grant@mail.mcgill.ca';
+const liamMurphy = 'liam.murphy3@mail.mcgill.ca';
+const lizzyVreendeburg = 'elizabeth.vreedenburgh@mail.mcgill.ca';
+const michaelRafferty = 'michael.rafferty@mail.mcgill.ca';
+const sachiKapoor = 'sachi.kapoor@mail.mcgill.ca';
+const sophiaLongo = 'sophia.longo@mail.mcgill.ca';
+const justinCote = 'justin.cote2@mail.mcgill.ca';
+const zishengHong = 'zisheng.hong@mail.mcgill.ca';
+
+
+  const abigailFinch = 'abigail.finch@mail.mcgill.ca';
   const alexanderHebiton = 'alexander.hebiton@mail.mcgill.ca';
   const ameliaRilling = 'amelia.rilling@mail.mcgill.ca';
   const bridgetAndersen = 'bridget.andersen@mail.mcgill.ca';
   const camilaCognac = 'camila.cognac@mail.mcgill.ca';
-  const charlesVillegas = 'charles.villegas@mail.mcgill.ca';
-  const edmundPaquin = 'edmund.paquin@mail.mcgill.ca';
   const emersonDarling = 'emerson.darling@mail.mcgill.ca';
   const filipSnitil = 'filip.snitil@mail.mcgill.ca';
-  const bellaVignuzzi = 'isabella.vignuzzi@mail.mcgill.ca';
   const jamesDiPaola = 'james.dipaola@mail.mcgill.ca';
   const julietteAdeline = 'juliette.adeline@mail.mcgill.ca';
-  const justinCote = 'justin.cote2@mail.mcgill.ca';
-  const kateRichards = 'katherine.richards@mail.mcgill.ca';
   const lakshyaSethi = 'lakshya.sethi@mail.mcgill.ca';
-  const liamGrant = 'liam.grant@mail.mcgill.ca';
-  const liamMurphy = 'liam.murphy3@mail.mcgill.ca';
   const madisonHughes = 'madison.hughes@mail.mcgill.ca';
-  const michaelRafferty = 'michael.rafferty@mail.mcgill.ca';
   const nicolasMorrison = 'nicolas.morrison@mail.mcgill.ca';
   const pooyaPilehChiha = 'pooya.pilehchiha@mail.mcgill.ca';
   const prabhjeetSingh = 'prabhjeet.singh@mail.mcgill.ca';
   const rachelMattingly = 'rachel.mattingly@mail.mcgill.ca';
   const roriSa = 'rori.sa@mail.mcgill.ca';
-  const sophiaLongo = 'sophia.longo@mail.mcgill.ca';
   const tessLedieu = 'tess.ledieu@mail.mcgill.ca';
   const theoGhanem = 'theo.ghanem@mail.mcgill.ca';
 
   // Head Runners associated to each head run
   const tuesdayHeadRunner = [
-    tessLedieu,
-    julietteAdeline,
-    jamesDiPaola,
-    michaelRafferty,
+    kateRichards,
     liamMurphy,
-    bridgetAndersen
+    zishengHong,
   ];
 
   const wednesdayHeadRunner = [
-    kateRichards,
-    nicolasMorrison,
+    lizzyVreendeburg,
+    edmundPaquin,
     sophiaLongo,
-    camilaCognac,
-    alexanderHebiton
+    michaelRafferty,
   ];
 
   const thursdayHeadRunner = [
-    charlesVillegas,
-    ameliaRilling,
-    emersonDarling,
-    justinCote,
-    liamGrant
+    alyssaAbouChakra,
+    sachiKapoor,
+    liamGrant,
   ];
 
   const saturdayHeadRunner = [
-    abigailFinch,
-    rachelMattingly,
-    filipSnitil,
+    michaelRafferty,
+    liamMurphy,
+    isabellaVignuzzi,
     theoGhanem,
-    bellaVignuzzi,
-    lakshyaSethi
+    liamGrant,
     ];
 
   const sundayHeadRunner = [
-    prabhjeetSingh,
+    charlesVillegas,
+    kateRichards,
     edmundPaquin,
-    roriSa,
-    madisonHughes,
-    pooyaPilehChiha,
-    aidenLee
+    sophiaLongo,
+    camilaCognac,
+    aidenLee,
   ];
 
   // Easier to decode from input `headrun`
@@ -238,7 +238,7 @@ function formatAllHeadRun() {
  *                      The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
  *                      Defaults to the last row in the sheet.
  *
- * @param {integer} numRow  Number of rows to format from `startRow`
+ * @param {integer} [numRow=1] Number of rows to format from `startRow`
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 10, 2024
