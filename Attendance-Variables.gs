@@ -45,7 +45,8 @@ const SCRIPT_PROPERTY = {
 const COPY_EMAIL_HTML_FILE = 'Confirmation-Email';
 const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';
 
-const ATTENDANCE_GFORM_LINK = "https://docs.google.com/forms/d/1QVBKZ8aRaQ__w78HJzMrkq2ps_B_om7bW5D6vQL0-as/edit";
+const ATTENDANCE_GFORM_LINK = ATTENDANCE_SHEET.getFormUrl();
+//const ATTENDANCE_GFORM_LINK = "https://docs.google.com/forms/d/1QVBKZ8aRaQ__w78HJzMrkq2ps_B_om7bW5D6vQL0-as/viewform";
 //const ATTENDANCE_FORM_TITLE = FormApp.openByUrl(ATTENDANCE_GFORM_LINK).getTitle();  // Gets name of GForm
 
 

@@ -56,7 +56,7 @@ function getLastSubmission_() {
   const numRow = sheet.getLastRow();
   
   // Fetch all values in the TIMESTAMP_COL
-  const values = sheet.getRange(startRow, COLUMN_MAP.TIMESTAMP, numRow).getValues();
+  const values = sheet.getSheetValues(startRow, COLUMN_MAP.TIMESTAMP, numRow);
   let lastRow = values.length;
 
   // Loop through the values in reverse order
@@ -84,15 +84,14 @@ function emailSubmission() {
   if (getCurrentUserEmail() != 'mcrunningclub@ssmu.ca') return;
 
   const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-  const latestSubmission = sheet.getRange(lastRow, 1, 1, sheet.getLastColumn());
+  const lastRow = getLastSubmission_();
 
   // Save values in 0-indexed array, then transform into 1-indexed by appending empty
   // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
-  const values = latestSubmission.getValues()[0];
-  values.unshift('');   // append '' to front for 1-indexed access
+  const submission = sheet.getSheetValues(lastRow, 1, 1, sheet.getLastColumn())[0];
+  submission.unshift('');   // append '' to front for 1-indexed access
 
-  var timestamp = new Date(values[TIMESTAMP_COL]);
+  var timestamp = new Date(submission[TIMESTAMP_COL]);
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
 
   // Replace newline with comma-space
@@ -100,16 +99,16 @@ function emailSubmission() {
     ATTENDEES_BEGINNER_COL,
     ATTENDEES_INTERMEDIATE_COL,
     ATTENDEES_ADVANCED_COL
-  ].map(level => values[level].replaceAll('\n', ', '));
+  ].map(level => submission[level].replaceAll('\n', ', '));
 
   // Read only (cannot edit values in sheet)
   const headrun = {
-    name: values[HEADRUN_COL],
-    distance: values[DISTANCE_COL],
+    name: submission[HEADRUN_COL],
+    distance: submission[DISTANCE_COL],
     attendees: allAttendees,
-    toEmail: values[EMAIL_COL],
-    confirmation: values[CONFIRMATION_COL],
-    notes: values[COMMENTS_COL]
+    toEmail: submission[EMAIL_COL],
+    confirmation: submission[CONFIRMATION_COL],
+    notes: submission[COMMENTS_COL]
   };
 
   // Read and edit sheet values
@@ -304,9 +303,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const numColToGet = LEVEL_COUNT;
 
   // Get attendee names starting from beginner col to advanced col
-  const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);
-
-  const allAttendees = attendeeRange.getValues()[0];
+  const allAttendees = sheet.getSheetValues(row, ATTENDEES_BEGINNER_COL, 1, numColToGet)[0];
   const registered = [];
   const unregistered = [];
 
@@ -415,12 +412,12 @@ function getMemberMap() {
   const numCols = MEMBER_SEARCH_KEY_COL;
   const memberCount = memberSheet.getLastRow() - 1;   // Do not count header row
 
-  const memberSheetRange = memberSheet.getRange(startRow, startCol, memberCount, numCols)
+  const memberSheetValues = memberSheet.getSheetValues(startRow, startCol, memberCount, numCols);
 
   // Get array of member names to use as search key, combined with email
   // Step 1. Combine memberKey and email
   // Step 2. Filter rows with empty names or emails
-  const memberMap = memberSheetRange.getValues()
+  const memberMap = memberSheetValues
     .map(row => [row[memberKeyIndex], row[memberEmailCol]])
     .filter(row => row[0] && row[1])
   ;

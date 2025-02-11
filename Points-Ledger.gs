@@ -181,11 +181,9 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
   const numRow = 1;
 
   // Range is `EMAIL_COL` to `DISTANCE_COL`
-  rangeSubmission = sheet.getRange(row, startCol, numRow, numCol);
-
   // Save values in 0-indexed array, then transform into 1-indexed by appending empty
   // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
-  const values = rangeSubmission.getValues()[0];
+  const values = sheet.getSheetValues(row, startCol, numRow, numCol)[0];
   values.unshift("");   // append "" to front
 
   const formattedNow = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm');
@@ -248,7 +246,7 @@ function pointsEmail() {
   const uniqueRecipients = new Set(
     attendeeColumns.flatMap(level => {
       // Get all values in the current column and split by newline
-      return sheet.getRange(2, level, lastRow, 1).getValues()
+      return sheet.getSheetValues(2, level, lastRow, 1)
         .flat() // Flatten the 2D array to 1D
         .map(value => value.split('\n')) // Split by newline
         .flat(); // Flatten the nested arrays
@@ -259,7 +257,7 @@ function pointsEmail() {
   const uniqueRecipientsArray = [...uniqueRecipients].map(value => value.trim()).filter(Boolean);
 
   // Get all names and point values from points, and names and emails from emails
-  const pointsData = points.getRange(2, 1, points.getLastRow() - 1, 6).getValues();
+  const pointsData = points.getSheetValues(2, 1, points.getLastRow() - 1, 6);
 
   // Create a mapping of full names to points
   const pointsMap = {};

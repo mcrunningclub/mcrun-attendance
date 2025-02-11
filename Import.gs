@@ -70,7 +70,7 @@ function onChange(e) {
 function processOnChange(sourceSheet) {
   const thisLastRow = sourceSheet.getLastRow();
   const thisColSize = sourceSheet.getLastColumn();
-  const latestImport = sourceSheet.getRange(thisLastRow, 1, 1, thisColSize).getValues()[0];   // Get last row
+  const latestImport = sourceSheet.getSheetValues(thisLastRow, 1, 1, thisColSize)[0];   // Get last row
 
   let submissionStr;
 
@@ -79,13 +79,13 @@ function processOnChange(sourceSheet) {
     console.log("Entered case 1 in onChange()!", `thisLastRow: ${thisLastRow}`);
     submissionStr = (latestImport[0] !== "") 
       ? latestImport[0] 
-      : sourceSheet.getRange(thisLastRow - 1, 1, 1, thisColSize).getValues()[0];    // Try with second-last row
+      : sourceSheet.getSheetValues(thisLastRow - 1, 1, 1, thisColSize)[0];    // Try with second-last row
   }
 
   // Case 2: Multi-column import (e.g., from Zapier)
   else {
     console.log("Entered case 2 in `onChange()`!");
-    const keys = sourceSheet.getRange(1, 1, 1, thisColSize).getValues()[0];  // Get header row
+    const keys = sourceSheet.getSheetValues(1, 1, 1, thisColSize)[0];  // Get header row
     submissionStr = packageAttendance(keys, latestImport);
   }
 
