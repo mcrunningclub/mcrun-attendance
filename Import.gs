@@ -32,7 +32,7 @@ function onChange(e) {
     const thisSheetID = thisSource.getSheetId();
 
     // Exit early if the event is not related to the import sheet
-    if (thisChange !== ['INSERT_ROW'] || thisSheetID != IMPORT_SHEET_ID) {
+    if (thisChange !== 'INSERT_ROW' || thisSheetID != IMPORT_SHEET_ID) {
       console.log(`
         Early exit. Either e.changeType or source.sheetId() not as expected.
         Type of change: ${thisChange}. Expected 'INSERT_ROW'
@@ -89,6 +89,7 @@ function processOnChange(sourceSheet) {
     submissionStr = packageAttendance(keys, latestImport);
   }
 
+  console.log(submissionStr);
   const attendanceObj = JSON.parse(submissionStr)
   const lastSemesterRow = copyToSemesterSheet(attendanceObj);
   
@@ -218,15 +219,21 @@ function packageAttendance(keyArr, valArr) {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 9, 2025
- * @update  Feb 9, 2025
+ * @update  Feb 10, 2025
  * 
  */
 
 function formatTimestamp(raw) {
-  return Utilities.formatDate(
-    new Date(raw), 
-    TIMEZONE, 
-    'yyyy-MM-dd hh:mm:ss'
-  );
-}
+  const date = new Date(raw);
+  const options =  {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false // 24-hour format
+  };
 
+  return date.toLocaleString('en-CA', options).replace(',', '');  // remove comma between date and time
+}

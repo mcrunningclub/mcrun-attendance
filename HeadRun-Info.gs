@@ -135,40 +135,21 @@ function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1
 function getHeadRunnerEmail(headrun) {
   // Head Runner Emails
   const aidenLee = 'jihong.lee@mail.mcgill.ca';
-const alyssaAbouChakra = 'alyssa.abouchakra@mail.mcgill.ca';
-const camilacognac = 'camila.cognac@mail.mcgill.ca';
-const charlesVillegas = 'charles.villegas@mail.mcgill.ca';
-const edmundPaquin = 'edmund.paquin@mail.mcgill.ca';
-const isabellaVignuzzi = 'isabella.vignuzzi@mail.mcgill.ca';
-const kateRichards = 'katherine.richards@mail.mcgill.ca';
-const liamGrant = 'liam.grant@mail.mcgill.ca';
-const liamMurphy = 'liam.murphy3@mail.mcgill.ca';
-const lizzyVreendeburg = 'elizabeth.vreedenburgh@mail.mcgill.ca';
-const michaelRafferty = 'michael.rafferty@mail.mcgill.ca';
-const sachiKapoor = 'sachi.kapoor@mail.mcgill.ca';
-const sophiaLongo = 'sophia.longo@mail.mcgill.ca';
-const justinCote = 'justin.cote2@mail.mcgill.ca';
-const zishengHong = 'zisheng.hong@mail.mcgill.ca';
-
-
-  const abigailFinch = 'abigail.finch@mail.mcgill.ca';
-  const alexanderHebiton = 'alexander.hebiton@mail.mcgill.ca';
-  const ameliaRilling = 'amelia.rilling@mail.mcgill.ca';
-  const bridgetAndersen = 'bridget.andersen@mail.mcgill.ca';
+  const alyssaAbouChakra = 'alyssa.abouchakra@mail.mcgill.ca';
   const camilaCognac = 'camila.cognac@mail.mcgill.ca';
-  const emersonDarling = 'emerson.darling@mail.mcgill.ca';
-  const filipSnitil = 'filip.snitil@mail.mcgill.ca';
-  const jamesDiPaola = 'james.dipaola@mail.mcgill.ca';
-  const julietteAdeline = 'juliette.adeline@mail.mcgill.ca';
-  const lakshyaSethi = 'lakshya.sethi@mail.mcgill.ca';
-  const madisonHughes = 'madison.hughes@mail.mcgill.ca';
-  const nicolasMorrison = 'nicolas.morrison@mail.mcgill.ca';
-  const pooyaPilehChiha = 'pooya.pilehchiha@mail.mcgill.ca';
-  const prabhjeetSingh = 'prabhjeet.singh@mail.mcgill.ca';
-  const rachelMattingly = 'rachel.mattingly@mail.mcgill.ca';
-  const roriSa = 'rori.sa@mail.mcgill.ca';
-  const tessLedieu = 'tess.ledieu@mail.mcgill.ca';
+  const charlesVillegas = 'charles.villegas@mail.mcgill.ca';
+  const edmundPaquin = 'edmund.paquin@mail.mcgill.ca';
+  const isabellaVignuzzi = 'isabella.vignuzzi@mail.mcgill.ca';
+  const kateRichards = 'katherine.richards@mail.mcgill.ca';
+  const liamGrant = 'liam.grant@mail.mcgill.ca';
+  const liamMurphy = 'liam.murphy3@mail.mcgill.ca';
+  const lizzyVreendeburg = 'elizabeth.vreedenburgh@mail.mcgill.ca';
+  const michaelRafferty = 'michael.rafferty@mail.mcgill.ca';
+  const sachiKapoor = 'sachi.kapoor@mail.mcgill.ca';
+  const sophiaLongo = 'sophia.longo@mail.mcgill.ca';
   const theoGhanem = 'theo.ghanem@mail.mcgill.ca';
+  const zishengHong = 'zisheng.hong@mail.mcgill.ca';
+  
 
   // Head Runners associated to each head run
   const tuesdayHeadRunner = [

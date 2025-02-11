@@ -100,6 +100,7 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
     'colourFooter' : banding.getFooterRowColorObject(),
 
     getColour : function(row) {
+      return this.colourOddRow;
       if(row == lastRow)     {return this.colourFooter}
       else if(row % 2 == 0)  {return this.colourEvenRow}
       else                   {return this.colourOddRow}
