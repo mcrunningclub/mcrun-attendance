@@ -15,44 +15,12 @@ const IMPORT_MAP = {
   'attendees' : ATTENDEES_BEGINNER_COL,
 }
 
+
 // USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
 // TRIGGERED BY ZAPIER AUTOMATION OR BY MASTER ATTENDANCE SHEET
-function onChange(e) {
-  try {
-    //console.log(e);   // Log event details
-    const thisSource = e.source;
-    const thisChange = e.changeType;
 
-    // Verify if thisSource valid
-    if (!thisSource) {
-      console.log(`thisSource is not defined. Value: ${thisSource}`);
-      return;
-    }
-    
-    const thisSheetID = thisSource.getSheetId();
-
-    // Exit early if the event is not related to the import sheet
-    if (thisChange !== 'INSERT_ROW' || thisSheetID != IMPORT_SHEET_ID) {
-      console.log(`
-        Early exit. Either e.changeType or source.sheetId() not as expected.
-        Type of change: ${thisChange}. Expected 'INSERT_ROW'
-        thisSheetID: ${thisSheetID}. Expected ${IMPORT_SHEET_ID}`
-      );
-      return;
-    }
-
-    // Success! Process new valid row...
-    processOnChange(thisSource);
-
-  }
-  catch (error) {
-    console.error(e);
-    if (!(error.message).includes('Please select an active sheet first.')) {
-      throw new Error(error);
-    }
-  }
-}
-
+// UPDATE : ZAPIER AUTOMATION DOES NOT TRIGGER INSTANTLY
+// SO ONCHANGE NO LONGER NEEDED, AND TRIGGER IS WHEN CHECKING FOR ATTENDANCE
 
 /** 
  * Process latest imported attendance submission via McRUN app.
