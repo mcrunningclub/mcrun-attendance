@@ -187,7 +187,7 @@ function toggleAttendanceCheck_() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Jan 24, 2025
+ * @update  Feb 13, 2025
  */
 
 function checkMissingAttendance() {
@@ -199,8 +199,24 @@ function checkMissingAttendance() {
     Logger.log("Error: `verifyAttendance()` is not allowed to run. Set script property to true.");
     return;
   }
-
+  
   verifyAttendance_();
+}
+
+function checkForNewImport_() {
+  const importSheet = IMPORT_SHEET;
+  const numRow = importSheet.getLastRow();
+  const numCol = importSheet.getLastColumn();
+
+  
+  // Check the last 5 rows
+  const numRowToCheck = 5;
+  const startRow = numRow - numRowToCheck;
+
+  // Get range but do not sort sheet. Non-imported submissions most likely at bottom.
+  const rangeToCheck = importSheet.getRange(startRow, 1, numRowToCheck, numCol);
+
+  throw new Error ('Function is incomplete. Please review.')
 }
 
 function verifyAttendance_() {
@@ -208,8 +224,8 @@ function verifyAttendance_() {
 
   // Gets values of all timelogs
   const numRows = sheet.getLastRow() - 1;
-  const submissionDates = sheet.getRange(2, TIMESTAMP_COL, numRows).getValues();
-  const submissionHeadRuns = sheet.getRange(2, HEADRUN_COL, numRows).getValues();
+  const submissionDates = sheet.getSheetValues(2, TIMESTAMP_COL, numRows);
+  const submissionHeadRuns = sheet.getSheetValues(2, HEADRUN_COL, numRows);
 
   // Get date at trigger time and compare with timestamp of existing submissions
   const today = new Date();

@@ -153,12 +153,8 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
   let retValue = "";
 
   if (response == ui.Button.OK) {
-    if (funcArg) {
-      retValue = this[functionName](funcArg);   // executing function `functionName` with arg
-    }
-    else {
-      retValue = this[functionName]();   // executing function with name `functionName` w/o arg
-    }
+    // Execute function `functionName` (with arg if non-empty)
+    retValue = funcArg ? this[functionName](funcArg) : this[functionName]();
   }
   else {
     ui.alert('Execution cancelled...');

@@ -96,11 +96,11 @@ function removePresenceChecks() {
   rangeAttendance.getRange().uncheck(); // remove all Presence checks
 }
 
+
 function prettifySheet() {
   formatSpecificColumns();
   hideAllAttendeeEmail();
 }
-
 
 /**
  * Formats certain columns of `HR Attendance` sheet.
@@ -111,43 +111,53 @@ function prettifySheet() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Feb 9, 2025
+ * @update  Feb 13, 2025
  */
 
 function formatSpecificColumns() {
   const sheet = ATTENDANCE_SHEET;
 
-  // Freeze first column and first row
-  sheet.setFrozenColumns(1);
+  // Helper fuction to improve readability
+  const getThisRange = (ranges) => 
+    Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
+
+  // 1. Freeze panes
   sheet.setFrozenRows(1);
-
-  const rangeListToBold = sheet.getRangeList(['A1:N1', 'A2:A', 'D2:D', 'L2:M']);
-  rangeListToBold.setFontWeight('bold');  // Set ranges to bold
-
-  const rangeListToWrap = sheet.getRangeList(['B2:E', 'I2:K']);
-  rangeListToWrap.setWrap(true);  // Turn on wrap
-
-  const rangeAttendees = sheet.getRangeList(['C2:C', 'F2:H']);
-  rangeAttendees.setFontSize(9);  // Reduce font size for `Attendees` column
-  rangeAttendees.setWrap(false);  // Turn off wrap
-
-  const rangeHeadRun = sheet.getRangeList(['D2:D', 'M2:M']);
-  rangeHeadRun.setFontSize(11);   // Increase font size for `Head Run` and `Submission Platform`
-
-  const rangeListToCenter = sheet.getRangeList(['L2:M']);
-  rangeListToCenter.setHorizontalAlignment('center');
+  sheet.setFrozenColumns(1);
   
-  const rangeListToMiddle = sheet.getRangeList(['F2:H', 'L2:M']);
-  rangeListToMiddle.setVerticalAlignment('middle');   // Center and align to middle
+  // 2. Bold formatting
+  getThisRange([
+    'A1:N1',  // Header Row
+    'A2:A',   // Timestamp
+    'D2:D',   // Headrun
+    'L2:M'    // Copy Sent + Submission Platform
+  ]).setFontWeight('bold');
 
-  const range = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn());
+  // 3. Font size adjustments
+  getThisRange(['D2:D', 'M2:M']).setFontSize(11); // for Headrun + Submission Platform
+  getThisRange(['C2:C', 'F2:H']).setFontSize(9);  // Headrunners + Attendees
+
+  // 4. Text wrapping
+  getThisRange(['B2:E', 'I2:K']).setWrap(true);  // Referral + Waiver + Payment Choice
+  getThisRange('F2:H').setWrap(false);  // Attendees
+
+  // 5. Horizontal and vertical alignment
+  getThisRange('L2:M').setHorizontalAlignment('center');
+
+  getThisRange([
+    'F2:H',   // Attendees
+    'L2:M',   // Copy Sent + Submission Platform
+  ]).setVerticalAlignment('middle');
+  
+  // 6. Update banding colours
+  const dataRange = sheet.getDataRange();
 
   // Need to remove current banding, before applying it to current range
   // Apply BLUE banding with distinct header and footer colours.
-  range.getBandings().forEach(banding => banding.remove());
-  range.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
+  dataRange.getBandings().forEach(banding => banding.remove());
+  dataRange.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
 
-  // Link pixel size to column index
+  // 7. Resize columns using `sizeMap`
   const sizeMap = {
     [TIMESTAMP_COL]: 150,
     [EMAIL_COL]: 240,
@@ -165,10 +175,9 @@ function formatSpecificColumns() {
     [NAMES_NOT_FOUND_COL]: 225,
   }
 
-  // Resize columns by corresponding pixel size
-  for (const [col, width] of Object.entries(sizeMap)) {
+  Object.entries(sizeMap).forEach(([col, width]) => {
     sheet.setColumnWidth(col, width);
-  }
+  });
 
 }
 
@@ -252,10 +261,6 @@ function formatAllNames() {
  *
  * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
  *                                                       Defaults to the last row in the sheet.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 10, 2024
- * @update  Dec 10, 2024
  */
 
 function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {

@@ -20,7 +20,7 @@ const IMPORT_MAP = {
 // TRIGGERED BY ZAPIER AUTOMATION OR BY MASTER ATTENDANCE SHEET
 
 // UPDATE : ZAPIER AUTOMATION DOES NOT TRIGGER INSTANTLY
-// SO ONCHANGE NO LONGER NEEDED, AND TRIGGER IS WHEN CHECKING FOR ATTENDANCE
+// SO `ONCHANGE` NO LONGER NEEDED, AND TRIGGER IS WHEN CHECKING FOR ATTENDANCE
 
 /** 
  * Process latest imported attendance submission via McRUN app.
@@ -31,7 +31,7 @@ const IMPORT_MAP = {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 10, 2025
- * @update  Feb 10, 2025
+ * @update  Feb 13, 2025
  * 
  */
 
@@ -60,6 +60,11 @@ function processOnChange(sourceSheet) {
   console.log(submissionStr);
   const attendanceObj = JSON.parse(submissionStr)
   const lastSemesterRow = copyToSemesterSheet(attendanceObj);
+
+  // Log successful transfer
+  const isImportedCol = keys.indexOf('isImported');
+  const isImportedRange = sourceSheet.getRange(thisLastRow, isImportedCol);
+  isImportedRange.setValue(true);
   
   // TRIGGER MAINTENANCE FUNCTIONS
   if((attendanceObj['platform']).toLowerCase() === 'mcrun app'){
