@@ -52,11 +52,9 @@ function sortAttendanceForm() {
 
   const numRows = sheet.getLastRow() - 1;     // Remove header row from count
   const numCols = sheet.getLastColumn();
-
-  // Sort all the way to the last row, without the header row
   const range = sheet.getRange(2, 1, numRows, numCols);
 
-  // Sorts values by `Timestamp`
+  // Sorts values by `Timestamp` without the header row
   range.sort([{ column: 1, ascending: true }]);
 }
 

@@ -76,7 +76,7 @@ function getLastSubmission_() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Oct 30, 2024
+ * @update  Feb 14, 2025
  */
 
 function emailSubmission() {
@@ -95,11 +95,9 @@ function emailSubmission() {
   const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
 
   // Replace newline with comma-space
-  const allAttendees = [
-    ATTENDEES_BEGINNER_COL,
-    ATTENDEES_INTERMEDIATE_COL,
-    ATTENDEES_ADVANCED_COL
-  ].map(level => submission[level].replaceAll('\n', ', '));
+  const allAttendees = Object.values(ATTENDEE_MAP).map(
+    level => submission[level].replaceAll('\n', ', ')
+  );
 
   // Read only (cannot edit values in sheet)
   const headrun = {
@@ -187,7 +185,7 @@ function toggleAttendanceCheck_() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Feb 13, 2025
+ * @update  Feb 16, 2025
  */
 
 function checkMissingAttendance() {
@@ -200,8 +198,12 @@ function checkMissingAttendance() {
     return;
   }
   
+  // Since getting a new app submission cannot trigger a script in 
+  // this project, transfer latest submission from `App import` sheet.
+  transferLastImport();
   verifyAttendance_();
 }
+
 
 function checkForNewImport_() {
   const importSheet = IMPORT_SHEET;
@@ -219,44 +221,53 @@ function checkForNewImport_() {
   throw new Error ('Function is incomplete. Please review.')
 }
 
+
 function verifyAttendance_() {
   const sheet = ATTENDANCE_SHEET;
 
   // Gets values of all timelogs
   const numRows = sheet.getLastRow() - 1;
-  const submissionDates = sheet.getSheetValues(2, TIMESTAMP_COL, numRows);
-  const submissionHeadRuns = sheet.getSheetValues(2, HEADRUN_COL, numRows);
+  const submissionDates = sheet.getSheetValues(2, TIMESTAMP_COL, numRows, 1);
+  const submissionHeadruns = sheet.getSheetValues(2, HEADRUN_COL, numRows, 1);
+
+  const getDateAmPM = (date) => Utilities.formatDate(date, TIMEZONE, 'yyyy-MM-dd a');
 
   // Get date at trigger time and compare with timestamp of existing submissions
   const today = new Date();
-  const formattedToday = Utilities.formatDate(today, TIMEZONE, 'yyyy-MM-dd a');   // e.g. '2024-10-27 PM'
+  const formattedToday = getDateAmPM(today);   // e.g. '2024-10-27 PM'
 
   // Formats trigger datetime to get head runner emails
-  const headRunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
-  const headRunTitle = getHeadRunString(headRunDay); // e.g 'Monday - 9am'
+  const headrunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
+  const headrunTitle = getHeadrunTitle(headrunDay); // e.g 'Monday - 9am'
+
+  let isSubmitted = false
 
   // Start checking from end of head run attendance submissions
   // Exit loop when submission found or until list exhausted
-  for (let isSubmitted = false, i = numRows-1; i >= 0 && !isSubmitted; i--) {
-    const submissionDate = Utilities.formatDate(new Date(submissionDates[i]), TIMEZONE, 'yyyy-MM-dd a');
+  for (let i = numRows-1; i >= 0 && !isSubmitted; i--) {
+    const submissionDate = getDateAmPM(new Date(submissionDates[i]));
 
-    // Get detailed head run to compare with today's headRunString
+    // Get detailed head run to compare with today's headrunTitle
     if (submissionDate === formattedToday) {
-      const submissionHeadRun = submissionHeadRuns[i].join();
-      isSubmitted = (submissionHeadRun === headRunTitle);
+      const submissionHeadrun = (submissionHeadruns[i][0]).toLowerCase();
+      isSubmitted = (submissionHeadrun === headrunTitle.toLowerCase());
     }
   }
 
   // Verify if form has been submitted. Otherwise send an email reminder.
   if (!isSubmitted) {
-    sendEmailReminder(headRunTitle, headRunDay)
+    sendEmailReminder(headrunTitle);
   }
 }
 
 
-function sendEmailReminder(headRunTitle, headRunDay) {
+function sendEmailReminder(headrunTitle) {
+  [dayOfWeek, time, ] = headrunTitle.split(' - ');
+  const amPmOfDay = time.match(/(am|pm)/i);
+  const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
+ 
   // Get head runners email using target headrun
-  const headRunnerEmail = getHeadRunnerEmail(headRunDay).join();
+  const headRunnerEmail = getHeadRunnerEmail(headrunDay).join();
 
   // Load HTML template and replace placeholders
   const templateName = REMINDER_EMAIL_HTML_FILE;
@@ -269,10 +280,11 @@ function sendEmailReminder(headRunTitle, headRunDay) {
   const reminderEmailBodyHTML = template.evaluate().getContent();
 
   var reminderEmail = {
-    to: headRunnerEmail,
-    bcc: PRESIDENT_EMAIL,
-    cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
-    subject: "McRUN Missing Attendance Form - " + headRunTitle,
+    //to: headRunnerEmail,
+    to:'andrey.gonzalez@mail.mcgill.ca',
+    //bcc: PRESIDENT_EMAIL,
+    //cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
+    subject: "McRUN Missing Attendance Form - " + headrunTitle,
     htmlBody: reminderEmailBodyHTML,
     noReply: true,
     name: "McRUN Attendance Bot"
@@ -294,7 +306,7 @@ function getAllUnregisteredMembers() {
 }
 
 
-function testIt() {
+function testUnregistered() {
   getUnregisteredMembersInRow_(10);
 }
 

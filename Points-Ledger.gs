@@ -73,13 +73,14 @@ function hideAllAttendeeEmail() {
 
 
 function hideAttendeeEmailInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
-  const allAttendeesCol = [
-    ATTENDEES_BEGINNER_COL,
-    ATTENDEES_INTERMEDIATE_COL,
-    ATTENDEES_ADVANCED_COL
-  ];
+  Object.values(ATTENDEE_MAP).forEach(col => hideAttendeeEmailInCell_(col, row));
 
-  allAttendeesCol.forEach(col => hideAttendeeEmailInCell_(col, row));
+  // const allAttendeesCol = [
+  //   ATTENDEES_BEGINNER_COL,
+  //   ATTENDEES_INTERMEDIATE_COL,
+  //   ATTENDEES_ADVANCED_COL
+  // ];
+  // allAttendeesCol.forEach(col => hideAttendeeEmailInCell_(col, row));
 }
 
 
@@ -190,11 +191,15 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
 
   // TODO : APPEND HEADRUN LEVEL TO EVENT NAME (USED TO DETERMINE POINTS TO GIVE)
 
-  const allAttendeesCol = [
-    ATTENDEES_BEGINNER_COL,
-    ATTENDEES_INTERMEDIATE_COL,
-    ATTENDEES_ADVANCED_COL
-  ].filter(level => !values[level].includes(EMPTY_ATTENDEE_FLAG)) // Skip levels with "None"
+  const allAttendeesCol = Object.values(ATTENDEE_MAP)
+    .filter(level => !values[level].includes(EMPTY_ATTENDEE_FLAG)   // Skip levels with "None"
+  );
+
+  // const allAttendeesCol = [
+  //   ATTENDEES_BEGINNER_COL,
+  //   ATTENDEES_INTERMEDIATE_COL,
+  //   ATTENDEES_ADVANCED_COL
+  // ].filter(level => !values[level].includes(EMPTY_ATTENDEE_FLAG)) // Skip levels with "None"
 
   for(var level of allAttendeesCol) {
 
@@ -236,11 +241,13 @@ function pointsEmail() {
   const points = SpreadsheetApp.openByUrl(LEDGER_URL).getSheetByName("Member Points");
 
   // Define the columns to check for attendees
-  const attendeeColumns = [
-    ATTENDEES_BEGINNER_COL,
-    ATTENDEES_INTERMEDIATE_COL,
-    ATTENDEES_ADVANCED_COL
-  ];
+  // const attendeeColumns = [
+  //   ATTENDEES_BEGINNER_COL,
+  //   ATTENDEES_INTERMEDIATE_COL,
+  //   ATTENDEES_ADVANCED_COL
+  // ];
+
+  const attendeeColumns = Object.values(ATTENDEE_MAP);
 
   // Collect all unique values in one step
   const uniqueRecipients = new Set(

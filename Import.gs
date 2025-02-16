@@ -74,11 +74,16 @@ function processOnChange(sourceSheet) {
 
 }
 
+function testIt() {
+  onAppSubmission(14);
+}
+
 
 function transferThisRow(row) {
-  const registrationObj = IMPORT_SHEET.getRange(row, 1).getValue();
+  const registrationObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const latestSemesterRow = copyToSemesterSheet(registrationObj);
-  onFormSubmit(latestSemesterRow);
+  //onFormSubmission(latestSemesterRow);
+  //onAppSubmission(latestSemesterRow);
 }
 
 function transferLastImport() {
@@ -124,12 +129,7 @@ function copyToSemesterSheet(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow()) 
   }
 
   // Process attendees for all run levels
-  const attendeeMap = {
-    'beginner': ATTENDEES_BEGINNER_COL,
-    //'easy': ATTENDEES_BEGINNER_COL,
-    'intermediate': ATTENDEES_INTERMEDIATE_COL,
-    'advanced':  ATTENDEES_ADVANCED_COL,
-  };
+  const attendeeMap = ATTENDEE_MAP;
 
   // Get formatted runLevel and attendees value by index
   const runLevelIndex = importMap['runLevel'] - 1;

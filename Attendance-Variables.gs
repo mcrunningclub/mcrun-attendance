@@ -19,7 +19,16 @@ const PLATFORM_COL = 13;
 const NAMES_NOT_FOUND_COL = 14;
 
 const TIMEZONE = getUserTimeZone_();
-const LEVEL_COUNT = 3;  // Beginner/Easy, Intermediate, Hard
+
+// RUN LEVELS
+const ATTENDEE_MAP = {
+  'beginner': ATTENDEES_BEGINNER_COL,
+  //'easy': ATTENDEES_BEGINNER_COL,
+  'intermediate': ATTENDEES_INTERMEDIATE_COL,
+  'advanced':  ATTENDEES_ADVANCED_COL,
+};
+
+const LEVEL_COUNT = Object.keys(ATTENDEE_MAP).length;
 const EMPTY_ATTENDEE_FLAG = 'None';
 
 const MEMBER_EMAIL_COL = 1;   // Found in 'Members' sheet

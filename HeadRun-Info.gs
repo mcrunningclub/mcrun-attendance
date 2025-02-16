@@ -27,7 +27,7 @@ const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
  * ```
  */
 
-function getHeadRunString(headRunDay) {
+function getHeadrunTitle(headRunDay) {
   switch(headRunDay) {
     case 'TuesdayPM'  : return 'Tuesday - 6pm';
     case 'WednesdayPM': return 'Wednesday - 6pm';
@@ -188,13 +188,14 @@ function getHeadRunnerEmail(headrun) {
     aidenLee,
   ];
 
+  const thisHeadrun = headrun.toLowerCase();
   // Easier to decode from input `headrun`
-  switch (headrun) {
-  case 'TuesdayPM'   : return tuesdayHeadRunner;
-  case 'WednesdayPM': return wednesdayHeadRunner;
-  case 'ThursdayAM' : return thursdayHeadRunner;
-  case 'SaturdayAM': return saturdayHeadRunner;
-  case 'SundayPM': return sundayHeadRunner;
+  switch (thisHeadrun) {
+  case 'tuesdaypm'   : return tuesdayHeadRunner;
+  case 'wednesdaypm': return wednesdayHeadRunner;
+  case 'thursdayam' : return thursdayHeadRunner;
+  case 'saturdayam': return saturdayHeadRunner;
+  case 'sundaypm': return sundayHeadRunner;
 
   default : return '';
   }
