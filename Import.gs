@@ -62,9 +62,8 @@ function processOnChange(sourceSheet) {
   const lastSemesterRow = copyToSemesterSheet(attendanceObj);
 
   // Log successful transfer
-  const isImportedCol = keys.indexOf('isImported');
-  const isImportedRange = sourceSheet.getRange(thisLastRow, isImportedCol);
-  isImportedRange.setValue(true);
+  const isImportedCol = keys.indexOf('isImported') + 1;
+  toggleSuccessfulImport(thisLastRow, isImportedCol);
   
   // TRIGGER MAINTENANCE FUNCTIONS
   if((attendanceObj['platform']).toLowerCase() === 'mcrun app'){
@@ -74,16 +73,28 @@ function processOnChange(sourceSheet) {
 
 }
 
-function testIt() {
-  onAppSubmission(14);
+
+function toggleSuccessfulImport(row, colIndex = null) {
+  const sheet = IMPORT_SHEET;
+  let isImportedCol = colIndex;
+
+  if (!colIndex) {
+    const header = sheet.getSheetValues(1, 1, 1, sheet.getLastColumn())[0];
+    isImportedCol = header.indexOf('isImported') + 1; // Get 0-index, then make 1-indexed
+  }
+
+  const isImportedRange = sheet.getRange(row, isImportedCol);
+  isImportedRange.setValue(true);
 }
 
 
 function transferThisRow(row) {
   const registrationObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const latestSemesterRow = copyToSemesterSheet(registrationObj);
+  toggleSuccessfulImport(row);
+
+  onAppSubmission(latestSemesterRow);
   //onFormSubmission(latestSemesterRow);
-  //onAppSubmission(latestSemesterRow);
 }
 
 function transferLastImport() {

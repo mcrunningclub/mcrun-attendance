@@ -31,10 +31,11 @@ function onAppSubmission(row=ATTENDANCE_SHEET.getLastRow()) {
   formatConfirmationInRow_(row);
 
   //emailSubmission();    // IN-REVIEW
-  formatSpecificColumns();
   
-  formatHeadRunnerInRow_(row);
-  hideAttendeeEmailInRow_(row);
+  formatNamesInRow_(row);
+  //hideAttendeeEmailInRow_(row);
+
+  formatSpecificColumns();
   sortAttendanceForm();
 }
 
@@ -218,7 +219,7 @@ function checkForNewImport_() {
   // Get range but do not sort sheet. Non-imported submissions most likely at bottom.
   const rangeToCheck = importSheet.getRange(startRow, 1, numRowToCheck, numCol);
 
-  throw new Error ('Function is incomplete. Please review.')
+  throw new Error ('Function is incomplete. Please review.');
 }
 
 
@@ -240,23 +241,28 @@ function verifyAttendance_() {
   const headrunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
   const headrunTitle = getHeadrunTitle(headrunDay); // e.g 'Monday - 9am'
 
-  let isSubmitted = false
-
-  // Start checking from end of head run attendance submissions
-  // Exit loop when submission found or until list exhausted
-  for (let i = numRows-1; i >= 0 && !isSubmitted; i--) {
-    const submissionDate = getDateAmPM(new Date(submissionDates[i]));
-
-    // Get detailed head run to compare with today's headrunTitle
-    if (submissionDate === formattedToday) {
-      const submissionHeadrun = (submissionHeadruns[i][0]).toLowerCase();
-      isSubmitted = (submissionHeadrun === headrunTitle.toLowerCase());
-    }
+  // Verify if form has been submitted. Otherwise send an email reminder.
+  if (!isSubmitted()) {
+    sendEmailReminder(headrunTitle);
   }
 
-  // Verify if form has been submitted. Otherwise send an email reminder.
-  if (!isSubmitted) {
-    sendEmailReminder(headrunTitle);
+  // Helper function
+  function isSubmitted(){
+    let isSubmittedFlag = false;
+
+    // Start checking from end of head run attendance submissions
+    // Exit loop when submission found or until list exhausted
+    for (let i = numRows-1; i >= 0 && !isSubmittedFlag; i--) {
+      const submissionDate = getDateAmPM(new Date(submissionDates[i]));
+
+      // Get detailed head run to compare with today's headrunTitle
+      if (submissionDate === formattedToday) {
+        const submissionHeadrun = (submissionHeadruns[i][0]).toLowerCase();
+        isSubmittedFlag = (submissionHeadrun === headrunTitle.toLowerCase());
+      }
+    }
+
+    return isSubmittedFlag;
   }
 }
 
@@ -280,10 +286,9 @@ function sendEmailReminder(headrunTitle) {
   const reminderEmailBodyHTML = template.evaluate().getContent();
 
   var reminderEmail = {
-    //to: headRunnerEmail,
-    to:'andrey.gonzalez@mail.mcgill.ca',
-    //bcc: PRESIDENT_EMAIL,
-    //cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
+    to: headRunnerEmail,
+    bcc: PRESIDENT_EMAIL,
+    cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
     subject: "McRUN Missing Attendance Form - " + headrunTitle,
     htmlBody: reminderEmailBodyHTML,
     noReply: true,
