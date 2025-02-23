@@ -29,15 +29,16 @@ const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 
 function getHeadrunTitle(headRunDay) {
   switch(headRunDay) {
-    case 'TuesdayPM'  : return 'Tuesday - 6pm';
-    case 'WednesdayPM': return 'Wednesday - 6pm';
+    case 'TuesdayPM'  : return 'Tuesday - 6:00pm';
+    case 'WednesdayPM': return 'Wednesday - 6:00pm';
     case 'ThursdayAM' : return 'Thursday - 7:30am';
-    case 'SaturdayAM' : return 'Saturday - 10am';
-    case 'SundayPM'   : return 'Sunday - 6pm';
+    case 'SaturdayAM' : return 'Saturday - 10:00am';
+    case 'SundayPM'   : return 'Sunday - 6:00pm';
 
     default : throw new Error(`No headrunner has been found for ${headRunDay}`);
   }
 }
+
 
 /**
  * Wrapper function for `formatHeadRunnerInRow` to apply on *ALL* submissions.

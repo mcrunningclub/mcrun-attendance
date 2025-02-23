@@ -257,18 +257,29 @@ function verifyAttendance_() {
 
       // Get detailed head run to compare with today's headrunTitle
       if (submissionDate === formattedToday) {
-        const submissionHeadrun = (submissionHeadruns[i][0]).toLowerCase();
-        isSubmittedFlag = (submissionHeadrun === headrunTitle.toLowerCase());
+        const submissionHeadrun = normalizeHeadrun(submissionHeadruns[i][0]);
+        isSubmittedFlag = (submissionHeadrun === normalizeHeadrun(headrunTitle));
       }
     }
 
     return isSubmittedFlag;
   }
+
+  function normalizeHeadrun(headrun) {
+    [dayOfWeek, time, ] = headrun.toLowerCase().split(/\s*-\s*|\s+/);
+
+    // Add missing ':00' if needed
+    if (/^\d{1,2}(am|pm)$/i.test(time)) {
+      time = time.replace(/(am|pm)$/i, ':00$1');
+    }
+    return `${dayOfWeek} - ${time}`;
+  }
+
 }
 
 
 function sendEmailReminder(headrunTitle) {
-  [dayOfWeek, time, ] = headrunTitle.split(' - ');
+  [dayOfWeek, time, ] = headrunTitle.split.split(/\s*-\s*|\s+/);
   const amPmOfDay = time.match(/(am|pm)/i);
   const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
  
