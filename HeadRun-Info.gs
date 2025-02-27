@@ -192,15 +192,14 @@ function getHeadRunnerEmail(headrun) {
   const thisHeadrun = headrun.toLowerCase();
   // Easier to decode from input `headrun`
   switch (thisHeadrun) {
-  case 'tuesdaypm'   : return tuesdayHeadRunner;
-  case 'wednesdaypm': return wednesdayHeadRunner;
-  case 'thursdayam' : return thursdayHeadRunner;
-  case 'saturdayam': return saturdayHeadRunner;
-  case 'sundaypm': return sundayHeadRunner;
+    case 'tuesdaypm'   : return tuesdayHeadRunner;
+    case 'wednesdaypm': return wednesdayHeadRunner;
+    case 'thursdayam' : return thursdayHeadRunner;
+    case 'saturdayam': return saturdayHeadRunner;
+    case 'sundaypm': return sundayHeadRunner;
 
-  default : return '';
+    default : throw Error (`No headrun found for ${thisHeadrun}`);
   }
-
 }
 
 

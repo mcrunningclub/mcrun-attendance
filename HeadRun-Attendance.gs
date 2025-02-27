@@ -6,7 +6,8 @@
  * @trigger Attendance Form Submission.
  */
 
-function onFormSubmission(row=ATTENDANCE_SHEET.getLastRow()) {
+function onFormSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
+  console.log(`Row number: ${row}`);
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
 
   formatConfirmationInRow_(row);  // transforms bool to user-friendly message
@@ -279,7 +280,7 @@ function verifyAttendance_() {
 
 
 function sendEmailReminder(headrunTitle) {
-  [dayOfWeek, time, ] = headrunTitle.split.split(/\s*-\s*|\s+/);
+  [dayOfWeek, time, ] = headrunTitle.split(/\s*-\s*|\s+/);
   const amPmOfDay = time.match(/(am|pm)/i);
   const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
  
