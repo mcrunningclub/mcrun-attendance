@@ -88,7 +88,7 @@ function toggleSuccessfulImport(row, colIndex = null) {
 }
 
 
-function transferThisRow(row) {
+function transferThisRow_(row) {
   const registrationObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const latestSemesterRow = copyToSemesterSheet(registrationObj);
   toggleSuccessfulImport(row);
@@ -99,7 +99,7 @@ function transferThisRow(row) {
 
 function transferLastImport() {
   const thisLastRow = IMPORT_SHEET.getLastRow();
-  transferThisRow(thisLastRow);
+  transferThisRow_(thisLastRow);
 }
 
 
@@ -114,7 +114,7 @@ function transferLastImport() {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 8, 2025
- * @update  Feb 9, 2025
+ * @update  March 13, 2025
  * 
  */
 
@@ -147,7 +147,7 @@ function copyToSemesterSheet(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow()) 
   const runLevel = (valuesByIndex[runLevelIndex]).toLowerCase();
 
   const attendeeIndex = importMap['attendees'] - 1;
-  const attendees = valuesByIndex[attendeeIndex];
+  const attendees = valuesByIndex[attendeeIndex].replace(/\s?,\s?/g, '\n');
 
   for (const [level, levelIndex] of Object.entries(attendeeMap)) {
     const arrIndex = levelIndex - 1;   // Transform 1-index to 0-index for array

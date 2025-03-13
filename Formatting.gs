@@ -286,7 +286,7 @@ function formatAllAttendeeNames() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 24, 2024
- * @update  Oct 24, 2024
+ * @update  March 13, 2025
  *
  * ```javascript
  * // Sample Script ➜ Format names in row `13`.
@@ -312,7 +312,7 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
       // Replace "n/a" (case insensitive) with EMPTY_ATTENDEE_FLAG value : "None"
       var cellValue = trimmedArr.replace(/n\/a/gi, EMPTY_ATTENDEE_FLAG);
 
-      // Exit if cell contains email and ':' delimiter, meaning already formatted.
+      // Exit if cell contains email and ':' delimiter -> already formatted.
       if (cellValue.includes('@') && cellValue.includes(':')) continue;
 
       // Split by commas or newline characters
