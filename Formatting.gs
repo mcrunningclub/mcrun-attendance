@@ -109,7 +109,7 @@ function prettifySheet() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Feb 13, 2025
+ * @update  Mar 16, 2025
  */
 
 function formatSpecificColumns() {
@@ -132,7 +132,7 @@ function formatSpecificColumns() {
   ]).setFontWeight('bold');
 
   // 3. Font size adjustments
-  getThisRange(['D2:D', 'M2:M']).setFontSize(11); // for Headrun + Submission Platform
+  getThisRange(['A2:A', 'D2:D', 'M2:M']).setFontSize(11); // for Headrun + Submission Platform
   getThisRange(['C2:C', 'F2:H']).setFontSize(9);  // Headrunners + Attendees
 
   // 4. Text wrapping

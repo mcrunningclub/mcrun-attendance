@@ -109,7 +109,7 @@ function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1
   };
 
   // Map over each row to process and format by applying `processRow()`
-  const formattedNames = rawValues.map(processRow);   // apply procecessRow()
+  const formattedNames = rawValues.map(processRow);   // apply processRow()
 
   // Update the sheet with formatted names
   rangeHeadRunner.setValues(formattedNames);

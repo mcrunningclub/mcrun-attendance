@@ -8,6 +8,7 @@
 
 function onFormSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
   console.log(`Row number: ${row}`);
+  sortAttendanceForm(row);    // GForm might not add submission to bottom
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
 
   formatConfirmationInRow_(row);  // transforms bool to user-friendly message
@@ -17,7 +18,6 @@ function onFormSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
   //emailSubmission();    // IN-REVIEW
   //setCopySent_();
   formatSpecificColumns(row);
-  sortAttendanceForm(row);
 }
 
 
