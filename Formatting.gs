@@ -237,6 +237,10 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   // Format and set value according to TRUE/FALSE response
   const formattedValue = (confirmationResp === 'true') ? 'Yes' : 'No (explain in comment section)';
   rangeConfirmation.setValue(formattedValue);
+  
+  // Useful debugging messages
+  console.log(`Confirmation Response (raw): ${confirmationResp}`);
+  console.log(`Confirmation Response (formatted): ${formattedValue}`);
 }
 
 /**
@@ -262,6 +266,7 @@ function formatAllNames() {
  */
 
 function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
+  console.log('Now attempting to format headrunner and attendee names');
   formatAttendeeNamesInRow_(row);
   formatHeadRunnerInRow_(row);
 }

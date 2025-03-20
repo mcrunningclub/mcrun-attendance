@@ -2,12 +2,17 @@
 
 /**
  * Functions to execute after form submission.
+ * 
+ * To use as a trigger function, it cannot have parameters.
+ * Otherwise, a runtime exception is raised for new form submission.
  *
- * @trigger Attendance Form Submission.
+ * @trigger Attendance Form or McRUN App Submission.
  */
 
-function onFormSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
-  console.log(`Row number: ${row}`);
+function onFormSubmission() {
+  const row = ATTENDANCE_SHEET.getLastRow();
+  console.log(`Latest row number: ${row}`);
+
   sortAttendanceForm(row);    // GForm might not add submission to bottom
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
 
@@ -27,12 +32,12 @@ function onFormSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
  * @trigger McRUN App Attendance Submission.
  */
 
-function onAppSubmission(row=ATTENDANCE_SHEET.getLastRow()) {
+function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
   //removePresenceChecks();
   formatConfirmationInRow_(row);
 
   //emailSubmission();    // IN-REVIEW
-  
+
   formatNamesInRow_(row);
   //hideAttendeeEmailInRow_(row);
 
@@ -56,7 +61,7 @@ function getLastSubmission_() {
   const sheet = ATTENDANCE_SHEET;
   const startRow = 1;
   const numRow = sheet.getLastRow();
-  
+
   // Fetch all values in the TIMESTAMP_COL
   const values = sheet.getSheetValues(startRow, COLUMN_MAP.TIMESTAMP, numRow);
   let lastRow = values.length;
@@ -199,7 +204,7 @@ function checkMissingAttendance() {
     Logger.log("Error: `verifyAttendance()` is not allowed to run. Set script property to true.");
     return;
   }
-  
+
   // Since getting a new app submission cannot trigger a script in 
   // this project, transfer latest submission from `App import` sheet.
   transferLastImport();
@@ -212,7 +217,7 @@ function checkForNewImport_() {
   const numRow = importSheet.getLastRow();
   const numCol = importSheet.getLastColumn();
 
-  
+
   // Check the last 5 rows
   const numRowToCheck = 5;
   const startRow = numRow - numRowToCheck;
@@ -220,7 +225,7 @@ function checkForNewImport_() {
   // Get range but do not sort sheet. Non-imported submissions most likely at bottom.
   const rangeToCheck = importSheet.getRange(startRow, 1, numRowToCheck, numCol);
 
-  throw new Error ('Function is incomplete. Please review.');
+  throw new Error('Function is incomplete. Please review.');
 }
 
 
@@ -248,12 +253,12 @@ function verifyAttendance_() {
   }
 
   // Helper function
-  function isSubmitted(){
+  function isSubmitted() {
     let isSubmittedFlag = false;
 
     // Start checking from end of head run attendance submissions
     // Exit loop when submission found or until list exhausted
-    for (let i = numRows-1; i >= 0 && !isSubmittedFlag; i--) {
+    for (let i = numRows - 1; i >= 0 && !isSubmittedFlag; i--) {
       const submissionDate = getDateAmPM(new Date(submissionDates[i]));
 
       // Get detailed head run to compare with today's headrunTitle
@@ -267,7 +272,7 @@ function verifyAttendance_() {
   }
 
   function normalizeHeadrun(headrun) {
-    [dayOfWeek, time, ] = headrun.toLowerCase().split(/\s*-\s*|\s+/);
+    [dayOfWeek, time,] = headrun.toLowerCase().split(/\s*-\s*|\s+/);
 
     // Add missing ':00' if needed
     if (/^\d{1,2}(am|pm)$/i.test(time)) {
@@ -280,10 +285,10 @@ function verifyAttendance_() {
 
 
 function sendEmailReminder(headrunTitle) {
-  [dayOfWeek, time, ] = headrunTitle.split(/\s*-\s*|\s+/);
+  [dayOfWeek, time,] = headrunTitle.split(/\s*-\s*|\s+/);
   const amPmOfDay = time.match(/(am|pm)/i);
   const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
- 
+
   // Get head runners email using target headrun
   const headRunnerEmail = getHeadRunnerEmail(headrunDay).join();
 
@@ -377,7 +382,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
     // Try to find names without email in registrations (memberMap)
     // And append their respective email as in `namesWithEmail`
-    const {foundUnregistered, foundRegistered} = findUnregistered_(namesWithoutEmail.sort(), cleanMemberMap);
+    const { foundUnregistered, foundRegistered } = findUnregistered_(namesWithoutEmail.sort(), cleanMemberMap);
 
     // Combine and sort both arrays
     const mergedRegistered = [...namesWithEmail, ...foundRegistered]
@@ -390,7 +395,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   setNamesNotFound(row, unregistered.join("\n"));
   return;
 
-  
+
 
   // Append email to registered attendees
   appendMemberEmail(row, registered);
@@ -427,7 +432,7 @@ function formatThisName(name) {
     .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
     .toLowerCase()
     .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
-  ;
+    ;
 }
 
 
@@ -465,7 +470,7 @@ function getMemberMap() {
   const memberMap = memberSheetValues
     .map(row => [row[memberKeyIndex], row[memberEmailCol]])
     .filter(row => row[0] && row[1])
-  ;
+    ;
 
   return memberMap;
 }
@@ -488,7 +493,7 @@ function findUnregistered_(attendees, memberMap) {
   const registeredMap = {}    // Saves member name-email pair
 
   if (attendees.length < 1) {
-    return {'registered': registeredMap, 'unregistered': unregistered};
+    return { 'registered': registeredMap, 'unregistered': unregistered };
   }
 
   const SEARCH_KEY_INDEX = 0;
