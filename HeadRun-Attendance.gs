@@ -207,6 +207,7 @@ function checkMissingAttendance() {
 
   // Since a new attendance submission via app cannot trigger a script in 
   // this project, transfer latest submission from `App import` sheet.
+  // Do nothing if already imported to prevent duplicates
   transferLastImport();
   verifyAttendance_();
 }
@@ -216,7 +217,6 @@ function checkForNewImport_() {
   const importSheet = IMPORT_SHEET;
   const numRow = importSheet.getLastRow();
   const numCol = importSheet.getLastColumn();
-
 
   // Check the last 5 rows
   const numRowToCheck = 5;

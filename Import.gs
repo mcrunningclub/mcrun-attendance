@@ -19,7 +19,7 @@ const IMPORT_MAP = {
 // TRIGGERED BY ZAPIER AUTOMATION OR BY MASTER ATTENDANCE SHEET
 
 // UPDATE : ZAPIER AUTOMATION DOES NOT TRIGGER INSTANTLY
-// SO `ONCHANGE` NO LONGER NEEDED, AND TRIGGER IS WHEN CHECKING FOR ATTENDANCE
+// SO `ONCHANGE` NO LONGER NEEDED, AND TRIGGER USED WHEN CHECKING FOR ATTENDANCE
 
 /** 
  * Process latest imported attendance submission via McRUN app.
@@ -53,28 +53,19 @@ function processOnChange(sourceSheet) {
   // Case 2: Multi-column import (e.g., from Zapier)
   else {
     console.log("Entered case 2 in `onChange()`!");
-    submissionStr = packageAttendance(keys, latestImport);
+    submissionStr = packageAttendance_(keys, latestImport);
   }
 
   // Useful debugging message
   console.log(submissionStr);
 
-  // Verify if already imported
-  const isImportedCol = keys.indexOf('isImported') + 1;
-  const isImported = sourceSheet.getRange(thisLastRow, isImportedCol).getValue();
-  console.log(`isImported: ${isImported}`);
-
-  if (isImported) {
-    Logger.log(`This submission has been already been transferred`);
-    return;
-  }
-
   // Otherwise, continue importing latest submission
   const attendanceObj = JSON.parse(submissionStr);
-  const lastSemesterRow = copyToSemesterSheet(attendanceObj);
+  const lastSemesterRow = copyToSemesterSheet_(attendanceObj);
 
   // Log successful transfer
-  toggleSuccessfulImport(thisLastRow, isImportedCol);
+  const isImportedCol = keys.indexOf('isImported') + 1;
+  toggleSuccessfulImport_(thisLastRow, isImportedCol);
   
   // TRIGGER MAINTENANCE FUNCTIONS
   if((attendanceObj['platform']).toLowerCase() === 'mcrun app'){
@@ -85,46 +76,17 @@ function processOnChange(sourceSheet) {
 }
 
 
-function toggleSuccessfulImport(row, colIndex = null) {
-  const sheet = IMPORT_SHEET;
-  let isImportedCol = colIndex;
-
-  if (!colIndex) {
-    const header = sheet.getSheetValues(1, 1, 1, sheet.getLastColumn())[0];
-    isImportedCol = header.indexOf('isImported') + 1; // Get 0-index, then make 1-indexed
-  }
-
-  const isImportedRange = sheet.getRange(row, isImportedCol);
-  isImportedRange.setValue(true);
-}
-
-
-/** 
- * Compare the input timestamps.
- * 
- * @param {string} ts1  Timestamp 1.
- * @param {string} ts2  Timestamp 2.
- * 
- * @return {Boolean}  Returns result of comparaison.
- * 
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Mar 20, 2025
- * @update  Mar 20, 2025
- * 
- */
-
-function isSameTimestamp(ts1, ts2) {
-  return Date(ts1) === Date(ts2);
-}
-
-
 function transferThisRow_(row) {
-  const registrationObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
-  const latestSemesterRow = copyToSemesterSheet(registrationObj);
-  toggleSuccessfulImport(row);
-
-  //onAppSubmission(latestSemesterRow);
-  //onFormSubmission(latestSemesterRow);
+  const attendanceObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
+  const attendanceTimestamp = attendanceObj['timestamp'];
+  
+  // Check if attendanceObj already imported in attendance sheet. Exit if true
+  const isFound = checkExistingTimestamp_(attendanceTimestamp, 3);   // Check last 3 rows
+  if (isFound) return;
+  
+  // Transfer if attendance submission not found.
+  copyToSemesterSheet_(attendanceObj);
+  toggleSuccessfulImport_(row);
 }
 
 function transferLastImport() {
@@ -133,11 +95,61 @@ function transferLastImport() {
 }
 
 
+function toggleSuccessfulImport_(row, colIndex = null) {
+  const sheet = IMPORT_SHEET;
+  let isImportedCol = colIndex;
+
+  if (!colIndex) {
+    const header = sheet.getSheetValues(1, 1, 1, sheet.getLastColumn())[0];
+    isImportedCol = header.indexOf('isImported') + 1;  // 0-index to 1-indexed for `.getRange()`
+  }
+
+  const isImportedRange = sheet.getRange(row, isImportedCol);
+  isImportedRange.setValue(true);
+}
+
+
+/** 
+ * Check is submission already added by comparing timestamps.
+ * 
+ * @param {string} timestampToCompare  Input timestamp
+ * @param {integer} [numOfRow = 5]  Number of rows to check from the bottom.
+ *                                  Defaults to 5.
+ * 
+ * @return {Boolean}  Returns true if found in attendance sheet.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Mar 20, 2025
+ * @update  Mar 20, 2025
+ * 
+ */
+
+function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
+  const sheet = ATTENDANCE_SHEET;
+
+  // Get dimensions of array
+  const numCol = 1;
+  const timestampCol = TIMESTAMP_COL;
+  const endRow = sheet.getLastRow();
+  const startRow = endRow - numOfRow + 1;
+
+  // Parse `timestampToCompare` as Date
+  const compareAsDate = new Date(timestampToCompare);
+  
+  // Get latest timestamp values from attendance sheet as 1d array
+  const latestTimestampValues = sheet.getSheetValues(startRow, timestampCol, numOfRow, numCol).flat();
+
+  // Compare timestamps in attendance sheet until found, else return false
+  const isFound = latestTimestampValues.some(ts => isSameTimestamp_(ts, compareAsDate));
+  console.log(`Timestamp '${compareAsDate}' found in attendance sheet: ${isFound}`);
+  return isFound;
+}
+
+
 /** 
  * Transfer new attendance submission from `Import` to semester sheet.
  * 
  * @param {Object<JSON>} attendanceJSON   Attendance information as JSON object.
- * 
  * @param {integer} [row=getLastSubmission()]  Target row in `Attendance_Sheet`.
  * 
  * @return {integer}  Latest row in `Attendance_Sheet`.
@@ -148,18 +160,18 @@ function transferLastImport() {
  * 
  */
 
-function copyToSemesterSheet(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow()) {
+function copyToSemesterSheet_(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow()) {
   const attendanceSheet = ATTENDANCE_SHEET;
   const importMap = IMPORT_MAP;
 
   const startRow = row + 1;
-  const colSize = attendanceSheet.getLastColumn();
+  const colSize = attendanceSheet.getLastColumn(); 
 
   const valuesByIndex = Array(colSize);   // Array.length = colSize
 
   // Format timestamp correctly and replace
   const timestampValue = attendanceJSON['timestamp'];
-  attendanceJSON['timestamp'] = formatTimestamp(timestampValue);
+  attendanceJSON['timestamp'] = formatTimestamp_(timestampValue);
 
   for (const [key, value] of Object.entries(attendanceJSON)) {
     if (key in importMap) {
@@ -207,7 +219,7 @@ function copyToSemesterSheet(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow()) 
  * 
  */
 
-function packageAttendance(keyArr, valArr) {
+function packageAttendance_(keyArr, valArr) {
   if (keyArr.length !== valArr.length) {
     const errMessage = `keyArr and valArr must have the same length.
       keyArr: ${keyArr}
@@ -237,7 +249,7 @@ function packageAttendance(keyArr, valArr) {
  * 
  */
 
-function formatTimestamp(raw) {
+function formatTimestamp_(raw) {
   const date = new Date(raw);
   const options =  {
     year: 'numeric',
@@ -251,3 +263,25 @@ function formatTimestamp(raw) {
 
   return date.toLocaleString('en-CA', options).replace(',', '');  // remove comma between date and time
 }
+
+
+/** 
+ * Compare the input timestamps.
+ * 
+ * @param {string} timestamp1  Timestamp 1
+ * @param {string} timestamp2  Timestamp 2
+ * 
+ * @return {Boolean}  Returns result of comparaison.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Mar 20, 2025
+ * @update  Mar 20, 2025
+ * 
+ */
+
+function isSameTimestamp_(timestamp1, timestamp2) {
+  const ts1 = (timestamp1 instanceof Date) ? timestamp1 : new Date(timestamp1);
+  const ts2 = (timestamp2 instanceof Date) ? timestamp2 : new Date(timestamp2);
+  return ts1.getTime() === ts2.getTime();
+}
+
