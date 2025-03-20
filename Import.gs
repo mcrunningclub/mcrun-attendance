@@ -15,7 +15,6 @@ const IMPORT_MAP = {
   'attendees' : ATTENDEES_BEGINNER_COL,
 }
 
-
 // USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
 // TRIGGERED BY ZAPIER AUTOMATION OR BY MASTER ATTENDANCE SHEET
 
@@ -31,7 +30,7 @@ const IMPORT_MAP = {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 10, 2025
- * @update  Feb 13, 2025
+ * @update  Mar 20, 2025
  * 
  */
 
@@ -40,6 +39,7 @@ function processOnChange(sourceSheet) {
   const thisColSize = sourceSheet.getLastColumn();
   const latestImport = sourceSheet.getSheetValues(thisLastRow, 1, 1, thisColSize)[0];   // Get last row
 
+  const keys = sourceSheet.getSheetValues(1, 1, 1, thisColSize)[0];  // Get header row
   let submissionStr;
 
   // Case 1: JSON-formatted import (single-column)
@@ -53,16 +53,27 @@ function processOnChange(sourceSheet) {
   // Case 2: Multi-column import (e.g., from Zapier)
   else {
     console.log("Entered case 2 in `onChange()`!");
-    const keys = sourceSheet.getSheetValues(1, 1, 1, thisColSize)[0];  // Get header row
     submissionStr = packageAttendance(keys, latestImport);
   }
 
+  // Useful debugging message
   console.log(submissionStr);
-  const attendanceObj = JSON.parse(submissionStr)
+
+  // Verify if already imported
+  const isImportedCol = keys.indexOf('isImported') + 1;
+  const isImported = sourceSheet.getRange(thisLastRow, isImportedCol).getValue();
+  console.log(`isImported: ${isImported}`);
+
+  if (isImported) {
+    Logger.log(`This submission has been already been transferred`);
+    return;
+  }
+
+  // Otherwise, continue importing latest submission
+  const attendanceObj = JSON.parse(submissionStr);
   const lastSemesterRow = copyToSemesterSheet(attendanceObj);
 
   // Log successful transfer
-  const isImportedCol = keys.indexOf('isImported') + 1;
   toggleSuccessfulImport(thisLastRow, isImportedCol);
   
   // TRIGGER MAINTENANCE FUNCTIONS
@@ -88,12 +99,31 @@ function toggleSuccessfulImport(row, colIndex = null) {
 }
 
 
+/** 
+ * Compare the input timestamps.
+ * 
+ * @param {string} ts1  Timestamp 1.
+ * @param {string} ts2  Timestamp 2.
+ * 
+ * @return {Boolean}  Returns result of comparaison.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Mar 20, 2025
+ * @update  Mar 20, 2025
+ * 
+ */
+
+function isSameTimestamp(ts1, ts2) {
+  return Date(ts1) === Date(ts2);
+}
+
+
 function transferThisRow_(row) {
   const registrationObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const latestSemesterRow = copyToSemesterSheet(registrationObj);
   toggleSuccessfulImport(row);
 
-  onAppSubmission(latestSemesterRow);
+  //onAppSubmission(latestSemesterRow);
   //onFormSubmission(latestSemesterRow);
 }
 

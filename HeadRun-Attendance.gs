@@ -10,7 +10,7 @@
  */
 
 function onFormSubmission() {
-  const row = ATTENDANCE_SHEET.getLastRow();
+  const row = getLastSubmission_();
   console.log(`Latest row number: ${row}`);
 
   sortAttendanceForm(row);    // GForm might not add submission to bottom
@@ -73,6 +73,7 @@ function getLastSubmission_() {
 
   return lastRow;
 }
+
 
 /**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
@@ -201,11 +202,10 @@ function checkMissingAttendance() {
   const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
 
   if (isCheckingAllowed !== "true") {
-    Logger.log("Error: `verifyAttendance()` is not allowed to run. Set script property to true.");
-    return;
+    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
   }
 
-  // Since getting a new app submission cannot trigger a script in 
+  // Since a new attendance submission via app cannot trigger a script in 
   // this project, transfer latest submission from `App import` sheet.
   transferLastImport();
   verifyAttendance_();
@@ -289,7 +289,7 @@ function sendEmailReminder(headrunTitle) {
   const amPmOfDay = time.match(/(am|pm)/i);
   const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
 
-  // Get head runners email using target headrun
+  // Get head runners email using input headrun
   const headRunnerEmail = getHeadRunnerEmail(headrunDay).join();
 
   // Load HTML template and replace placeholders
@@ -313,6 +313,7 @@ function sendEmailReminder(headrunTitle) {
   }
 
   MailApp.sendEmail(reminderEmail);
+  console.log(`Reminder sent successfully for missing attendance submission (${headrunTitle})`);
 }
 
 
