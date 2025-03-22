@@ -29,7 +29,7 @@ function query_object_to_string(query_object) {
  *
  * @author [Jikael Gagnon](<jikael.gagnon@mail.mcgill.ca>)
  * @date  Nov 7, 2024
- * @update  Nov 7, 2024
+ * @update  Mar 22, 2025
  */
 
 function callStravaAPI(endpoint, query_object) {
@@ -70,25 +70,25 @@ function callStravaAPI(endpoint, query_object) {
 
 
 function strava_main() {
-  /** Activity example */
-  // var endpoint = 'activities/13889807290';
-  // var query_object = {"include_all_efforts" : true};
-  // var response = callStravaAPI(endpoint, query_object);
+  /** Club member example */
+  //var endpoint = 'clubs/693906/members'
+  //var query_object = {"include_all_efforts" : true};
+  //var response = callStravaAPI(endpoint, {});
 
   /** Club activites example */
-  // var endpoint = '/clubs/693906/activities'
-  // var endpoint = '/athletes/61928790';
-  // var response = callStravaAPI(endpoint, {})
-  // saveMapToFile(response, 'example.png')
+  var endpoint = 'clubs/693906/activities'
+  //var endpoint = 'activities/7851396132' // 13889807290';
+  var response = callStravaAPI(endpoint, {});
+  const runStats = getRunStats(response[0]);
+  console.log(runStats);
 
   /** Individual athlete example */
-  var endpoint = 'athlete/activities'
-  var response = callStravaAPI(endpoint, {});
+  // var endpoint = 'athletes/29784399/stats' // 'athlete/activities';
+  // var response = callStravaAPI(endpoint, {});
+  // const stats = getRunStats(response[0]);
+  // saveMapToFile(response, 'example.png')
 
-  const stats = getRunStats(response[0]);
-  console.log(stats);
-
-  //saveMapToFile(activity0, 'test-march-22.png');
+  //console.log(response);
 }
 
 
@@ -96,8 +96,9 @@ function strava_main() {
  * Extract target run stats from Strava activity.
  * 
  * @see 'https://developers.strava.com/docs/reference/#api-models-SummaryActivity'
+ * @see 'https://developers.strava.com/docs/reference/#api-models-ClubActivity'
  * 
- * @param {object} activity  A Strava object `SummaryActivity`.
+ * @param {object} activity  A Strava object `SummaryActivity` or `ClubActivity`.
  * @return {object}  Extracted stats from `activity`.
  * 
  * @author [Andrey S Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
@@ -107,6 +108,7 @@ function strava_main() {
 
 function getRunStats(activity) {
   const targetStats = [
+    'athlete',
     'name',
     'distance',
     'moving_time',
@@ -117,13 +119,16 @@ function getRunStats(activity) {
     'map',
   ];
 
-  const extracted = targetStats.reduce((acc, aStat) => {
-    acc[aStat] = activity[aStat];
-    return acc;
-  }, {});
+  const found = {};
+  targetStats.forEach(stat => {
+    if(activity[stat]) { 
+      found[stat] = activity[stat];   // Only add if present in `activity`
+    }
+  });
 
-  return extracted;
+  return found;
 }
+
 
 
 /**
@@ -193,7 +198,6 @@ function getSaveLocation(submissionTime) {
  */
 
 function getMapForLatestRun() {
-  const sheet = ATTENDANCE_SHEET;
   var submissionTimestamp = getLatestSubmissionTimestamp();
   var now = new Date();
   var subEpochTime = getUnixEpochTimestamp(submissionTimestamp);
@@ -208,16 +212,17 @@ function getMapForLatestRun() {
     throw new Error(errorMessage); // Throw the ExecutionError
   }
 
-  var activity = response[0]
-  var saveLocation = getSaveLocation(subEpochTime)
-  saveMapToFile(activity, saveLocation)
+  var activity = response[0];
+  var saveLocation = getSaveLocation(subEpochTime);
+  saveMapToFile(activity, saveLocation);
 }
 
 
 /**
- * Configure the service using the OAuth2 library: https://github.com/googleworkspace/apps-script-oauth2.
- *
- * @trigger Form Submission.
+ * Configure the service using the OAuth2 library.
+ * 
+ * @see 'https://github.com/googleworkspace/apps-script-oauth2'
+ * 
  */
 
 function getStravaService() {
