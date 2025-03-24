@@ -17,18 +17,26 @@ function onFormSubmission() {
   const row = getLastSubmission_();  // Get submission row index
   console.log(`Latest row number: ${row}`);
 
+  onFormSubmissionInRow(row);
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
-
-  formatConfirmationInRow_(row);  // transforms bool to user-friendly message
-  formatNamesInRow_(row);     // formats names in last row
-  //getUnregisteredMembersInRow_(row);
 
   //emailSubmission();    // IN-REVIEW
   //setCopySent_();
-  formatSpecificColumns(row);
+  formatSpecificColumns();
 }
 
 
+function onFormSubmissionInRow(row = 15) {
+  addMissingPlatform_(row);    // Sets platform to 'Google Form'
+
+  formatConfirmationInRow_(row);  // Transforms bool to user-friendly message
+  formatNamesInRow_(row);     // Formats names in last row
+  //getUnregisteredMembersInRow_(row);
+
+  formatSpecificColumns();
+}
+
+ 
 /**
  * Functions to execute after McRUN app submission.
  *

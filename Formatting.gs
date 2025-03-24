@@ -109,7 +109,7 @@ function prettifySheet() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Mar 16, 2025
+ * @update  Mar 24, 2025
  */
 
 function formatSpecificColumns() {
@@ -140,10 +140,10 @@ function formatSpecificColumns() {
   getThisRange('F2:H').setWrap(false);  // Attendees
 
   // 5. Horizontal and vertical alignment
-  getThisRange('L2:M').setHorizontalAlignment('center');
-
+  getThisRange(['E2:E', 'L2:M']).setHorizontalAlignment('center');  // Headrun + Copy Sent + Submission Platform
+ 
   getThisRange([
-    'F2:H',   // Attendees
+    'D2:H',   // Headrun Details + Attendees
     'L2:M',   // Copy Sent + Submission Platform
   ]).setVerticalAlignment('middle');
   
