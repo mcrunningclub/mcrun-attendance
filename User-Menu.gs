@@ -303,7 +303,7 @@ function onFormSubmitUI_() {
 
   // Assemble notification message
   const firstMsg = "↪️ Most functions will be triggered when there is a new attendance submission via Google Form.";
-  const fullMsg = (returnObj.msg ? `${returnObj.msg}\n` : '') + firstMsg;
+  const fullMsg = (returnObj.msg ? `${returnObj.msg}\n\n` : '') + firstMsg;
 
   // Execute Function with argument
   const functionName = onFormSubmissionInRow.name;
@@ -318,7 +318,6 @@ function onAppSubmitUI_() {
 }
 
 
-
 function requestRowInput_() {
   const ui = SpreadsheetApp.getUi();
   const headerMsg = "Which row do you want to target?";
@@ -327,11 +326,11 @@ function requestRowInput_() {
   const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
   const responseText = response.getResponseText().trim();
 
-  return processRowInput(responseText);
+  return processRowInput(responseText, ui);
 }
 
 
-function processRowInput(userResponse) {
+function processRowInput(userResponse, ui) {
   const rowNumber = Number.parseInt(userResponse);
   const returnObj = {row: null, msg: ''};
 
