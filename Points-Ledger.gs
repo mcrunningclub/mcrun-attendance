@@ -72,15 +72,8 @@ function hideAllAttendeeEmail() {
 }
 
 
-function hideAttendeeEmailInRow_(row=ATTENDANCE_SHEET.getLastRow()) {
+function hideAttendeeEmailInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   Object.values(ATTENDEE_MAP).forEach(col => hideAttendeeEmailInCell_(col, row));
-
-  // const allAttendeesCol = [
-  //   ATTENDEES_BEGINNER_COL,
-  //   ATTENDEES_INTERMEDIATE_COL,
-  //   ATTENDEES_ADVANCED_COL
-  // ];
-  // allAttendeesCol.forEach(col => hideAttendeeEmailInCell_(col, row));
 }
 
 
@@ -195,14 +188,7 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
     .filter(level => !values[level].includes(EMPTY_ATTENDEE_FLAG)   // Skip levels with "None"
   );
 
-  // const allAttendeesCol = [
-  //   ATTENDEES_BEGINNER_COL,
-  //   ATTENDEES_INTERMEDIATE_COL,
-  //   ATTENDEES_ADVANCED_COL
-  // ].filter(level => !values[level].includes(EMPTY_ATTENDEE_FLAG)) // Skip levels with "None"
-
   for(var level of allAttendeesCol) {
-
     // Format in `Event Log` sheet in `Points Ledger`
     // Import-Timestamp   Event   Event-TS   MemberEmail   Distance   Points
     const eventToTransfer = [
@@ -218,103 +204,5 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
     const rangeNewLog = ledgerSheet.getRange(ledgerLastRow++, 1, 1, colSizeOfTransfer);
     rangeNewLog.setValues([eventToTransfer]);
   }
-
 }
 
-
-/**
- * Function to send email to each member updating them on their points
- *
- * @trigger The 1st and 14th of every month
- *
- * @author [Charles Villegas](<charles.villegas@mail.mcgill.ca>) & ChatGPT
- * @date  Nov 5, 2024
- * @update  Jan 7, 2025
- */
-
-function pointsEmail() {
-  const sheet = ATTENDANCE_SHEET;
-  const lastRow = sheet.getLastRow();
-
-  // if (getCurrentUserEmail() != 'mcrunningclub@ssmu.ca') return;   // prevent email sent by wrong user
-
-  const points = SpreadsheetApp.openByUrl(LEDGER_URL).getSheetByName("Member Points");
-
-  // Define the columns to check for attendees
-  // const attendeeColumns = [
-  //   ATTENDEES_BEGINNER_COL,
-  //   ATTENDEES_INTERMEDIATE_COL,
-  //   ATTENDEES_ADVANCED_COL
-  // ];
-
-  const attendeeColumns = Object.values(ATTENDEE_MAP);
-
-  // Collect all unique values in one step
-  const uniqueRecipients = new Set(
-    attendeeColumns.flatMap(level => {
-      // Get all values in the current column and split by newline
-      return sheet.getSheetValues(2, level, lastRow, 1)
-        .flat() // Flatten the 2D array to 1D
-        .map(value => value.split('\n')) // Split by newline
-        .flat(); // Flatten the nested arrays
-    })
-  );
-
-  // Convert the Set to an Array of unique recipients
-  const uniqueRecipientsArray = [...uniqueRecipients].map(value => value.trim()).filter(Boolean);
-
-  // Get all names and point values from points, and names and emails from emails
-  const pointsData = points.getSheetValues(2, 1, points.getLastRow() - 1, 6);
-
-  // Create a mapping of full names to points
-  const pointsMap = {};
-  pointsData.forEach(([email, , , ,fullName, points]) => {
-    pointsMap[fullName.trim()] = [email, points]; // Store points with full name as the key
-  });
-
-  // Loop through the full names array and email that member regarding their current points
-  uniqueRecipientsArray.forEach(fullName => {
-    const trimmedName = fullName.trim();
-    if (!pointsMap[trimmedName]) return;     // skips to next iteration if no email is found
-
-    const points = pointsMap[trimmedName][1] ?? 0;
-    const email = pointsMap[trimmedName][0]; // Get email for the full name
-    const firstName = trimmedName.split(" ")[0];
-
-    if (email) {
-      // Construct and send the email
-      const subject = `Your Points Update`;
-
-      const pointsEmailHTML = `
-        <!DOCTYPE html>
-        <html>
-          <body style="font-family: Arial, Helvetica, sans-serif;">
-            <div style="margin: 10% 5%; text-align: center">
-                <img src="https://mcrun.ssmu.ca/wp-content/uploads/2023/04/McRun-Logo-Circular.png" style="width: 20%" >
-                <div style="text-align: left; width: max-content; margin: 0 auto">
-                <h1>Hello, ${firstName}!</h1>
-                <h3>You currently have:</h3>
-                <h2>${points} points</h2>
-                <p>Thanks for running with us, hope you keep up the great pace!</p>
-                <p>- McGill Students Running Club</p>
-                </div>
-            </div>
-          </body>
-        </html>
-      `;
-
-
-      MailApp.sendEmail({
-        to: email,
-        subject: subject,
-        htmlBody: pointsEmailHTML
-      });
-
-
-      // log confirmation for the sent email with values for each variable
-      Logger.log(`Email sent to ${trimmedName} at ${email} with ${points} points.`);
-    } else {
-      Logger.log(`No email found for ${trimmedName}.`);
-    }
-  });
-}

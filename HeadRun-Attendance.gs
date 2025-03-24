@@ -10,10 +10,13 @@
  */
 
 function onFormSubmission() {
-  const row = getLastSubmission_();
+  // Since GForm might not add submission to bottom, sort beforehand
+  sortAttendanceForm();    
+  SpreadsheetApp.flush();
+
+  const row = getLastSubmission_();  // Get submission row index
   console.log(`Latest row number: ${row}`);
 
-  sortAttendanceForm(row);    // GForm might not add submission to bottom
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
 
   formatConfirmationInRow_(row);  // transforms bool to user-friendly message
@@ -63,7 +66,7 @@ function getLastSubmission_() {
   const numRow = sheet.getLastRow();
 
   // Fetch all values in the TIMESTAMP_COL
-  const values = sheet.getSheetValues(startRow, COLUMN_MAP.TIMESTAMP, numRow);
+  const values = sheet.getSheetValues(startRow, TIMESTAMP_COL, numRow, 1);
   let lastRow = values.length;
 
   // Loop through the values in reverse order
@@ -193,7 +196,7 @@ function toggleAttendanceCheck_() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Feb 16, 2025
+ * @update  Mar 24, 2025
  */
 
 function checkMissingAttendance() {
@@ -209,7 +212,13 @@ function checkMissingAttendance() {
   // this project, transfer latest submission from `App import` sheet.
   // Do nothing if already imported to prevent duplicates
   transferLastImport();
-  verifyAttendance_();
+
+  // If not submitted, verifyAttendance will send reminder email
+  const isSubmitted = verifyAttendance_();
+  if (isSubmitted) {
+    onFormSubmission();
+    console.log(`Executed onFormSubmission successfully!`);
+  }
 }
 
 
@@ -248,11 +257,15 @@ function verifyAttendance_() {
   const headrunTitle = getHeadrunTitle(headrunDay); // e.g 'Monday - 9am'
 
   // Verify if form has been submitted. Otherwise send an email reminder.
-  if (!isSubmitted()) {
+  const isAttendanceSubmitted = isSubmitted();
+  if (!isAttendanceSubmitted) {
     sendEmailReminder(headrunTitle);
+    console.log('Sending email reminder for headrun ${headrunTitle} now...');
   }
 
-  // Helper function
+  return isAttendanceSubmitted;
+
+  /** Helper functions */
   function isSubmitted() {
     let isSubmittedFlag = false;
 

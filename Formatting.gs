@@ -351,7 +351,7 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
 
 /**
- * Creates email using details from input `emailDetails`.
+ * Create email using details from input `emailDetails' for internal use
  *
  * @param {Map<string>} emailDetails  Information needed to populate email body.
  * @return {string}  HTML code for email.

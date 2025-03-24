@@ -46,8 +46,6 @@ const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhK
 // SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
 const SCRIPT_PROPERTY = {
   isCheckingAttendance: 'IS_CHECKING_ATTENDANCE',
-  clientID: 'CLIENT_ID',
-  clientSecret: 'CLIENT_SECRET',
 };
 
 // NAME OF HTML TEMPLATES. ENSURE CORRECT FILE NAME!!
