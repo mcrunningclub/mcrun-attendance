@@ -210,34 +210,14 @@ function formatAllNamesUI_() {
  */
 
 function formatNamesInRowUI_() {
-  const ui = SpreadsheetApp.getUi();
-  const headerMsg = "Which row do you want to format?";
-  const textMsg = "Enter the row number, or leave empty for the last row.";
+  const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
+  const selectedRow = returnObj.row;
 
-  const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
-  const responseText = response.getResponseText().trim();
+  if (!selectedRow) return;  // User input is not valid
 
-  var functionName = formatNamesInRow_.name;
-  var customMsg = "";
-
-  const rowNumber = Number.parseInt(responseText);
-
-  if (responseText === "") {
-    // User did not enter a row number; check last row only.
-    customMsg = "This will only format the names in the last row."
-  }
-  else if (isValidRow_(rowNumber)) {
-    // Row is valid, can continue execution.
-    customMsg = `This will only format the names in row ${rowNumber}.`
-  }
-  else {
-    // Input value is invalid row. Stop execution.
-    ui.alert("Incorrect row number, please try again with a valid row number.");
-    return;
-  }
-
-  // Run respective function depending if-statement above
-  confirmAndRunUserChoice_(functionName, customMsg, rowNumber);
+  // Execute Function with argument
+  const functionName = formatNamesInRow_.name;
+  confirmAndRunUserChoice_(functionName, returnObj.msg, selectedRow);
 }
 
 
@@ -293,33 +273,17 @@ function findAllUnregisteredUI_() {
  */
 
 function findUnregisteredAttendeesUI_() {
-  const ui = SpreadsheetApp.getUi();
-  const headerMsg = "Which row do you want to check?";
-  const textMsg = "Enter the row number, or leave empty to check last row.";
+  const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
+  const selectedRow = returnObj.row;
 
-  const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
-  const responseText = response.getResponseText().trim();
-  const rowNumber = Number.parseInt(responseText);
+  if (!selectedRow) return;  // User input is not valid
 
-  var functionName = getUnregisteredMembersInRow_.name;    // Function searches last row if no arg provided
-  var customMsg = "";
+  // Assemble notification message
+  const fullMsg = `↪️ This will search for unregistered attendees in ${selectedRow}, and add them to \`Not Found\` column.`;
 
-  if (responseText == "") {
-    // User did not enter a row number; check last row only.
-    customMsg = "This will search for unregistered attendees in the last row, and add them to \`Not Found\` column."
-  }
-  else if (isValidRow_(rowNumber)) {
-    // Row is valid, can continue execution.
-    customMsg = `This will search for unregistered attendees in row ${responseText} and add them to \`Not Found\` column.`
-  }
-  else {
-    // Input value is invalid row. Stop execution.
-    ui.alert("Incorrect row number, please try again with a valid row number.");
-    return;
-  }
-
-  // Run respective function depending if-statement result above
-  confirmAndRunUserChoice_(functionName, customMsg, rowNumber);
+  // Execute Function with argument
+  const functionName = getUnregisteredMembersInRow_.name;
+  confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
 }
 
 
@@ -332,15 +296,61 @@ function findUnregisteredAttendeesUI_() {
  */
 
 function onFormSubmitUI_() {
-  const functionName = onFormSubmission.name;
-  const customMsg = "This will run functions triggered when new attendance is submitted using the Google Form."
-  confirmAndRunUserChoice_(functionName, customMsg);
+  const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
+  const selectedRow = returnObj.row;
+
+  if (!selectedRow) return;  // User input is not valid
+
+  // Assemble notification message
+  const firstMsg = "↪️ Most functions will be triggered when there is a new attendance submission via Google Form.";
+  const fullMsg = (returnObj.msg ? `${returnObj.msg}\n` : '') + firstMsg;
+
+  // Execute Function with argument
+  const functionName = onFormSubmissionInRow.name;
+  confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
 }
+
 
 function onAppSubmitUI_() {
   const functionName = onAppSubmission.name;
   const customMsg = "This will run functions triggered when new attendance is submitted using the app."
   confirmAndRunUserChoice_(functionName, customMsg);
+}
+
+
+
+function requestRowInput_() {
+  const ui = SpreadsheetApp.getUi();
+  const headerMsg = "Which row do you want to target?";
+  const textMsg = "Enter the row number, or leave empty for the last row.";
+
+  const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
+  const responseText = response.getResponseText().trim();
+
+  return processRowInput(responseText);
+}
+
+
+function processRowInput(userResponse) {
+  const rowNumber = Number.parseInt(userResponse);
+  const returnObj = {row: null, msg: ''};
+
+  if (userResponse === "") {
+    // User did not enter a row number; check last row only.
+    returnObj.row = '';
+    returnObj.msg =  "This will only target the last row.";
+  }
+  else if (isValidRow_(rowNumber)) {
+    // Row is valid, can continue execution.
+    returnObj.row = rowNumber;
+    returnObj.msg = `This will only target row ${rowNumber}.`
+  }
+  else {
+    // Input value is invalid row. Stop execution.
+    ui.alert("Incorrect row number, please try again with a valid row number.");
+  }
+
+  return returnObj;
 }
 
 
