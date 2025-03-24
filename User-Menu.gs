@@ -330,6 +330,26 @@ function requestRowInput_() {
 }
 
 
+/**
+ * Returns result of reponse processing for row input.
+ *
+ * Helper function for UI functions for McRUN menu.
+ *
+ * @param {string} userResponse  User response text from `SpreadsheetApp.getUi().prompt`
+ * @param {GoogleAppsScript.Base.Ui} ui  User interface in Google Sheets
+ * @return {Result} `Result`  Packaged result of processing.
+ * 
+ * ### Properties of Return Object
+ * - ```Result.row {integer}``` — Parsed integer value of `userResponse`.
+ * 
+ * - ```Result.msg {string}``` — Custom message to display to the user.
+ * 
+ * ### Metadata
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Mar 24, 2025
+ * @update  Mar 24, 2025
+ */
+
 function processRowInput(userResponse, ui) {
   const rowNumber = Number.parseInt(userResponse);
   const returnObj = {row: null, msg: ''};
@@ -359,10 +379,11 @@ function processRowInput(userResponse, ui) {
  * Helper function for UI functions for McRUN menu.
  *
  * @param {number}  The row number in `ATTENDANCE_SHEET` 1-indexed.
+ * @return {boolean}  Returns true if valid row in sheet.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Dec 6, 2024
- * @update Dec 6, 2024
+ * @update  Dec 6, 2024
  */
 
 function isValidRow_(row) {
@@ -379,7 +400,7 @@ function isValidRow_(row) {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 11, 2024
- * @update Dec 11, 2024
+ * @update  Dec 11, 2024
  */
 
 function checkValidScriptProperties() {
