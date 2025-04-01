@@ -317,7 +317,7 @@ function sendEmailReminder(headrunTitle) {
   const templateName = REMINDER_EMAIL_HTML_FILE;
   const template = HtmlService.createTemplateFromFile(templateName);
 
-  template.LINK = ATTENDANCE_GFORM_LINK;
+  template.LINK = GET_ATTENDANCE_GFORM_LINK();
   template.SEMESTER = SEMESTER_NAME;
 
   // Returns string content from populated html template
@@ -351,7 +351,11 @@ function getAllUnregisteredMembers() {
 
 
 function testUnregistered() {
-  getUnregisteredMembersInRow_(10);
+  for(let row = 35; row <= 62; row++){
+    getUnregisteredMembersInRow_(row);
+    Utilities.sleep(1 * 1000);
+  }
+    
 }
 
 
@@ -367,7 +371,7 @@ function testUnregistered() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
- * @update  Feb 9, 2025
+ * @update  Apr 1, 2025
  */
 
 function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
@@ -379,18 +383,22 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const registered = [];
   const unregistered = [];
 
-  const memberMap = getMemberMap();
+  const memberMap = getMemberMap_();
   const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
 
   // Function to prepare a name: remove whitespace, strip accents, capitalize, and swap names
-  const prepareThisName = compose(formatThisName, reverseThisName);
+  const prepareThisName = compose(formatThisName, reverseThisName_);
 
   allAttendees.forEach(level => {
     const namesWithEmail = [];
     const namesWithoutEmail = [];
 
     // Skip if level contains the EMPTY_ATTENDEE_FLAG
-    if (level.includes(EMPTY_ATTENDEE_FLAG)) return;
+    if (level.includes(EMPTY_ATTENDEE_FLAG)) {
+      registered.push('');
+      unregistered.push('');
+      return;
+    };
 
     // Process and separate names in the level
     level.split('\n').forEach(name => {
@@ -404,35 +412,32 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
     // Try to find names without email in registrations (memberMap)
     // And append their respective email as in `namesWithEmail`
-    const { foundUnregistered, foundRegistered } = findUnregistered_(namesWithoutEmail.sort(), cleanMemberMap);
+    const { 
+      'unregistered' : foundUnregistered, 
+      'registered' : foundRegistered 
+    } = findUnregistered_(namesWithoutEmail.sort(), cleanMemberMap);
 
     // Combine and sort both arrays
-    const mergedRegistered = [...namesWithEmail, ...foundRegistered]
-    registered.push(mergedRegistered.sort());
+    const mergedRegistered = [...namesWithEmail, ...foundRegistered];
 
+    registered.push(mergedRegistered.sort());
     unregistered.push(foundUnregistered);
   });
 
   // Log unfound names
-  setNamesNotFound(row, unregistered.join("\n"));
-  return;
-
-
+  setNamesNotFound_(row, unregistered.join("\n"));
 
   // Append email to registered attendees
-  appendMemberEmail(row, registered);
-
-  // Hide emails in row, and highlight unregistered attendee
-  hideAttendeeEmailInRow_(row);
+  appendMemberEmail(row, registered, unregistered);
 }
 
 function testMap() {
-  const memberMap = getMemberMap();
+  const memberMap = getMemberMap_();
   const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
 }
 
 
-function setNamesNotFound(row, notFoundArr) {
+function setNamesNotFound_(row, notFoundArr) {
   const sheet = ATTENDANCE_SHEET;
   const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
   unfoundNameRange.setValue(notFoundArr);
@@ -459,8 +464,12 @@ function formatThisName(name) {
 
 
 // Format as `LastName, FirstName`
-function reverseThisName(name) {
+function reverseThisName_(name) {
   let nameParts = name.split(/\s+/)   // Split by spaces;
+
+  if (nameParts.length === 1) {
+    return name;
+  }
 
   // Replace hyphens with spaces. Can only perform after splitting first and last name.
   nameParts = nameParts.map(p => p.replace(/-/g, ' '));
@@ -472,7 +481,7 @@ function reverseThisName(name) {
 }
 
 
-function getMemberMap() {
+function getMemberMap_() {
   // Get existing member registry in `Members` sheet
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
 
@@ -515,7 +524,7 @@ function findUnregistered_(attendees, memberMap) {
   const registeredMap = {}    // Saves member name-email pair
 
   if (attendees.length < 1) {
-    return { 'registered': registeredMap, 'unregistered': unregistered };
+    return { 'registered': [], 'unregistered': [] };
   }
 
   const SEARCH_KEY_INDEX = 0;
@@ -525,7 +534,7 @@ function findUnregistered_(attendees, memberMap) {
 
   for (const attendee of attendees) {
     // Split attendee name into last and first name
-    const [attendeeLastName, attendeeFirstName] = attendee.split(",").map(s => s.trim());
+    const [attendeeLastName, attendeeFirstName = ""] = attendee.split(",").map(s => s.trim());
 
     let isFound = false;
 
@@ -561,10 +570,16 @@ function findUnregistered_(attendees, memberMap) {
     }
   }
 
+  const registered = Object.keys(registeredMap).map(name => {
+    const [lastName, firstName] = name.split(', ');
+    const email = registeredMap[name];
+    return `${firstName} ${lastName}:${email}`;
+  });
+
 
   const returnObject = {
-    'registered': registeredMap,
-    'unregistered': unregistered.sort()  // sorted list of unregistered attendees
+    'registered': registered || [],
+    'unregistered': unregistered.sort() || []  // sorted list of unregistered attendees
   };
 
   return returnObject;

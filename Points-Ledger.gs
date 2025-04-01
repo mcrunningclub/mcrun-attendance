@@ -4,14 +4,14 @@
  * Loops through all levels found in `row`. Sets new cell values in the end.
  *
  * @param {integer} row  Row in `ATTENDANCE_SHEET` to append email.
- * @param {string[][]} memberMap  All search keys of registered members (sorted) and emails.
+ * @param {string[][]} registered  All search keys of registered members (sorted) and emails.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Dec 14, 2024
- * @update  Feb 9, 2025
+ * @update  April 1, 2025
  */
 
-function appendMemberEmail(row, memberMap) {
+function appendMemberEmail(row, registered, unregistered) {
   const sheet = ATTENDANCE_SHEET;
   const numRowToGet = 1;
   const numColToGet = LEVEL_COUNT;
@@ -19,40 +19,36 @@ function appendMemberEmail(row, memberMap) {
   // Get attendee range starting from beginner col to advanced col
   const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, numRowToGet, numColToGet);  // Attendees columns
 
-  const allAttendees = attendeeRange.getValues()[0]; // Single row of attendees
+  //const allAttendees = attendeeRange.getValues()[0]; // Single row of attendees
   const updatedAttendees = [];    // Resulting values to set in sheet
 
   // Iterate through levels and add emails
-  for(let col=0; col < numColToGet; col++) {
-    let attendeesInLevel = allAttendees[col].split('\n');  // Split by newline
-    
+  for(let col = 0; col < numColToGet; col++) {
+    const levelRegistered = registered[col];
+    const levelUnregistered = unregistered[col];
+
+    const registeredCount = levelRegistered ? levelRegistered.length : 0;
+    const unregisteredCount = levelUnregistered ? levelUnregistered.length : 0;
+
     // Skip levels with no attendees
-    if(attendeesInLevel.includes(EMPTY_ATTENDEE_FLAG)) {
+    if (registeredCount === 0 && unregisteredCount === 0) {
       updatedAttendees.push(EMPTY_ATTENDEE_FLAG);
       continue;
     }
-
-    const memberSearchKey = memberMap[SEARCH_KEY_INDEX];
-
-
-    // Compare last names and check if first name matches any in the list
-    //if (attendeeLastName === memberLastName && searchFirstNameList.includes(attendeeFirstName)) {return;}
-
-
-    // Format each attendee with their email if available
-    const formattedAttendee = attendeesInLevel.map(name => {
-
-      const [memberLastName, memberFirstNames] = memberSearchKey.split(",").map(s => s.trim());
-      const searchFirstNameList = memberFirstNames.split("|").map(s => s.trim());   // only if preferredName exists
-
-      if (name in memberMap) {
-        return `${name}:${memberMap[name]}`;
-      }
-      return name; // Leave the name as-is if no email found
-    });
-
+    // Update these members since no unregistered
+    else if (unregisteredCount === 0) {
+      updatedAttendees[col] = levelRegistered.join('\n');
+      continue;
+    }
+    else if (registeredCount === 0) {
+      updatedAttendees[col] = levelUnregistered.join('\n');
+      continue;
+    }
+    // Merge attendees in `col` and sort before setting back in sheet
+    const attendees = [...levelRegistered, ...levelUnregistered].sort();
+    
     // Join back into a string and add to the results
-    updatedAttendees.push(formattedAttendee.join('\n'));
+    updatedAttendees.push(attendees.join('\n'));
   }
 
   // Write the updated attendees back to the sheet
@@ -152,15 +148,16 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
 
 
 function transferAllSubmissions() {
-  const startRow = 50; // ATTENDANCE_SHEET.getLastRow()
+  const startRow = 2;
+  const endRow = 62;
 
-  for (let row = startRow; row > 1; row--) {
+  for (let row = startRow; row <= endRow; row++) {
     transferSubmissionToLedger(row);
   }
 }
 
 
-function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
+function transferSubmissionToLedger(row = getLastSubmission_()) {
   const sheet = ATTENDANCE_SHEET;
 
   // `Points Ledger` Google Sheet
@@ -191,9 +188,10 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
   for(var level of allAttendeesCol) {
     // Format in `Event Log` sheet in `Points Ledger`
     // Import-Timestamp   Event   Event-TS   MemberEmail   Distance   Points
+    const eventName = `Headrun ${values[RUN_LEVEL_COL]}\n${values[HEADRUN_COL]}`;
     const eventToTransfer = [
       formattedNow,           // Import Timestamp
-      values[HEADRUN_COL],    // Event name
+      eventName,              // Event name
       values[TIMESTAMP_COL],  // Event Timestamp
       values[level],          // Member Emails
       values[DISTANCE_COL],   // Distance
@@ -201,7 +199,7 @@ function transferSubmissionToLedger(row=ATTENDANCE_SHEET.getLastRow()) {
     ]
 
     const colSizeOfTransfer = eventToTransfer.length;
-    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow++, 1, 1, colSizeOfTransfer);
+    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow + 1, 1, 1, colSizeOfTransfer);
     rangeNewLog.setValues([eventToTransfer]);
   }
 }

@@ -37,11 +37,11 @@ const MEMBER_SEARCH_KEY_COL = 6;  // Found in 'Members' sheet
 // EXTERNAL SHEETS USED IN SCRIPTS
 const MASTER_NAME = 'MASTER';
 const SEMESTER_NAME = 'Winter 2025';
-const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y70sI-FAktCiSWqEmkDxfZWz0lFu4/edit?usp=sharing";
+const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y70sI-FAktCiSWqEmkDxfZWz0lFu4/";
 
 // LEDGER SPREADSHEET
 const LEDGET_SHEET_NAME = 'Event Log';
-const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/edit?usp=sharing";
+const LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/";
 
 // SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
 const SCRIPT_PROPERTY = {
@@ -52,7 +52,7 @@ const SCRIPT_PROPERTY = {
 const COPY_EMAIL_HTML_FILE = 'Confirmation-Email';
 const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';
 
-const ATTENDANCE_GFORM_LINK = ATTENDANCE_SHEET.getFormUrl();
+const GET_ATTENDANCE_GFORM_LINK = () => ATTENDANCE_SHEET.getFormUrl();
 //const ATTENDANCE_GFORM_LINK = "https://docs.google.com/forms/d/1QVBKZ8aRaQ__w78HJzMrkq2ps_B_om7bW5D6vQL0-as/viewform";
 //const ATTENDANCE_FORM_TITLE = FormApp.openByUrl(ATTENDANCE_GFORM_LINK).getTitle();  // Gets name of GForm
 

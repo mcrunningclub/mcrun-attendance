@@ -208,9 +208,7 @@ function copyToSemesterSheet_(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow())
  * Create JSON-formatted string of key-value pairs for attendance submission.
  * 
  * @param {string[]} keyArr  Array of keys storing header row values.
- * 
  * @param {string[]} valArr  Values of attendance submission to map.
- * 
  * @return {string}  A JSON string of attendance submission as key-value pairs.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
@@ -240,7 +238,6 @@ function packageAttendance_(keyArr, valArr) {
  * Raw format cannot be understood by GSheet.
  * 
  * @param {string} raw  Datetime value to be formatted.
- * 
  * @return {Date}  A Date object with correct format.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
