@@ -76,7 +76,7 @@ function processOnChange(sourceSheet) {
 }
 
 
-function transferThisRow_(row) {
+function transferThisRow(row) {
   const attendanceObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const attendanceTimestamp = attendanceObj['timestamp'];
   
@@ -87,11 +87,12 @@ function transferThisRow_(row) {
   // Transfer if attendance submission not found.
   copyToSemesterSheet_(attendanceObj);
   toggleSuccessfulImport_(row);
+  onAppSubmission(row);
 }
 
 function transferLastImport() {
   const thisLastRow = IMPORT_SHEET.getLastRow();
-  transferThisRow_(thisLastRow);
+  transferThisRow(thisLastRow);
 }
 
 

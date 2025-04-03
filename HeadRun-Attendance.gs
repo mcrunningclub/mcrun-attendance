@@ -18,22 +18,19 @@ function onFormSubmission() {
   console.log(`Latest row number: ${row}`);
 
   onFormSubmissionInRow(row);
-  addMissingPlatform_(row);    // Sets platform to 'Google Form'
 
   //emailSubmission();    // IN-REVIEW
-  //setCopySent_();
   formatSpecificColumns();
+  transferSubmissionToLedger(row);
 }
 
 
-function onFormSubmissionInRow(row = 15) {
+function onFormSubmissionInRow(row) {
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
 
   formatConfirmationInRow_(row);  // Transforms bool to user-friendly message
   formatNamesInRow_(row);     // Formats names in last row
-  //getUnregisteredMembersInRow_(row);
-
-  formatSpecificColumns();
+  getUnregisteredMembersInRow_(row);    // Find any unregistered members
 }
 
  
@@ -50,9 +47,8 @@ function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
   //emailSubmission();    // IN-REVIEW
 
   formatNamesInRow_(row);
-  //hideAttendeeEmailInRow_(row);
-
   formatSpecificColumns();
+  
   sortAttendanceForm();
 }
 

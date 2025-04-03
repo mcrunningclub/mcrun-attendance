@@ -164,7 +164,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
   const sheetURL = LEDGER_URL;
   const ss = SpreadsheetApp.openByUrl(sheetURL);
   const ledgerSheet = ss.getSheetByName(LEDGET_SHEET_NAME);
-  var ledgerLastRow = ledgerSheet.getLastRow();   // Increment per event transfer
+  var ledgerLastRow = ledgerSheet.getLastRow() + 1;   // Increment per event transfer
 
   // Select columns to transfer from `sheet`
   const startCol = TIMESTAMP_COL;
@@ -199,8 +199,11 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
     ]
 
     const colSizeOfTransfer = eventToTransfer.length;
-    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow + 1, 1, 1, colSizeOfTransfer);
+    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow, 1, 1, colSizeOfTransfer);
     rangeNewLog.setValues([eventToTransfer]);
+
+    // Output log message
+    Logger.log(`Successfully transferred event '${eventName}' to row ${ledgerLastRow} in ledger.`);
   }
 }
 

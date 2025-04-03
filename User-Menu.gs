@@ -44,7 +44,7 @@ function logMenuAttempt_(email = "") {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 5, 2024
- * @update  Dec 8, 2024
+ * @update  April 1, 2025
  */
 
 function onOpen() {
@@ -73,6 +73,11 @@ function onOpen() {
       .addItem('Submit By Form', onFormSubmitUI_.name)
       .addItem('Submit By App', onAppSubmitUI_.name)
       .addItem('Turn On/Off Submission Checker', toggleAttendanceCheckUI_.name)
+    )
+
+    .addSubMenu(ui.createMenu('Export Menu')
+      .addItem('Import from App Records', importAppRecordUI_.name)
+      .addItem('Export to Points Ledger', exportToPointsLedgerUI_.name)
     )
     .addToUi();
 
@@ -317,6 +322,50 @@ function onAppSubmitUI_() {
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
+
+/**
+ * Scripts for `Transfer` menu items.
+ *
+ * Extracting function name using `name` property to allow for refactoring.
+ *
+ * Some functions include a custom message for user.
+ */
+
+function exportToPointsLedgerUI_() {
+  const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
+  const selectedRow = returnObj.row;
+
+  if (!selectedRow) return;  // User input is not valid
+
+  // Assemble notification message
+  const firstMsg = "↪️ Exporting attendance record to points ledger...";
+  const fullMsg = (returnObj.msg ? `${returnObj.msg}\n\n` : '') + firstMsg;
+
+  // Execute Function with argument
+  const functionName = transferSubmissionToLedger.name;
+  confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
+}
+
+
+function importAppRecordUI_() {
+  const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
+  const selectedRow = returnObj.row;
+
+  if (!selectedRow) return;  // User input is not valid
+
+  // Assemble notification message
+  const firstMsg = "↪️ Importing attendance record from McRUN app...";
+  const fullMsg = (returnObj.msg ? `${returnObj.msg}\n\n` : '') + firstMsg;
+
+  // Execute Function with argument
+  const functionName = transferThisRow.name;
+  confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
+}
+
+
+/**
+ * Helper Functions for user input, etc.
+ */
 
 function requestRowInput_() {
   const ui = SpreadsheetApp.getUi();
