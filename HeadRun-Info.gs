@@ -28,12 +28,12 @@ const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
  */
 
 function getHeadrunTitle(headRunDay) {
-  switch(headRunDay) {
-    case 'TuesdayPM'  : return 'Tuesday - 6:00pm';
+  switch (headRunDay) {
+    case 'TuesdayPM': return 'Tuesday - 6:00pm';
     case 'WednesdayPM': return 'Wednesday - 6:00pm';
-    case 'ThursdayAM' : return 'Thursday - 7:30am';
-    case 'SaturdayAM' : return 'Saturday - 10:00am';
-    case 'SundayPM'   : return 'Sunday - 6:00pm';
+    case 'ThursdayAM': return 'Thursday - 7:30am';
+    case 'SaturdayAM': return 'Saturday - 10:00am';
+    case 'SundayPM': return 'Sunday - 6:00pm';
 
     default : throw new Error(`No headrunner has been found for ${headRunDay}`);
   }
@@ -76,7 +76,7 @@ function formatAllHeadRunner() {
  * ```
  */
 
-function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1) {
+function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
   const sheet = ATTENDANCE_SHEET;
   const headrunnerCol = HEADRUNNERS_COL;
 
@@ -113,6 +113,7 @@ function formatHeadRunnerInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1
 
   // Update the sheet with formatted names
   rangeHeadRunner.setValues(formattedNames);
+  console.log(`Completed formatting of headrunner names`,  formattedNames);
 }
 
 
@@ -150,7 +151,7 @@ function getHeadRunnerEmail(headrun) {
   const sophiaLongo = 'sophia.longo@mail.mcgill.ca';
   const theoGhanem = 'theo.ghanem@mail.mcgill.ca';
   const zishengHong = 'zisheng.hong@mail.mcgill.ca';
-  
+
 
   // Head Runners associated to each head run
   const tuesdayHeadRunner = [
@@ -178,7 +179,7 @@ function getHeadRunnerEmail(headrun) {
     isabellaVignuzzi,
     theoGhanem,
     liamGrant,
-    ];
+  ];
 
   const sundayHeadRunner = [
     charlesVillegas,
@@ -192,13 +193,13 @@ function getHeadRunnerEmail(headrun) {
   const thisHeadrun = headrun.toLowerCase();
   // Easier to decode from input `headrun`
   switch (thisHeadrun) {
-    case 'tuesdaypm'   : return tuesdayHeadRunner;
+    case 'tuesdaypm': return tuesdayHeadRunner;
     case 'wednesdaypm': return wednesdayHeadRunner;
-    case 'thursdayam' : return thursdayHeadRunner;
+    case 'thursdayam': return thursdayHeadRunner;
     case 'saturdayam': return saturdayHeadRunner;
     case 'sundaypm': return sundayHeadRunner;
 
-    default : throw Error (`No headrun found for ${thisHeadrun}`);
+    default: throw Error(`No headrun found for ${thisHeadrun}`);
   }
 }
 
@@ -227,7 +228,7 @@ function formatAllHeadRun() {
  * @update  Dec 11, 2024
  */
 
-function formatHeadRunInRow_(startRow=ATTENDANCE_SHEET.getLastRow(), numRow=1) {
+function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
   const sheet = ATTENDANCE_SHEET;
   const headrunCol = HEADRUN_COL;
 

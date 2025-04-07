@@ -107,6 +107,7 @@ function toggleSuccessfulImport_(row, colIndex = null) {
 
   const isImportedRange = sheet.getRange(row, isImportedCol);
   isImportedRange.setValue(true);
+  console.log(`Toggled successful import in row ${row}`);
 }
 
 
@@ -157,7 +158,7 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 8, 2025
- * @update  March 13, 2025
+ * @update  Apr 7, 2025
  * 
  */
 
@@ -201,6 +202,8 @@ function copyToSemesterSheet_(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow())
   const rangeToImport = attendanceSheet.getRange(startRow, 1, 1, colSize);
   rangeToImport.setValues([valuesByIndex]);
 
+  // Log and return startRow
+  console.log(`Set registration ${timestampValue} in row ${startRow}`);
   return startRow;
 }
 

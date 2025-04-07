@@ -311,7 +311,7 @@ function onFormSubmitUI_() {
   const fullMsg = (returnObj.msg ? `${returnObj.msg}\n\n` : '') + firstMsg;
 
   // Execute Function with argument
-  const functionName = onFormSubmissionInRow.name;
+  const functionName = onFormSubmissionInRow_.name;
   confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
 }
 

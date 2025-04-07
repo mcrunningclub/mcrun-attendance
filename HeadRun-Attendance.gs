@@ -17,19 +17,14 @@ function onFormSubmission() {
   const row = getLastSubmission_();  // Get submission row index
   console.log(`Latest row number: ${row}`);
 
-  onFormSubmissionInRow(row);
-
-  //emailSubmission();    // IN-REVIEW
-  formatSpecificColumns();
-  transferSubmissionToLedger(row);
+  onFormSubmissionInRow_(row);
+  endFunctions_(row);
 }
 
 
-function onFormSubmissionInRow(row) {
+function onFormSubmissionInRow_(row) {
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
-
-  formatConfirmationInRow_(row);  // Transforms bool to user-friendly message
-  formatNamesInRow_(row);     // Formats names in last row
+  bulkFormatting_(row);
   getUnregisteredMembersInRow_(row);    // Find any unregistered members
 }
 
@@ -41,15 +36,25 @@ function onFormSubmissionInRow(row) {
  */
 
 function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
-  //removePresenceChecks();
-  formatConfirmationInRow_(row);
+  console.log(`Starting 'onAppSubmission' for row ${row}`);
 
-  //emailSubmission();    // IN-REVIEW
-
-  formatNamesInRow_(row);
-  formatSpecificColumns();
+  bulkFormatting_(row);
+  endFunctions_(row);
   
   sortAttendanceForm();
+  console.log(`Completed 'onAppSubmission' successfully!`);
+}
+
+
+function bulkFormatting_(row) {
+  formatConfirmationInRow_(row);  // Transforms bool to user-friendly message
+  formatNamesInRow_(row);     // Formats names in last row
+}
+
+function endFunctions_(row) {
+  transferSubmissionToLedger(row);
+  formatSpecificColumns();
+  //emailSubmission();    // IN-REVIEW
 }
 
 /**
@@ -191,12 +196,7 @@ function toggleAttendanceCheck_() {
  *
  * @trigger 30-60 mins after schedule in `getHeadRunString()`.
  *
- * CURRENTLY IN REVIEW!
- *
  * @UPDATE-EACH-SEMESTER `getHeadRunString()`, `getHeadRunnerEmail()`.
- *
- * @TODO  change to `checkMissingAttendance(var headRunAMorPM)`.
- * @TODO  modify headrun source to GSheet-> i.e. modify `getHeadRunString()` and `getHeadRunnerEmail()`.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
@@ -217,12 +217,12 @@ function checkMissingAttendance() {
   // Do nothing if already imported to prevent duplicates
   transferLastImport();
 
-  // If not submitted, verifyAttendance will send reminder email
-  const isSubmitted = verifyAttendance_();
-  if (isSubmitted) {
-    onFormSubmission();
-    console.log(`Executed onFormSubmission successfully!`);
-  }
+  // Save result of attendance verification, and get title for email
+  const { isSubmitted: isSubmitted, headrunTitle: headrunTitle } = verifyAttendance_();
+
+  // Send copy of submission if true. Otherwise send an email reminder.
+  isSubmitted ? sendSubmissionCopy_(headrunTitle) :  sendEmailReminder_(headrunTitle);
+  console.log(`Executed onFormSubmission with 'isSubmitted' ${isSubmitted}`);
 }
 
 
@@ -260,16 +260,10 @@ function verifyAttendance_() {
   const headrunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
   const headrunTitle = getHeadrunTitle(headrunDay); // e.g 'Monday - 9am'
 
-  // Verify if form has been submitted. Otherwise send an email reminder.
-  const isAttendanceSubmitted = isSubmitted();
-  if (!isAttendanceSubmitted) {
-    sendEmailReminder(headrunTitle);
-    console.log('Sending email reminder for headrun ${headrunTitle} now...');
-  }
+  return { isSubmitted: isSubmitted(), headrunTitle: headrunTitle };
 
-  return isAttendanceSubmitted;
 
-  /** Helper functions */
+  /** Helper function */
   function isSubmitted() {
     let isSubmittedFlag = false;
 
@@ -301,7 +295,7 @@ function verifyAttendance_() {
 }
 
 
-function sendEmailReminder(headrunTitle) {
+function sendEmailReminder_(headrunTitle) {
   [dayOfWeek, time,] = headrunTitle.split(/\s*-\s*|\s+/);
   const amPmOfDay = time.match(/(am|pm)/i);
   const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
@@ -334,6 +328,12 @@ function sendEmailReminder(headrunTitle) {
 }
 
 
+function sendSubmissionCopy_() {
+  console.log("Please complete 'sendSubmissionCopy'");
+  return;
+}
+
+
 /**
  * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
  * 
@@ -343,15 +343,6 @@ function sendEmailReminder(headrunTitle) {
 
 function getAllUnregisteredMembers() {
   runOnSheet_(getUnregisteredMembersInRow_.name);
-}
-
-
-function testUnregistered() {
-  for(let row = 35; row <= 62; row++){
-    getUnregisteredMembersInRow_(row);
-    Utilities.sleep(1 * 1000);
-  }
-    
 }
 
 
@@ -383,7 +374,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
 
   // Function to prepare a name: remove whitespace, strip accents, capitalize, and swap names
-  const prepareThisName = compose(formatThisName, reverseThisName_);
+  const prepareThisName = compose_(formatThisName_, reverseThisName_);
 
   allAttendees.forEach(level => {
     const namesWithEmail = [];
@@ -427,11 +418,6 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   appendMemberEmail(row, registered, unregistered);
 }
 
-function testMap() {
-  const memberMap = getMemberMap_();
-  const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
-}
-
 
 function setNamesNotFound_(row, notFoundArr) {
   const sheet = ATTENDANCE_SHEET;
@@ -441,14 +427,14 @@ function setNamesNotFound_(row, notFoundArr) {
 
 
 // Group functions to apply on `input`
-function compose(...fns) {
+function compose_(...fns) {
   return (input) => fns.reduce((v, f) => f(v), input);
 }
 
 
 // Remove whitespace, strip accents and capitalize names
 // Swap order of attendee names to `lastName, firstName`
-function formatThisName(name) {
+function formatThisName_(name) {
   return name
     .trim()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents

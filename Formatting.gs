@@ -238,9 +238,8 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const formattedValue = (confirmationResp === 'true') ? 'Yes' : 'No (explain in comment section)';
   rangeConfirmation.setValue(formattedValue);
   
-  // Useful debugging messages
-  console.log(`Confirmation Response (raw): ${confirmationResp}`);
-  console.log(`Confirmation Response (formatted): ${formattedValue}`);
+  // Log debugging message
+  console.log(`Confirmation Response (raw): ${confirmationResp} (formatted):${formattedValue}`);
 }
 
 /**
@@ -269,6 +268,7 @@ function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   console.log('Now attempting to format headrunner and attendee names');
   formatAttendeeNamesInRow_(row);
   formatHeadRunnerInRow_(row);
+  SpreadsheetApp.flush();   // Apply all changes
 }
 
 
@@ -347,6 +347,7 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   }
   // Replace values with formatted names
   nameRange.setValues([namesArr]);    // setValues() requires 2D array
+  console.log(`Completed formatting of attendee names`, nameArr);
 }
 
 
