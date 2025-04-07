@@ -158,7 +158,7 @@ function transferAllSubmissions() {
 
 
 function transferSubmissionToLedger(row = getLastSubmission_()) {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
 
   // `Points Ledger` Google Sheet
   const sheetURL = LEDGER_URL;
@@ -203,7 +203,17 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
     rangeNewLog.setValues([eventToTransfer]);
 
     // Output log message
-    Logger.log(`Successfully transferred event '${eventName}' to row ${ledgerLastRow} in ledger.`);
+    Logger.log(`Successfully transferred event '${eventName.replace('\n', ' ')}' to Ledger row ${ledgerLastRow}`);
   }
 }
 
+
+function sendNewSubmissionToLedger(row) {
+  //const submission = packageMemberInfoInRow_(row);
+  //console.log(`Member info to export to 'NewMemberComms'\n`, submission);
+  //NewMemberCommunications.createNewMemberCommunications(submission);
+}
+
+function triggerEmailInLedger() {
+  
+}

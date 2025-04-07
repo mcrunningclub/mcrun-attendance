@@ -18,7 +18,7 @@ function onFormSubmission() {
   console.log(`Latest row number: ${row}`);
 
   onFormSubmissionInRow_(row);
-  endFunctions_(row);
+  transferAndFormat_(row);
 }
 
 
@@ -37,10 +37,9 @@ function onFormSubmissionInRow_(row) {
 
 function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
   console.log(`Starting 'onAppSubmission' for row ${row}`);
-
   bulkFormatting_(row);
-  endFunctions_(row);
-  
+  transferAndFormat_(row);
+
   sortAttendanceForm();
   console.log(`Completed 'onAppSubmission' successfully!`);
 }
@@ -51,10 +50,9 @@ function bulkFormatting_(row) {
   formatNamesInRow_(row);     // Formats names in last row
 }
 
-function endFunctions_(row) {
+function transferAndFormat_(row) {
   transferSubmissionToLedger(row);
   formatSpecificColumns();
-  //emailSubmission();    // IN-REVIEW
 }
 
 /**
@@ -66,11 +64,11 @@ function endFunctions_(row) {
  *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 8, 2025
- * @update  Feb 8, 2025
+ * @update  Apr 7, 2025
  */
 
 function getLastSubmission_() {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
   const startRow = 1;
   const numRow = sheet.getLastRow();
 
@@ -96,14 +94,14 @@ function getLastSubmission_() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Feb 14, 2025
+ * @update  Apr 7, 2025
  */
 
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
   if (getCurrentUserEmail() != 'mcrunningclub@ssmu.ca') return;
 
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
   const lastRow = getLastSubmission_();
 
   // Save values in 0-indexed array, then transform into 1-indexed by appending empty
@@ -216,6 +214,7 @@ function checkMissingAttendance() {
   // this project, transfer latest submission from `App import` sheet.
   // Do nothing if already imported to prevent duplicates
   transferLastImport();
+  onAppSubmission(row);
 
   // Save result of attendance verification, and get title for email
   const { isSubmitted: isSubmitted, headrunTitle: headrunTitle } = verifyAttendance_();

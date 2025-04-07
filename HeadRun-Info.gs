@@ -62,7 +62,7 @@ function formatAllHeadRunner() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 10, 2024
- * @update  Dec 11, 2024
+ * @update  Apr 7, 2024
  *
  * ```javascript
  * // Sample Script ➜ Format names in row `7`.
@@ -77,7 +77,7 @@ function formatAllHeadRunner() {
  */
 
 function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
   const headrunnerCol = HEADRUNNERS_COL;
 
   // Get all the values in `HEADRUNNERS_COL` in bulk
@@ -225,11 +225,11 @@ function formatAllHeadRun() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 10, 2024
- * @update  Dec 11, 2024
+ * @update  Apr 7, 2025
  */
 
 function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
   const headrunCol = HEADRUN_COL;
 
   // Get the cell value, and remove hyphen-space in each cell

@@ -2,17 +2,25 @@
 const IMPORT_SHEET_ID = 82376152;
 const IMPORT_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetById(IMPORT_SHEET_ID);
 
+// ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
+// SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+const GET_IMPORT_SHEET = () => {
+  return (IMPORT_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SS_ID).getSheetById(IMPORT_SHEET_ID);
+}
+
+const IS_IMPORTED_COL = 10;   // Update if columns modified
+
 // MAPPING FROM MASTER ATTENDANCE SHEET TO SEMESTER SHEET
 const IMPORT_MAP = {
-  'timestamp' : TIMESTAMP_COL,
-  'headrunners' : HEADRUNNERS_COL,
-  'headRun' : HEADRUN_COL,
-  'runLevel' : RUN_LEVEL_COL,
-  'confirmation' : CONFIRMATION_COL,
-  'distance' : DISTANCE_COL,
-  'comments' : COMMENTS_COL,
-  'platform' : PLATFORM_COL,
-  'attendees' : ATTENDEES_BEGINNER_COL,
+  'timestamp': TIMESTAMP_COL,
+  'headrunners': HEADRUNNERS_COL,
+  'headRun': HEADRUN_COL,
+  'runLevel': RUN_LEVEL_COL,
+  'confirmation': CONFIRMATION_COL,
+  'distance': DISTANCE_COL,
+  'comments': COMMENTS_COL,
+  'platform': PLATFORM_COL,
+  'attendees': ATTENDEES_BEGINNER_COL,
 }
 
 // USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
@@ -30,64 +38,49 @@ const IMPORT_MAP = {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 10, 2025
- * @update  Mar 20, 2025
+ * @update  Apr 7, 2025
  * 
  */
 
-function processOnChange(sourceSheet) {
-  const thisLastRow = sourceSheet.getLastRow();
-  const thisColSize = sourceSheet.getLastColumn();
-  const latestImport = sourceSheet.getSheetValues(thisLastRow, 1, 1, thisColSize)[0];   // Get last row
+function processImportFromApp(importObj) {
+  const importSheet = GET_IMPORT_SHEET();
+  Logger.log('Processing following import...');
+  Logger.log(importObj);
 
-  const keys = sourceSheet.getSheetValues(1, 1, 1, thisColSize)[0];  // Get header row
-  let submissionStr;
+  try {
+    // First add to import sheet as backup
+    importSheet.appendRow([importObj]);
 
-  // Case 1: JSON-formatted import (single-column)
-  if (latestImport[1] === "") {
-    console.log("Entered case 1 in onChange()!", `thisLastRow: ${thisLastRow}`);
-    submissionStr = (latestImport[0] !== "") 
-      ? latestImport[0] 
-      : sourceSheet.getSheetValues(thisLastRow - 1, 1, 1, thisColSize)[0];    // Try with second-last row
+    // Now process input
+    const attendanceObj = JSON.parse(importObj);
+    const newSemesterRow = copyToSemesterSheet_(attendanceObj);
+    console.log(`Successfully imported values to row ${newSemesterRow} (Attendance sheet)`);
+
+    // Log successful transfer to attendance sheet
+    const newImportRow = importSheet.getLastRow();
+    toggleSuccessfulImport_(newImportRow, IS_IMPORTED_COL);
+
+    // Finally apply post-import functions
+    onAppSubmission(newSemesterRow);
   }
-
-  // Case 2: Multi-column import (e.g., from Zapier)
-  else {
-    console.log("Entered case 2 in `onChange()`!");
-    submissionStr = packageAttendance_(keys, latestImport);
+  catch (e) {
+    Logger.log("Unable to fully process 'importObj' in Attendance Code");
+    throw e;
   }
-
-  // Useful debugging message
-  console.log(submissionStr);
-
-  // Otherwise, continue importing latest submission
-  const attendanceObj = JSON.parse(submissionStr);
-  const lastSemesterRow = copyToSemesterSheet_(attendanceObj);
-
-  // Log successful transfer
-  const isImportedCol = keys.indexOf('isImported') + 1;
-  toggleSuccessfulImport_(thisLastRow, isImportedCol);
-  
-  // TRIGGER MAINTENANCE FUNCTIONS
-  if((attendanceObj['platform']).toLowerCase() === 'mcrun app'){
-    console.log("Entering onAppSubmission() now...");
-    onAppSubmission(lastSemesterRow);
-  }
-
 }
 
 
 function transferThisRow(row) {
   const attendanceObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const attendanceTimestamp = attendanceObj['timestamp'];
-  
+
   // Check if attendanceObj already imported in attendance sheet. Exit if true
   const isFound = checkExistingTimestamp_(attendanceTimestamp, 3);   // Check last 3 rows
   if (isFound) return;
-  
+
   // Transfer if attendance submission not found.
   copyToSemesterSheet_(attendanceObj);
   toggleSuccessfulImport_(row);
-  onAppSubmission(row);
 }
 
 function transferLastImport() {
@@ -97,7 +90,7 @@ function transferLastImport() {
 
 
 function toggleSuccessfulImport_(row, colIndex = null) {
-  const sheet = IMPORT_SHEET;
+  const sheet = GET_IMPORT_SHEET();
   let isImportedCol = colIndex;
 
   if (!colIndex) {
@@ -107,7 +100,7 @@ function toggleSuccessfulImport_(row, colIndex = null) {
 
   const isImportedRange = sheet.getRange(row, isImportedCol);
   isImportedRange.setValue(true);
-  console.log(`Toggled successful import in row ${row}`);
+  console.log(`Toggled successful import in row ${row} (Import sheet)`);
 }
 
 
@@ -137,7 +130,7 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
 
   // Parse `timestampToCompare` as Date
   const compareAsDate = new Date(timestampToCompare);
-  
+
   // Get latest timestamp values from attendance sheet as 1d array
   const latestTimestampValues = sheet.getSheetValues(startRow, timestampCol, numOfRow, numCol).flat();
 
@@ -162,12 +155,12 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  * 
  */
 
-function copyToSemesterSheet_(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow()) {
-  const attendanceSheet = ATTENDANCE_SHEET;
+function copyToSemesterSheet_(attendanceJSON, row = GET_ATTENDANCE_SHEET().getLastRow()) {
+  const attendanceSheet = GET_ATTENDANCE_SHEET();
   const importMap = IMPORT_MAP;
 
   const startRow = row + 1;
-  const colSize = attendanceSheet.getLastColumn(); 
+  const colSize = attendanceSheet.getLastColumn();
 
   const valuesByIndex = Array(colSize);   // Array.length = colSize
 
@@ -203,7 +196,7 @@ function copyToSemesterSheet_(attendanceJSON, row=ATTENDANCE_SHEET.getLastRow())
   rangeToImport.setValues([valuesByIndex]);
 
   // Log and return startRow
-  console.log(`Set registration ${timestampValue} in row ${startRow}`);
+  console.log(`Set registration '${timestampValue}' in row ${startRow} (Attendance sheet)`);
   return startRow;
 }
 
@@ -226,7 +219,7 @@ function packageAttendance_(keyArr, valArr) {
     const errMessage = `keyArr and valArr must have the same length.
       keyArr: ${keyArr}
       valArr: ${valArr}`
-    ;
+      ;
     throw new Error(errMessage);
   }
 
@@ -252,7 +245,7 @@ function packageAttendance_(keyArr, valArr) {
 
 function formatTimestamp_(raw) {
   const date = new Date(raw);
-  const options =  {
+  const options = {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

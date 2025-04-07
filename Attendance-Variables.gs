@@ -1,6 +1,7 @@
 // SHEET CONSTANTS
-const SHEET_NAME = 'HR Attendance W25';
-const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+const ATTENDANCE_SHEET_NAME = 'HR Attendance W25';
+const ATTENDANCE_SS_ID = '1SnaD9UO4idXXb07X8EakiItOOORw5UuEOg0dX_an3T4';
+const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
 
 // LIST OF COLUMNS IN SHEET_NAME
 const TIMESTAMP_COL = 1;
@@ -17,6 +18,12 @@ const COMMENTS_COL = 11;
 const IS_COPY_SENT_COL = 12;
 const PLATFORM_COL = 13;
 const NAMES_NOT_FOUND_COL = 14;
+
+// ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
+// SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+const GET_ATTENDANCE_SHEET = () => {
+  return (ATTENDANCE_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SS_ID).getSheetByName(ATTENDANCE_SHEET_NAME);
+}
 
 const TIMEZONE = getUserTimeZone_();
 

@@ -23,12 +23,12 @@ function addMissingPlatform_(row=ATTENDANCE_SHEET.getLastRow()) {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 9, 2025
- * @update  Feb 9, 2025
+ * @update  Apr 7, 2025
  *
  */
 
 function setCopySent_(row=ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
   const rangeIsCopySent = sheet.getRange(row, IS_COPY_SENT_COL);
 
   // Since GForm automatically sends copy to submitter, set isCopySent `true`.
@@ -43,12 +43,12 @@ function setCopySent_(row=ATTENDANCE_SHEET.getLastRow()) {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 1, 2024
- * @update  Nov 1, 2024
+ * @update  Apr 7, 2025
  *
  */
 
 function sortAttendanceForm() {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
 
   const numRows = sheet.getLastRow() - 1;     // Remove header row from count
   const numCols = sheet.getLastColumn();
@@ -109,11 +109,11 @@ function prettifySheet() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Mar 24, 2025
+ * @update  Apr 7, 2025
  */
 
 function formatSpecificColumns() {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
 
   // Helper fuction to improve readability
   const getThisRange = (ranges) => 
@@ -219,11 +219,11 @@ function formatAllConfirmations() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 8, 2024
- * @update  Feb 9, 2025
+ * @update  Apr 7, 2025
  */
 
 function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
   const confirmationCol = CONFIRMATION_COL;
 
   // Get confirmation col and value using `row`
@@ -239,7 +239,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   rangeConfirmation.setValue(formattedValue);
   
   // Log debugging message
-  console.log(`Confirmation Response (raw): ${confirmationResp} (formatted):${formattedValue}`);
+  console.log(`Confirmation Response (raw): ${confirmationResp}\t(formatted): ${formattedValue}`);
 }
 
 /**
@@ -291,7 +291,7 @@ function formatAllAttendeeNames() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 24, 2024
- * @update  March 13, 2025
+ * @update  Apr 7, 2025
  *
  * ```javascript
  * // Sample Script ➜ Format names in row `13`.
@@ -301,7 +301,7 @@ function formatAllAttendeeNames() {
  */
 
 function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = ATTENDANCE_SHEET;
+  const sheet = GET_ATTENDANCE_SHEET();
   const numColToGet = LEVEL_COUNT;
 
   // Get attendee names starting from beginner col
@@ -347,7 +347,7 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   }
   // Replace values with formatted names
   nameRange.setValues([namesArr]);    // setValues() requires 2D array
-  console.log(`Completed formatting of attendee names`, nameArr);
+  console.log(`Completed formatting of attendee names`, namesArr);
 }
 
 
