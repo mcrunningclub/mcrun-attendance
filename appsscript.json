@@ -2,7 +2,16 @@
   "timeZone": "America/Toronto",
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
-  "dependencies": {},
+  "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "PointsLedgerCode",
+        "version": "0",
+        "libraryId": "1a4zX7bu2Rm7RHF6oc3k_4nSYdvmupHw5kiAnMMEHCySVcnba4WQwTjml",
+        "developmentMode": true
+      }
+    ]
+  },
   "webapp": {
     "executeAs": "USER_ACCESSING",
     "access": "ANYONE"

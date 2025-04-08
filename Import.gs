@@ -4,7 +4,7 @@ const IMPORT_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetById(IMPORT_S
 
 // ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
 // SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
-const GET_IMPORT_SHEET = () => {
+const GET_IMPORT_SHEET_ = () => {
   return (IMPORT_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SS_ID).getSheetById(IMPORT_SHEET_ID);
 }
 
@@ -43,7 +43,7 @@ const IMPORT_MAP = {
  */
 
 function processImportFromApp(importObj) {
-  const importSheet = GET_IMPORT_SHEET();
+  const importSheet = GET_IMPORT_SHEET_();
   Logger.log('Processing following import...');
   Logger.log(importObj);
 
@@ -90,7 +90,7 @@ function transferLastImport() {
 
 
 function toggleSuccessfulImport_(row, colIndex = null) {
-  const sheet = GET_IMPORT_SHEET();
+  const sheet = GET_IMPORT_SHEET_();
   let isImportedCol = colIndex;
 
   if (!colIndex) {

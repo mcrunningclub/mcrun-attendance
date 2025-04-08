@@ -11,7 +11,7 @@
  * @update  April 1, 2025
  */
 
-function appendMemberEmail(row, registered, unregistered) {
+function appendMemberEmail_(row, registered, unregistered) {
   const sheet = ATTENDANCE_SHEET;
   const numRowToGet = 1;
   const numColToGet = LEVEL_COUNT;
@@ -147,73 +147,98 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
 }
 
 
-function transferAllSubmissions() {
-  const startRow = 2;
-  const endRow = 62;
+function transferSubmissionToLedger(row = getLastSubmission_()) {
+  // STEP 1: Package all non-empty submission levels in single 2d arr
+  const packagedEvents = packageRowForLedger_(row);
 
-  for (let row = startRow; row <= endRow; row++) {
-    transferSubmissionToLedger(row);
+  // STEP 1b: Only transfer if attendees count > 0
+  if (packagedEvents.length === 0) return;
+
+  // STEP 2: Send submission using library and store new row index.
+  // This triggers automations in the recipient sheet.
+  try {
+    const logNewRow = sendNewSubmission_(packagedEvents);
+    storeStravaInLogSheet_(logNewRow);
+  }
+
+  // STEP 2b: Error occured, send using `openByUrl`. Downside: automations not triggered
+  catch(e) {
+    Logger.log(e);    // Display error message from 'sendNewSubmission'
+    Logger.log(`Unable to transfer submission with library. Now trying with 'openByUrl'...`);
+
+    // `Points Ledger` Google Sheet
+    const ss = SpreadsheetApp.openByUrl(POINTS_LEDGER_URL);
+    const logSheet = ss.getSheetByName(LOG_SHEET_NAME);
+    const logNewRow = logSheet.getLastRow() + 1;
+
+    const packageNumRows = packagedEvents.length;
+    const packageNumCols = packagedEvents[0].length;
+    
+    // Set values using defined range dimensions
+    logSheet.getRange(logNewRow, 1, packageNumRows, packageNumCols).setValues(packagedEvents);
+
+    // Display successful message for Step 2b, and error message from Step 2.
+    Logger.log(`Successfully transferred event attendance submission to Ledger row ${logNewRow}`);
   }
 }
 
 
-function transferSubmissionToLedger(row = getLastSubmission_()) {
+function packageRowForLedger_(row) {
   const sheet = GET_ATTENDANCE_SHEET();
 
-  // `Points Ledger` Google Sheet
-  const sheetURL = LEDGER_URL;
-  const ss = SpreadsheetApp.openByUrl(sheetURL);
-  const ledgerSheet = ss.getSheetByName(LEDGET_SHEET_NAME);
-  var ledgerLastRow = ledgerSheet.getLastRow() + 1;   // Increment per event transfer
-
-  // Select columns to transfer from `sheet`
+  // Define dimenstion of range
   const startCol = TIMESTAMP_COL;
-  const numCol = DISTANCE_COL - startCol + 1;  // GSheet is 1-indexed
-  const numRow = 1;
+  const numCols = DISTANCE_COL - startCol + 1;
 
-  // Range is `EMAIL_COL` to `DISTANCE_COL`
-  // Save values in 0-indexed array, then transform into 1-indexed by appending empty
-  // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
-  const values = sheet.getSheetValues(row, startCol, numRow, numCol)[0];
-  values.unshift("");   // append "" to front
+  // Fetch values from the row, convert to 1-indexed by unshifting
+  // Access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
+  const rowValues  = sheet.getSheetValues(row, startCol, 1, numCols)[0];
+  rowValues.unshift("");   // Padding for 1-indexed access
 
-  const formattedNow = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm');
+  // Identify attendee columns with actual data (not marked "None" or empty)
+  const validAttendeeCols = Object.values(ATTENDEE_MAP).filter(level => {
+    const attendee = rowValues[level];
+    return attendee && !attendee.includes(EMPTY_ATTENDEE_FLAG);
+  });
 
-  // TODO : APPEND HEADRUN LEVEL TO EVENT NAME (USED TO DETERMINE POINTS TO GIVE)
+  // Build list of events for all valid attendees
+  const exportTimestamp = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
+  const eventLabel = `Headrun ${rowValues[RUN_LEVEL_COL]}\n${rowValues[HEADRUN_COL]}`;
+  const eventTimestamp = rowValues[TIMESTAMP_COL];
+  const distance = rowValues[DISTANCE_COL];
 
-  const allAttendeesCol = Object.values(ATTENDEE_MAP)
-    .filter(level => !values[level].includes(EMPTY_ATTENDEE_FLAG)   // Skip levels with "None"
-  );
+  const events = validAttendeeCols.map(colIndex => [
+    exportTimestamp,        // Export Timestamp
+    eventLabel,             // Event Name
+    eventTimestamp,         // Event Timestamp
+    rowValues[colIndex],    // Member Name + Email
+    distance                // Distance
+    // Points will be added in recipient sheet
+  ]);
 
-  for(var level of allAttendeesCol) {
-    // Format in `Event Log` sheet in `Points Ledger`
-    // Import-Timestamp   Event   Event-TS   MemberEmail   Distance   Points
-    const eventName = `Headrun ${values[RUN_LEVEL_COL]}\n${values[HEADRUN_COL]}`;
-    const eventToTransfer = [
-      formattedNow,           // Import Timestamp
-      eventName,              // Event name
-      values[TIMESTAMP_COL],  // Event Timestamp
-      values[level],          // Member Emails
-      values[DISTANCE_COL],   // Distance
-      // Note: Points col added in `Points Ledger`
-    ]
-
-    const colSizeOfTransfer = eventToTransfer.length;
-    const rangeNewLog = ledgerSheet.getRange(ledgerLastRow, 1, 1, colSizeOfTransfer);
-    rangeNewLog.setValues([eventToTransfer]);
-
-    // Output log message
-    Logger.log(`Successfully transferred event '${eventName.replace('\n', ' ')}' to Ledger row ${ledgerLastRow}`);
-  }
+  return events;
 }
 
 
-function sendNewSubmissionToLedger(row) {
-  //const submission = packageMemberInfoInRow_(row);
-  //console.log(`Member info to export to 'NewMemberComms'\n`, submission);
-  //NewMemberCommunications.createNewMemberCommunications(submission);
+function sendNewSubmission_(submissionArr) {
+  const funcName = PointsLedgerCode.storeImportFromAttendanceSheet.name;
+  return executePointsLedgerFunction_(funcName, [submissionArr]);
 }
 
-function triggerEmailInLedger() {
-  
+function storeStravaInLogSheet_(logRow) {
+  const funcName = PointsLedgerCode.findAndStoreStravaActivity.name;
+  return executePointsLedgerFunction_(funcName, [logRow]);
 }
+
+function triggerEmailInLedger_(logRow) {
+  const funcName = PointsLedgerCode.sendStatsEmail.name;
+  executePointsLedgerFunction_(funcName, [undefined, logRow]);
+}
+
+function executePointsLedgerFunction_(funcName, args) {
+  console.log(`\n---START OF '${funcName}()' LOG MESSAGES\n\n`);
+  const retValue = PointsLedgerCode[funcName].apply(args);
+  console.log(`\n---END OF '${funcName}()' LOG MESSAGES\n\n`);
+  return retValue;
+}
+
