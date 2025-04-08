@@ -266,7 +266,7 @@ function toggleAttendanceCheckUI_() {
 }
 
 function findAllUnregisteredUI_() {
-  functionName = getAllUnregisteredMembers.name;
+  functionName = getAllUnregisteredMembers_.name;
   const customMsg = "This will search for *all* unregistered attendees, and add them to `Not Found` column. \
   \n\nWARNING! Wide-sheet formatting will may take some time."
 
@@ -358,7 +358,7 @@ function importAppRecordUI_() {
   const fullMsg = (returnObj.msg ? `${returnObj.msg}\n\n` : '') + firstMsg;
 
   // Execute Function with argument
-  const functionName = transferThisRow.name;
+  const functionName = transferThisRow_.name;
   confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
 }
 
@@ -375,7 +375,7 @@ function requestRowInput_() {
   const response = ui.prompt(headerMsg, textMsg, ui.ButtonSet.OK);
   const responseText = response.getResponseText().trim();
 
-  return processRowInput(responseText, ui);
+  return processRowInput_(responseText, ui);
 }
 
 
@@ -399,7 +399,7 @@ function requestRowInput_() {
  * @update  Mar 24, 2025
  */
 
-function processRowInput(userResponse, ui) {
+function processRowInput_(userResponse, ui) {
   const rowNumber = Number.parseInt(userResponse);
   const returnObj = {row: null, msg: ''};
 

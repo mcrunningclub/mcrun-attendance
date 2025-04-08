@@ -70,7 +70,12 @@ function processImportFromApp(importObj) {
 }
 
 
-function transferThisRow(row) {
+function transferLastImport() {
+  const thisLastRow = IMPORT_SHEET.getLastRow();
+  transferThisRow_(thisLastRow);
+}
+
+function transferThisRow_(row) {
   const attendanceObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const attendanceTimestamp = attendanceObj['timestamp'];
 
@@ -83,10 +88,7 @@ function transferThisRow(row) {
   toggleSuccessfulImport_(row);
 }
 
-function transferLastImport() {
-  const thisLastRow = IMPORT_SHEET.getLastRow();
-  transferThisRow(thisLastRow);
-}
+
 
 
 function toggleSuccessfulImport_(row, colIndex = null) {
@@ -155,8 +157,8 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  * 
  */
 
-function copyToSemesterSheet_(attendanceJSON, row = GET_ATTENDANCE_SHEET().getLastRow()) {
-  const attendanceSheet = GET_ATTENDANCE_SHEET();
+function copyToSemesterSheet_(attendanceJSON, row = GET_ATTENDANCE_SHEET_().getLastRow()) {
+  const attendanceSheet = GET_ATTENDANCE_SHEET_();
   const importMap = IMPORT_MAP;
 
   const startRow = row + 1;

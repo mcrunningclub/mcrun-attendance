@@ -51,7 +51,8 @@ function bulkFormatting_(row) {
 }
 
 function transferAndFormat_(row) {
-  transferSubmissionToLedger(row);
+  const logRow = transferSubmissionToLedger(row);
+  triggerEmailInLedger_(logRow)
   formatSpecificColumns();
 }
 
@@ -68,7 +69,7 @@ function transferAndFormat_(row) {
  */
 
 function getLastSubmission_() {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
   const startRow = 1;
   const numRow = sheet.getLastRow();
 
@@ -101,7 +102,7 @@ function emailSubmission() {
   // Error Management: prevent wrong user sending email
   if (getCurrentUserEmail() != 'mcrunningclub@ssmu.ca') return;
 
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
   const lastRow = getLastSubmission_();
 
   // Save values in 0-indexed array, then transform into 1-indexed by appending empty
@@ -257,7 +258,7 @@ function verifyAttendance_() {
 
   // Formats trigger datetime to get head runner emails
   const headrunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
-  const headrunTitle = getHeadrunTitle(headrunDay); // e.g 'Monday - 9am'
+  const headrunTitle = getHeadrunTitle_(headrunDay); // e.g 'Monday - 9am'
 
   return { isSubmitted: isSubmitted(), headrunTitle: headrunTitle };
 
@@ -300,13 +301,13 @@ function sendEmailReminder_(headrunTitle) {
   const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
 
   // Get head runners email using input headrun
-  const headRunnerEmail = getHeadRunnerEmail(headrunDay).join();
+  const headRunnerEmail = getHeadRunnerEmail_(headrunDay).join();
 
   // Load HTML template and replace placeholders
   const templateName = REMINDER_EMAIL_HTML_FILE;
   const template = HtmlService.createTemplateFromFile(templateName);
 
-  template.LINK = GET_ATTENDANCE_GFORM_LINK();
+  template.LINK = GET_ATTENDANCE_GFORM_LINK_();
   template.SEMESTER = SEMESTER_NAME;
 
   // Returns string content from populated html template
@@ -340,7 +341,7 @@ function sendSubmissionCopy_() {
  * 
  */
 
-function getAllUnregisteredMembers() {
+function getAllUnregisteredMembers_() {
   runOnSheet_(getUnregisteredMembersInRow_.name);
 }
 

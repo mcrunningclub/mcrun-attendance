@@ -28,7 +28,7 @@ function addMissingPlatform_(row=ATTENDANCE_SHEET.getLastRow()) {
  */
 
 function setCopySent_(row=ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
   const rangeIsCopySent = sheet.getRange(row, IS_COPY_SENT_COL);
 
   // Since GForm automatically sends copy to submitter, set isCopySent `true`.
@@ -48,7 +48,7 @@ function setCopySent_(row=ATTENDANCE_SHEET.getLastRow()) {
  */
 
 function sortAttendanceForm() {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
 
   const numRows = sheet.getLastRow() - 1;     // Remove header row from count
   const numCols = sheet.getLastColumn();
@@ -113,7 +113,7 @@ function prettifySheet() {
  */
 
 function formatSpecificColumns() {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
 
   // Helper fuction to improve readability
   const getThisRange = (ranges) => 
@@ -223,7 +223,7 @@ function formatAllConfirmations() {
  */
 
 function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
   const confirmationCol = CONFIRMATION_COL;
 
   // Get confirmation col and value using `row`
@@ -301,7 +301,7 @@ function formatAllAttendeeNames() {
  */
 
 function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
   const numColToGet = LEVEL_COUNT;
 
   // Get attendee names starting from beginner col

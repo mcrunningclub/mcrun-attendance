@@ -23,7 +23,7 @@ function appendMemberEmail_(row, registered, unregistered) {
   const updatedAttendees = [];    // Resulting values to set in sheet
 
   // Iterate through levels and add emails
-  for(let col = 0; col < numColToGet; col++) {
+  for (let col = 0; col < numColToGet; col++) {
     const levelRegistered = registered[col];
     const levelUnregistered = unregistered[col];
 
@@ -46,7 +46,7 @@ function appendMemberEmail_(row, registered, unregistered) {
     }
     // Merge attendees in `col` and sort before setting back in sheet
     const attendees = [...levelRegistered, ...levelUnregistered].sort();
-    
+
     // Join back into a string and add to the results
     updatedAttendees.push(attendees.join('\n'));
   }
@@ -62,7 +62,7 @@ function hideAllAttendeeEmail() {
   const numRows = sheet.getLastRow() - 1;   // Remove header row from count
   const endRow = startRow + numRows;
 
-  for(var row = startRow; row < endRow; row++) {
+  for (var row = startRow; row < endRow; row++) {
     hideAttendeeEmailInRow_(row);
   }
 }
@@ -73,27 +73,27 @@ function hideAttendeeEmailInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 }
 
 
-function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
+function hideAttendeeEmailInCell_(column, row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
   const lastRow = ATTENDANCE_SHEET.getLastRow();
 
   const attendeeRange = sheet.getRange(row, column);
   const cellValue = attendeeRange.getValue();
 
-  if(!cellValue || cellValue === EMPTY_ATTENDEE_FLAG) return;   // No attendees for this level
+  if (!cellValue || cellValue === EMPTY_ATTENDEE_FLAG) return;   // No attendees for this level
 
   // Get the cell's background color
   const banding = attendeeRange.getBandings()[0];   // Only 1 banding
   const bandingColours = {
     'colourEvenRow': banding.getFirstRowColorObject(),
-    'colourOddRow' : banding.getSecondRowColorObject(),
-    'colourFooter' : banding.getFooterRowColorObject(),
+    'colourOddRow': banding.getSecondRowColorObject(),
+    'colourFooter': banding.getFooterRowColorObject(),
 
-    getColour : function(row) {
+    getColour: function (row) {
       return this.colourOddRow;
-      if(row == lastRow)     {return this.colourFooter}
-      else if(row % 2 == 0)  {return this.colourEvenRow}
-      else                   {return this.colourOddRow}
+      if (row == lastRow) { return this.colourFooter }
+      else if (row % 2 == 0) { return this.colourEvenRow }
+      else { return this.colourOddRow }
     }
   }
 
@@ -105,11 +105,11 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
     .setItalic(true)
     .setForegroundColorObject(cellBackgroundColour)
     .build()
-  ;
+    ;
   const isUnregisteredTextStyle = SpreadsheetApp.newTextStyle()
     .setForegroundColor('red')
     .build()
-  ;
+    ;
 
   // Split the cell value by line breaks
   const lines = cellValue.split("\n");
@@ -121,10 +121,10 @@ function hideAttendeeEmailInCell_(column, row=ATTENDANCE_SHEET.getLastRow()) {
   for (const line of lines) {
     const delimiterIndex = line.indexOf(delimiter);
 
-    if(delimiterIndex !== -1) {
+    if (delimiterIndex !== -1) {
       // Find the email (after the delimiter)
       const email = line.substring(delimiterIndex + 1).trim();
-      if(email) {
+      if (email) {
         const start = currentIndex + delimiterIndex; // Start index of delimiter
         const end = start + email.length + 1; // End index of the email
 
@@ -162,7 +162,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
   }
 
   // STEP 2b: Error occured, send using `openByUrl`. Downside: automations not triggered
-  catch(e) {
+  catch (e) {
     Logger.log(e);    // Display error message from 'sendNewSubmission'
     Logger.log(`Unable to transfer submission with library. Now trying with 'openByUrl'...`);
 
@@ -173,7 +173,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
 
     const packageNumRows = packagedEvents.length;
     const packageNumCols = packagedEvents[0].length;
-    
+
     // Set values using defined range dimensions
     logSheet.getRange(logNewRow, 1, packageNumRows, packageNumCols).setValues(packagedEvents);
 
@@ -184,7 +184,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
 
 
 function packageRowForLedger_(row) {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
 
   // Define dimenstion of range
   const startCol = TIMESTAMP_COL;
@@ -192,7 +192,7 @@ function packageRowForLedger_(row) {
 
   // Fetch values from the row, convert to 1-indexed by unshifting
   // Access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
-  const rowValues  = sheet.getSheetValues(row, startCol, 1, numCols)[0];
+  const rowValues = sheet.getSheetValues(row, startCol, 1, numCols)[0];
   rowValues.unshift("");   // Padding for 1-indexed access
 
   // Identify attendee columns with actual data (not marked "None" or empty)

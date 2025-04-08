@@ -27,7 +27,7 @@ const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
  * ```
  */
 
-function getHeadrunTitle(headRunDay) {
+function getHeadrunTitle_(headRunDay) {
   switch (headRunDay) {
     case 'TuesdayPM': return 'Tuesday - 6:00pm';
     case 'WednesdayPM': return 'Wednesday - 6:00pm';
@@ -77,7 +77,7 @@ function formatAllHeadRunner() {
  */
 
 function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
   const headrunnerCol = HEADRUNNERS_COL;
 
   // Get all the values in `HEADRUNNERS_COL` in bulk
@@ -134,7 +134,7 @@ function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
  * ```
  */
 
-function getHeadRunnerEmail(headrun) {
+function getHeadRunnerEmail_(headrun) {
   // Head Runner Emails
   const aidenLee = 'jihong.lee@mail.mcgill.ca';
   const alyssaAbouChakra = 'alyssa.abouchakra@mail.mcgill.ca';
@@ -229,7 +229,7 @@ function formatAllHeadRun() {
  */
 
 function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
-  const sheet = GET_ATTENDANCE_SHEET();
+  const sheet = GET_ATTENDANCE_SHEET_();
   const headrunCol = HEADRUN_COL;
 
   // Get the cell value, and remove hyphen-space in each cell
