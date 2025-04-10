@@ -35,7 +35,7 @@ function getHeadrunTitle_(headRunDay) {
     case 'SaturdayAM': return 'Saturday - 10:00am';
     case 'SundayPM': return 'Sunday - 6:00pm';
 
-    default : throw new Error(`No headrunner has been found for ${headRunDay}`);
+    default: throw new Error(`No headrunner has been found for ${headRunDay}`);
   }
 }
 
@@ -113,7 +113,7 @@ function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
 
   // Update the sheet with formatted names
   rangeHeadRunner.setValues(formattedNames);
-  console.log(`Completed formatting of headrunner names`,  formattedNames);
+  console.log(`Completed formatting of headrunner names`, formattedNames);
 }
 
 

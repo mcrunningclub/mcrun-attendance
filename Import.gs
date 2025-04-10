@@ -71,7 +71,7 @@ function processImportFromApp(importObj) {
 
 
 function transferLastImport() {
-  const thisLastRow = IMPORT_SHEET.getLastRow();
+  const thisLastRow = getLastSubmission_(IMPORT_SHEET);
   transferThisRow_(thisLastRow);
 }
 

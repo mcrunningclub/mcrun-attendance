@@ -32,7 +32,7 @@ const ATTENDEE_MAP = {
   'beginner': ATTENDEES_BEGINNER_COL,
   //'easy': ATTENDEES_BEGINNER_COL,
   'intermediate': ATTENDEES_INTERMEDIATE_COL,
-  'advanced':  ATTENDEES_ADVANCED_COL,
+  'advanced': ATTENDEES_ADVANCED_COL,
 };
 
 const LEVEL_COUNT = Object.keys(ATTENDEE_MAP).length;

@@ -401,12 +401,12 @@ function requestRowInput_() {
 
 function processRowInput_(userResponse, ui) {
   const rowNumber = Number.parseInt(userResponse);
-  const returnObj = {row: null, msg: ''};
+  const returnObj = { row: null, msg: '' };
 
   if (userResponse === "") {
     // User did not enter a row number; check last row only.
     returnObj.row = '';
-    returnObj.msg =  "This will only target the last row.";
+    returnObj.msg = "This will only target the last row.";
   }
   else if (isValidRow_(rowNumber)) {
     // Row is valid, can continue execution.

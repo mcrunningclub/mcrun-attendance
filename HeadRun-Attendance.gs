@@ -11,7 +11,7 @@
 
 function onFormSubmission() {
   // Since GForm might not add submission to bottom, sort beforehand
-  sortAttendanceForm();    
+  sortAttendanceForm();
   SpreadsheetApp.flush();
 
   const row = getLastSubmission_();  // Get submission row index
@@ -28,7 +28,7 @@ function onFormSubmissionInRow_(row) {
   getUnregisteredMembersInRow_(row);    // Find any unregistered members
 }
 
- 
+
 /**
  * Functions to execute after McRUN app submission.
  *
@@ -61,15 +61,15 @@ function transferAndFormat_(row) {
  * 
  * Used to prevent native `sheet.getLastRow()` from returning empty row.
  * 
+ * @param {Spreadsheet.sheet} [sheet = GET_ATTENDANCE_SHEET_()] Target sheet
  * @return {integer}  Returns 1-index of last row in GSheet.
  *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 8, 2025
- * @update  Apr 7, 2025
+ * @update  Apr 10, 2025
  */
 
-function getLastSubmission_() {
-  const sheet = GET_ATTENDANCE_SHEET_();
+function getLastSubmission_(sheet = GET_ATTENDANCE_SHEET_()) {
   const startRow = 1;
   const numRow = sheet.getLastRow();
 
@@ -211,17 +211,11 @@ function checkMissingAttendance() {
     throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
   }
 
-  // Since a new attendance submission via app cannot trigger a script in 
-  // this project, transfer latest submission from `App import` sheet.
-  // Do nothing if already imported to prevent duplicates
-  transferLastImport();
-  onAppSubmission(row);
-
   // Save result of attendance verification, and get title for email
   const { isSubmitted: isSubmitted, headrunTitle: headrunTitle } = verifyAttendance_();
 
   // Send copy of submission if true. Otherwise send an email reminder.
-  isSubmitted ? sendSubmissionCopy_(headrunTitle) :  sendEmailReminder_(headrunTitle);
+  isSubmitted ? sendSubmissionCopy_(headrunTitle) : sendEmailReminder_(headrunTitle);
   console.log(`Executed onFormSubmission with 'isSubmitted' ${isSubmitted}`);
 }
 
@@ -399,9 +393,9 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
     // Try to find names without email in registrations (memberMap)
     // And append their respective email as in `namesWithEmail`
-    const { 
-      'unregistered' : foundUnregistered, 
-      'registered' : foundRegistered 
+    const {
+      'unregistered': foundUnregistered,
+      'registered': foundRegistered
     } = findUnregistered_(namesWithoutEmail.sort(), cleanMemberMap);
 
     // Combine and sort both arrays

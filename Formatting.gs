@@ -9,7 +9,7 @@
  *
  */
 
-function addMissingPlatform_(row=ATTENDANCE_SHEET.getLastRow()) {
+function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
   const rangePlatform = sheet.getRange(row, PLATFORM_COL);
   rangePlatform.setValue('Google Form');
@@ -27,7 +27,7 @@ function addMissingPlatform_(row=ATTENDANCE_SHEET.getLastRow()) {
  *
  */
 
-function setCopySent_(row=ATTENDANCE_SHEET.getLastRow()) {
+function setCopySent_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = GET_ATTENDANCE_SHEET_();
   const rangeIsCopySent = sheet.getRange(row, IS_COPY_SENT_COL);
 
@@ -97,7 +97,6 @@ function removePresenceChecks() {
 
 function prettifySheet() {
   formatSpecificColumns();
-  hideAllAttendeeEmail();
 }
 
 /**
@@ -116,13 +115,13 @@ function formatSpecificColumns() {
   const sheet = GET_ATTENDANCE_SHEET_();
 
   // Helper fuction to improve readability
-  const getThisRange = (ranges) => 
+  const getThisRange = (ranges) =>
     Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
 
   // 1. Freeze panes
   sheet.setFrozenRows(1);
   sheet.setFrozenColumns(1);
-  
+
   // 2. Bold formatting
   getThisRange([
     'A1:N1',  // Header Row
@@ -141,12 +140,12 @@ function formatSpecificColumns() {
 
   // 5. Horizontal and vertical alignment
   getThisRange(['E2:E', 'L2:M']).setHorizontalAlignment('center');  // Headrun + Copy Sent + Submission Platform
- 
+
   getThisRange([
     'D2:H',   // Headrun Details + Attendees
     'L2:M',   // Copy Sent + Submission Platform
   ]).setVerticalAlignment('middle');
-  
+
   // 6. Update banding colours
   const dataRange = sheet.getDataRange();
 
@@ -237,7 +236,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   // Format and set value according to TRUE/FALSE response
   const formattedValue = (confirmationResp === 'true') ? 'Yes' : 'No (explain in comment section)';
   rangeConfirmation.setValue(formattedValue);
-  
+
   // Log debugging message
   console.log(`Confirmation Response (raw): ${confirmationResp}\t(formatted): ${formattedValue}`);
 }
