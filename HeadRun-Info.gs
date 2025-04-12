@@ -113,7 +113,7 @@ function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
 
   // Update the sheet with formatted names
   rangeHeadRunner.setValues(formattedNames);
-  console.log(`Completed formatting of headrunner names`, formattedNames);
+  console.log(`[AC] Completed formatting of headrunner names`, formattedNames);
 }
 
 

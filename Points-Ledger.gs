@@ -73,7 +73,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
   // STEP 2b: Error occured, send using `openByUrl`. Downside: automations not triggered
   catch (e) {
     Logger.log(e);    // Display error message from 'sendNewSubmission'
-    Logger.log(`Unable to transfer submission with library. Now trying with 'openByUrl'...`);
+    Logger.log(`[AC] Unable to transfer submission with library. Now trying with 'openByUrl'...`);
 
     // `Points Ledger` Google Sheet
     const ss = SpreadsheetApp.openByUrl(POINTS_LEDGER_URL);
@@ -87,7 +87,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
     logSheet.getRange(logNewRow, 1, packageNumRows, packageNumCols).setValues(packagedEvents);
 
     // Display successful message for Step 2b, and error message from Step 2.
-    Logger.log(`Successfully transferred event attendance submission to Ledger row ${logNewRow}`);
+    Logger.log(`[AC] Successfully transferred event attendance submission to Ledger row ${logNewRow}`);
   }
 }
 
@@ -145,8 +145,8 @@ function triggerEmailInLedger_(logRow) {
 }
 
 function executePointsLedgerFunction_(funcName, args) {
-  console.log(`\n---START OF '${funcName}()' LOG MESSAGES\n\n`);
+  console.log(`\n---[AC] START OF '${funcName}()' LOG MESSAGES\n\n`);
   const retValue = PointsLedgerCode[funcName].apply(PointsLedgerCode, args);
-  console.log(`\n---END OF '${funcName}()' LOG MESSAGES\n\n`);
+  console.log(`\n---[AC] END OF '${funcName}()' LOG MESSAGES\n\n`);
   return retValue;
 }

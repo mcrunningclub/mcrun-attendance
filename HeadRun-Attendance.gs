@@ -36,12 +36,12 @@ function onFormSubmissionInRow_(row) {
  */
 
 function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
-  console.log(`Starting 'onAppSubmission' for row ${row}`);
+  console.log(`[AC] Starting 'onAppSubmission' for row ${row}`);
   bulkFormatting_(row);
   transferAndFormat_(row);
 
   sortAttendanceForm();
-  console.log(`Completed 'onAppSubmission' successfully!`);
+  console.log(`[AC] Completed 'onAppSubmission' successfully!`);
 }
 
 

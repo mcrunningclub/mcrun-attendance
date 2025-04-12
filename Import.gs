@@ -44,7 +44,7 @@ const IMPORT_MAP = {
 
 function processImportFromApp(importObj) {
   const importSheet = GET_IMPORT_SHEET_();
-  Logger.log('Processing following import...');
+  Logger.log('[AC] Processing following import...');
   Logger.log(importObj);
 
   try {
@@ -54,7 +54,7 @@ function processImportFromApp(importObj) {
     // Now process input
     const attendanceObj = JSON.parse(importObj);
     const newSemesterRow = copyToSemesterSheet_(attendanceObj);
-    console.log(`Successfully imported values to row ${newSemesterRow} (Attendance sheet)`);
+    console.log(`[AC] Successfully imported values to row ${newSemesterRow} in Attendance Sheet`);
 
     // Log successful transfer to attendance sheet
     const newImportRow = importSheet.getLastRow();
@@ -64,7 +64,7 @@ function processImportFromApp(importObj) {
     onAppSubmission(newSemesterRow);
   }
   catch (e) {
-    Logger.log("Unable to fully process 'importObj' in Attendance Code");
+    Logger.log("[AC] Unable to fully process 'importObj' in Import Sheet");
     throw e;
   }
 }
@@ -102,7 +102,7 @@ function toggleSuccessfulImport_(row, colIndex = null) {
 
   const isImportedRange = sheet.getRange(row, isImportedCol);
   isImportedRange.setValue(true);
-  console.log(`Toggled successful import in row ${row} (Import sheet)`);
+  console.log(`[AC] Toggled successful import in row ${row} (Import sheet)`);
 }
 
 
@@ -198,7 +198,7 @@ function copyToSemesterSheet_(attendanceJSON, row = GET_ATTENDANCE_SHEET_().getL
   rangeToImport.setValues([valuesByIndex]);
 
   // Log and return startRow
-  console.log(`Set registration '${timestampValue}' in row ${startRow} (Attendance sheet)`);
+  console.log(`[AC] Set registration '${timestampValue}' in row ${startRow}`);
   return startRow;
 }
 

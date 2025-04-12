@@ -238,7 +238,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   rangeConfirmation.setValue(formattedValue);
 
   // Log debugging message
-  console.log(`Confirmation Response (raw): ${confirmationResp}\t(formatted): ${formattedValue}`);
+  console.log(`[AC] Confirmation Response (raw): ${confirmationResp}   (formatted): ${formattedValue}`);
 }
 
 /**
@@ -264,7 +264,7 @@ function formatAllNames() {
  */
 
 function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
-  console.log('Now attempting to format headrunner and attendee names');
+  console.log('[AC] Now attempting to format headrunner and attendee names');
   formatAttendeeNamesInRow_(row);
   formatHeadRunnerInRow_(row);
   SpreadsheetApp.flush();   // Apply all changes
@@ -346,7 +346,7 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   }
   // Replace values with formatted names
   nameRange.setValues([namesArr]);    // setValues() requires 2D array
-  console.log(`Completed formatting of attendee names`, namesArr);
+  console.log(`[AC] Completed formatting of attendee names`, namesArr);
 }
 
 
