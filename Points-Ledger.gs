@@ -112,10 +112,13 @@ function packageRowForLedger_(row) {
 
   // Build list of events for all valid attendees
   const exportTimestamp = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
-  const eventLabel = `Headrun ${rowValues[RUN_LEVEL_COL]}\n${rowValues[HEADRUN_COL]}`;
   const eventTimestamp = rowValues[TIMESTAMP_COL];
   const distance = rowValues[DISTANCE_COL];
 
+  //const allHeadruns = getAllHeadruns_();
+  const prepend = /(?:-|am|pm)/i.test(rowValues[HEADRUN_COL]) ? 'Headrun' : 'Event';
+  const eventLabel = `${prepend} ${rowValues[RUN_LEVEL_COL]}\n${rowValues[HEADRUN_COL]}`;
+ 
   const events = validAttendeeCols.map(colIndex => [
     exportTimestamp,        // Export Timestamp
     eventLabel,             // Event Name

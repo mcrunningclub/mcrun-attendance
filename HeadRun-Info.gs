@@ -39,6 +39,16 @@ function getHeadrunTitle_(headRunDay) {
   }
 }
 
+function getAllHeadruns_() {
+  return [
+    'Tuesday - 6:00pm', 
+    'Wednesday - 6:00pm', 
+    'Thursday - 7:30am', 
+    'Saturday - 10:00am', 
+    'Sunday - 6:00pm'
+  ].join(';');
+}
+
 
 /**
  * Wrapper function for `formatHeadRunnerInRow` to apply on *ALL* submissions.
@@ -244,4 +254,107 @@ function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 
 
   // Replace with formatted value
   rangeToFormat.setValues(formattedHeadRun);  // setValues requires 2d array
+}
+
+
+
+function createWeeklyAttendanceTrigger() {
+  const calendar = CalendarApp.getDefaultCalendar(); // or use CalendarApp.getCalendarById(email)
+  const props = PropertiesService.getScriptProperties();
+  const stored = JSON.parse(props.getProperty("calendarTriggers") || "{}");
+
+  const now = new Date();
+  const startOfWeek = getStartOfWeek(now); // Sunday
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 7); // Saturday end
+
+  const events = calendar.getEvents(startOfWeek, endOfWeek);
+
+  const filteredEvents = events.filter(event =>
+    !event.isAllDayEvent() &&
+    event.getStartTime() > now
+  );
+
+  const TRIGGER_FUNC = checkMissingAttendance.name;
+  const offset = 60 * 60 * 1000;
+
+  filteredEvents.forEach(event => {
+    const startTime = new Date(event.getStartTime().getTime() + offset);
+
+    const trigger = ScriptApp.newTrigger(TRIGGER_FUNC)
+      .timeBased()
+      .at(startTime)
+      .create();
+
+    stored[trigger.getUniqueId()] = startTime.toISOString();
+
+    Logger.log(`Trigger created for "${event.getTitle()}" at ${startTime}`);
+  });
+
+  props.setProperty("calendarTriggers", JSON.stringify(stored));
+
+  // Helper: Gets the Sunday of the current week
+  function getStartOfWeek(date) {
+    const start = new Date(date);
+    const day = start.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    start.setDate(start.getDate() - day);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+}
+
+
+function deleteExpiredCalendarTriggers() {
+  const now = new Date();
+  const props = PropertiesService.getScriptProperties();
+  let stored = JSON.parse(props.getProperty("calendarTriggers") || "{}");
+
+  const triggers = ScriptApp.getProjectTriggers();
+  let updated = {};
+
+  triggers.forEach(trigger => {
+    const id = trigger.getUniqueId();
+    const scheduledTime = stored[id] ? new Date(stored[id]) : null;
+
+    if (scheduledTime && scheduledTime < now) {
+      ScriptApp.deleteTrigger(trigger);
+      Logger.log(`Deleted expired calendar trigger: ${id}`);
+    } else if (scheduledTime) {
+      updated[id] = stored[id];
+    }
+  });
+
+  props.setProperty("calendarTriggers", JSON.stringify(updated));
+}
+
+
+function addSingleEventTrigger() {
+  const calendar = CalendarApp.getDefaultCalendar(); // or use CalendarApp.getCalendarById(email)
+
+  const now = new Date();
+  const midnight = new Date(new Date().setHours(23, 59, 59, 59));
+
+  const events = calendar.getEvents(now, midnight);
+
+  if (!events) {
+    return;
+  }
+
+  const props = PropertiesService.getScriptProperties();
+  const TRIGGER_FUNC = checkMissingAttendance.name;
+}
+
+
+function createTimeDrivenTriggers() {
+  // Trigger every 6 hours.
+  ScriptApp.newTrigger('myFunction')
+      .timeBased()
+      .everyHours(6)
+      .create();
+  // Trigger every Monday at 09:00.
+  ScriptApp.newTrigger('myFunction')
+      .timeBased()
+      .onWeekDay(ScriptApp.WeekDay.MONDAY)
+      .atHour(9)
+      .create();
 }
