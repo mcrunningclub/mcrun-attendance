@@ -2,6 +2,18 @@
 const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
 const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 
+const CALENDAR_STORE = 'calendarTriggers';
+const TRIGGER_FUNC = checkMissingAttendance.name;
+
+/** GET PROP STORE OR GENERATE IF NULL  */
+let PROP_STORE = null;
+const GET_PROP_STORE_ = () => {
+  if (!PROP_STORE) {
+    PROP_STORE = PropertiesService.getScriptProperties();
+  }
+  return PROP_STORE;
+}
+
 /**
  * Return headrun day and time from headrun code input `headRunDay`.
  *
@@ -257,11 +269,47 @@ function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 
 }
 
 
+/**
+ * Adds new events as time-based triggers and removed expired ones
+ * 
+ * @trigger  Every Sunday at 1am.
+ */
 
-function createWeeklyAttendanceTrigger() {
-  const calendar = CalendarApp.getDefaultCalendar(); // or use CalendarApp.getCalendarById(email)
-  const props = PropertiesService.getScriptProperties();
-  const stored = JSON.parse(props.getProperty("calendarTriggers") || "{}");
+function updateWeeklyCalendarTriggers () {
+  createWeeklyAttendanceTriggers_();
+  deleteExpiredCalendarTriggers_();
+}
+
+/**
+ * Add new McRUN event from calendar to Apps Script trigger for today.
+ * 
+ * @trigger  Updated calendar.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Apr 17, 2025
+ * @update  Apr 17, 2025
+ */
+
+function addSingleEventTrigger() {
+  const now = new Date();
+  const midnight = new Date(new Date().setHours(23, 59, 59, 59));
+
+  const calendar = CalendarApp.getDefaultCalendar();
+  const events = calendar.getEvents(now, midnight);
+  events.forEach(e => createAndStoreTrigger_(e));
+}
+
+
+/**
+ * Get events from calendar and create time-based triggers.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
+ * @date  Apr 17, 2025
+ * @update  Apr 17, 2025
+ */
+
+function createWeeklyAttendanceTriggers_() {
+  const calendar = CalendarApp.getDefaultCalendar();
 
   const now = new Date();
   const startOfWeek = getStartOfWeek(now); // Sunday
@@ -275,23 +323,7 @@ function createWeeklyAttendanceTrigger() {
     event.getStartTime() > now
   );
 
-  const TRIGGER_FUNC = checkMissingAttendance.name;
-  const offset = 60 * 60 * 1000;
-
-  filteredEvents.forEach(event => {
-    const startTime = new Date(event.getStartTime().getTime() + offset);
-
-    const trigger = ScriptApp.newTrigger(TRIGGER_FUNC)
-      .timeBased()
-      .at(startTime)
-      .create();
-
-    stored[trigger.getUniqueId()] = startTime.toISOString();
-
-    Logger.log(`Trigger created for "${event.getTitle()}" at ${startTime}`);
-  });
-
-  props.setProperty("calendarTriggers", JSON.stringify(stored));
+  filteredEvents.forEach(event => createAndStoreTrigger_(event));
 
   // Helper: Gets the Sunday of the current week
   function getStartOfWeek(date) {
@@ -304,13 +336,58 @@ function createWeeklyAttendanceTrigger() {
 }
 
 
-function deleteExpiredCalendarTriggers() {
+/**
+ * Add time-based trigger using event information from Calendar.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
+ * @date  Apr 15, 2025
+ * @update  Apr 17, 2025
+ */
+
+function createAndStoreTrigger_(event) {
+  const props = GET_PROP_STORE_();
+  const stored = JSON.parse(props.getProperty(CALENDAR_STORE) || "{}");
+
+  const offset = 60 * 60 * 1000;
+  const startTime = new Date(event.getStartTime().getTime() + offset);
+
+  // Only add trigger if new
+  if (isExistingTrigger_(startTime, stored)) return;
+
+  const trigger = ScriptApp.newTrigger(TRIGGER_FUNC)
+    .timeBased()
+    .at(startTime)
+    .create();
+
+  stored[trigger.getUniqueId()] = startTime.toISOString();
+
+  // Store updated calendar triggers
+  props.setProperty(CALENDAR_STORE, JSON.stringify(stored));
+  Logger.log(`Trigger created and stored for "${event.getTitle()}" at ${startTime}`);
+
+  // Helper function
+  function isExistingTrigger_(time, stored) {
+    const triggerTimes = Object.values(stored);
+    return (time in triggerTimes);
+  }
+}
+
+
+/**
+ * Removes expired calendar triggers and updates store in Properties.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
+ * @date  Apr 15, 2025
+ * @update  Apr 17, 2025
+ */
+
+function deleteExpiredCalendarTriggers_() {
   const now = new Date();
-  const props = PropertiesService.getScriptProperties();
-  let stored = JSON.parse(props.getProperty("calendarTriggers") || "{}");
+  const props = GET_PROP_STORE_();
+  const stored = JSON.parse(props.getProperty(CALENDAR_STORE) || "{}");
 
   const triggers = ScriptApp.getProjectTriggers();
-  let updated = {};
+  const updated = {};
 
   triggers.forEach(trigger => {
     const id = trigger.getUniqueId();
@@ -318,34 +395,18 @@ function deleteExpiredCalendarTriggers() {
 
     if (scheduledTime && scheduledTime < now) {
       ScriptApp.deleteTrigger(trigger);
-      Logger.log(`Deleted expired calendar trigger: ${id}`);
+      Logger.log(`Deleted expired calendar trigger: ${id} for ${scheduledTime}`);
     } else if (scheduledTime) {
       updated[id] = stored[id];
     }
   });
 
-  props.setProperty("calendarTriggers", JSON.stringify(updated));
+  props.setProperty(CALENDAR_STORE, JSON.stringify(updated));
+  console.log(`Updated store ${CALENDAR_STORE} with values`, updated);
 }
 
 
-function addSingleEventTrigger() {
-  const calendar = CalendarApp.getDefaultCalendar(); // or use CalendarApp.getCalendarById(email)
-
-  const now = new Date();
-  const midnight = new Date(new Date().setHours(23, 59, 59, 59));
-
-  const events = calendar.getEvents(now, midnight);
-
-  if (!events) {
-    return;
-  }
-
-  const props = PropertiesService.getScriptProperties();
-  const TRIGGER_FUNC = checkMissingAttendance.name;
-}
-
-
-function createTimeDrivenTriggers() {
+function testRepeatTrigger() {
   // Trigger every 6 hours.
   ScriptApp.newTrigger('myFunction')
       .timeBased()
