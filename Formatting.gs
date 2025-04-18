@@ -6,7 +6,6 @@
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 17, 2023
  * @update  Feb 9, 2025
- *
  */
 
 function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
@@ -240,6 +239,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   // Log debugging message
   console.log(`[AC] Confirmation Response (raw): ${confirmationResp}   (formatted): ${formattedValue}`);
 }
+
 
 /**
  * Wrapper function for `formatAttendeeNamesInRow` and `formatHeadRunnerInRow`

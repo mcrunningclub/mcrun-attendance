@@ -3,16 +3,10 @@ const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
 const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 
 const CALENDAR_STORE = 'calendarTriggers';
+const HEADRUNNER_STORE = 'headrunners';
+const HEADRUN_STORE = 'headruns';
 const TRIGGER_FUNC = checkMissingAttendance.name;
 
-/** GET PROP STORE OR GENERATE IF NULL  */
-let PROP_STORE = null;
-const GET_PROP_STORE_ = () => {
-  if (!PROP_STORE) {
-    PROP_STORE = PropertiesService.getScriptProperties();
-  }
-  return PROP_STORE;
-}
 
 /**
  * Return headrun day and time from headrun code input `headRunDay`.
@@ -51,14 +45,37 @@ function getHeadrunTitle_(headRunDay) {
   }
 }
 
-function getAllHeadruns_() {
-  return [
-    'Tuesday - 6:00pm', 
-    'Wednesday - 6:00pm', 
-    'Thursday - 7:30am', 
-    'Saturday - 10:00am', 
-    'Sunday - 6:00pm'
-  ].join(';');
+/*
+headruns = {
+  sunday: {'10:00am': [headrunners]}
+}
+
+headrunners = {
+  name1: {email1, strava1},
+  name2: {email2, strava2}
+}
+*/
+
+function getAllHeadruns() {
+  const docProp = PropertiesService.getDocumentProperties();
+  return docProp.getProperty(HEADRUN_STORE);
+}
+
+function getAllHeadrunners() {
+  const docProp = PropertiesService.getDocumentProperties();
+  return docProp.getProperty(HEADRUNNER_STORE);
+}
+
+function readAndStoreHeadrunners() {
+  const sheet = GET_COMPILED_SHEET_();
+  const headruns = sheet.getDataRange().getValues();
+
+  console.log(headruns);
+  return;
+
+
+  const docProp = PropertiesService.getDocumentProperties();
+  docProp.setProperty(headrunners);
 }
 
 

@@ -1,8 +1,3 @@
-// SHEET CONSTANTS
-const ATTENDANCE_SHEET_NAME = 'HR Attendance W25';
-const ATTENDANCE_SS_ID = '1SnaD9UO4idXXb07X8EakiItOOORw5UuEOg0dX_an3T4';
-const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
-
 // LIST OF COLUMNS IN SHEET_NAME
 const TIMESTAMP_COL = 1;
 const EMAIL_COL = 2;
@@ -18,6 +13,11 @@ const COMMENTS_COL = 11;
 const IS_COPY_SENT_COL = 12;
 const PLATFORM_COL = 13;
 const NAMES_NOT_FOUND_COL = 14;
+
+
+const ATTENDANCE_SHEET_NAME = 'HR Attendance W25';
+const ATTENDANCE_SS_ID = '1SnaD9UO4idXXb07X8EakiItOOORw5UuEOg0dX_an3T4';
+const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
 
 // ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
 // SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
@@ -60,8 +60,22 @@ const COPY_EMAIL_HTML_FILE = 'Confirmation-Email';
 const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';
 
 const GET_ATTENDANCE_GFORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
-//const ATTENDANCE_GFORM_LINK = "https://docs.google.com/forms/d/1QVBKZ8aRaQ__w78HJzMrkq2ps_B_om7bW5D6vQL0-as/viewform";
-//const ATTENDANCE_FORM_TITLE = FormApp.openByUrl(ATTENDANCE_GFORM_LINK).getTitle();  // Gets name of GForm
+
+
+/** GET COMPILED SHEET OR GENERATE REF IF NULL */
+const GET_HEADRUN_SCHEDULE_SS = () => SpreadsheetApp.openById('1FvnfUHO2Xj-Q5j6-B2Wz9DgxEXFX-OoCh6Pf49Kqyac');
+const COMPILED_SHEET_NAME = "Compiled";
+let COMPILED_SHEET = null;
+
+const GET_COMPILED_SHEET_ = () => {
+  return (COMPILED_SHEET) ?? GET_HEADRUN_SCHEDULE_SS().getSheetByName(COMPILED_SHEET_NAME);
+}
+
+/** GET PROP STORE OR GENERATE IF NULL  */
+let PROP_STORE = null;
+const GET_PROP_STORE_ = () => {
+  return PROP_STORE ?? PropertiesService.getScriptProperties();
+}
 
 
 /**
