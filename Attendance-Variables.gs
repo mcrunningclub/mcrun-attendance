@@ -53,6 +53,7 @@ const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8
 // SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
 const SCRIPT_PROPERTY = {
   isCheckingAttendance: 'IS_CHECKING_ATTENDANCE',
+  calendarTriggers: 'calendarTriggers',
 };
 
 // NAME OF HTML TEMPLATES. ENSURE CORRECT FILE NAME!!

@@ -2,7 +2,7 @@
 const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
 const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 
-const CALENDAR_STORE = 'calendarTriggers';
+const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
 const HEADRUNNER_STORE = 'headrunners';
 const HEADRUN_STORE = 'headruns';
 const TRIGGER_FUNC = checkMissingAttendance.name;
