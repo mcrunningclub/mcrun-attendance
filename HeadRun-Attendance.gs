@@ -214,7 +214,7 @@ function checkMissingAttendance() {
   // Save result of attendance verification, and get title for email
   const { isSubmitted: isSubmitted, headrunTitle: headrunTitle } = verifyAttendance_();
 
-  // Send copy of submission if true. Otherwise send an email reminder.
+  // Send copy of submission if true. Otherwise send an email reminder
   isSubmitted ? sendSubmissionCopy_(headrunTitle) : sendEmailReminder_(headrunTitle);
   console.log(`Executed onFormSubmission with 'isSubmitted' ${isSubmitted}`);
 }

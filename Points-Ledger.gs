@@ -65,9 +65,9 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
 
   // STEP 2: Send submission using library and store new row index.
   // This triggers automations in the recipient sheet.
+  let logNewRow = 0;
   try {
-    const logNewRow = sendNewSubmission_(packagedEvents);
-    storeStravaInLogSheet_(logNewRow);
+    logNewRow = sendNewSubmission_(packagedEvents);
   }
 
   // STEP 2b: Error occured, send using `openByUrl`. Downside: automations not triggered
@@ -78,7 +78,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
     // `Points Ledger` Google Sheet
     const ss = SpreadsheetApp.openByUrl(POINTS_LEDGER_URL);
     const logSheet = ss.getSheetByName(LOG_SHEET_NAME);
-    const logNewRow = logSheet.getLastRow() + 1;
+    logNewRow = logSheet.getLastRow() + 1;
 
     const packageNumRows = packagedEvents.length;
     const packageNumCols = packagedEvents[0].length;
@@ -88,6 +88,22 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
 
     // Display successful message for Step 2b, and error message from Step 2.
     Logger.log(`[AC] Successfully transferred event attendance submission to Ledger row ${logNewRow}`);
+  }
+
+  // STEP 3: Find and store strava activity
+  try {
+    storeStravaInLogSheet_(logNewRow);
+  }
+  catch {
+    Logger.log(`[AC] Unable to store Strava activity correctly using Points Ledger library`);
+  }
+
+  // STEP 4: Send stats email if Strava activity exists
+  try {
+    triggerEmailInLedger_(logNewRow);
+  } 
+  catch {
+    Logger.log(`[AC] Unable to send stats email successfully using Points Ledger library`);
   }
 }
 
