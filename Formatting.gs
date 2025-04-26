@@ -145,13 +145,10 @@ function formatSpecificColumns() {
     'L2:M',   // Copy Sent + Submission Platform
   ]).setVerticalAlignment('middle');
 
-  // 6. Update banding colours
-  const dataRange = sheet.getDataRange();
-
-  // Need to remove current banding, before applying it to current range
-  // Apply BLUE banding with distinct header and footer colours.
-  dataRange.getBandings().forEach(banding => banding.remove());
-  dataRange.applyRowBanding(SpreadsheetApp.BandingTheme.BLUE, true, true);
+  // 6. Update banding colours by extending range
+  const dataRange = sheet.getRange(1,1);
+  const banding = dataRange.getBandings()[0];
+  banding.setRange(sheet.getDataRange());
 
   // 7. Resize columns using `sizeMap`
   const sizeMap = {
