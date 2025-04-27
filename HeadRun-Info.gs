@@ -68,9 +68,18 @@ function getAllHeadrunners() {
 
 function readAndStoreHeadrunners() {
   const sheet = GET_COMPILED_SHEET_();
-  const headruns = sheet.getDataRange().getValues();
+  const data = sheet.getDataRange().getValues();
+  console.log(data);
+  
+  const headruns = data.shift();
+  const count = headruns.length;
 
-  console.log(headruns);
+  headruns.forEach((hr, i) => {
+    if (i < 1) return;
+    headrunners = hr[count][i];
+    console.log(headruns);
+  })
+  
   return;
 
 
@@ -292,8 +301,8 @@ function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 
  * @trigger  Every Sunday at 1am.
  */
 
-function updateWeeklyCalendarTriggers () {
-  createWeeklyAttendanceTriggers_();
+function updateWeeklyCalendarTriggers() {
+  createDailyAttendanceTrigger_();
   deleteExpiredCalendarTriggers_();
 }
 
@@ -322,10 +331,10 @@ function addSingleEventTrigger() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
  * @date  Apr 17, 2025
- * @update  Apr 17, 2025
+ * @update  Apr 27, 2025
  */
 
-function createWeeklyAttendanceTriggers_() {
+function createDailyAttendanceTrigger_() {
   const calendar = CalendarApp.getDefaultCalendar();
 
   const now = new Date();
@@ -350,6 +359,44 @@ function createWeeklyAttendanceTriggers_() {
     start.setHours(0, 0, 0, 0);
     return start;
   }
+}
+
+
+function updateCalendarTriggers() {
+  // Get events from day start (midnight)
+  const now = new Date();
+  const start = new Date().setHours(0, 0, 0, 0);
+
+  const calendar = CalendarApp.getDefaultCalendar();
+  const events = calendar.getEvents(start, now);
+
+
+
+
+
+  const offset = now - 10*60 * 1000;    // Search 6 sec ago
+
+  
+
+  const cancelledRegex = /cancel{1,2}ed/i;
+
+  for (const event of events) {
+    if (offset < event.getLastUpdated()) {
+      console.log(event.getDescription());
+      console.log(event.getTitle);
+      console.log(`This event has been cancelled: ${isCancelled(event)}`)
+    }
+  }
+
+  function isCancelled(event) {
+    const str = event.getDescription() + event.getTitle();
+    return cancelledRegex.test(str);
+  }
+}
+
+function mTest() {
+  const now = new Date()
+  const offset = now - 6 * 1000;    // Search 6 sec ago
 }
 
 
