@@ -5,6 +5,7 @@ const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
 const HEADRUNNER_STORE = 'headrunners';
 const HEADRUN_STORE = 'headruns';
+
 const TRIGGER_FUNC = checkMissingAttendance.name;
 
 
@@ -45,17 +46,6 @@ function getHeadrunTitle_(headRunDay) {
   }
 }
 
-/*
-headruns = {
-  sunday: {'10:00am': [headrunners]}
-}
-
-headrunners = {
-  name1: {email1, strava1},
-  name2: {email2, strava2}
-}
-*/
-
 function getAllHeadruns() {
   const docProp = PropertiesService.getDocumentProperties();
   return docProp.getProperty(HEADRUN_STORE);
@@ -66,10 +56,122 @@ function getAllHeadrunners() {
   return docProp.getProperty(HEADRUNNER_STORE);
 }
 
-function readAndStoreHeadrunners() {
+
+/** DATA STRUCTURE FOR HEADRUNS AND HEADRUNNERS: */
+
+/*
+headruns = {
+  sunday: {
+    '10:00am' : {level : 'easy', headrunners : [name1, name2, ...]},
+    '2:15pm': {level : 'intermediate', headrunners : [name2]}
+  ]
+}
+
+headrunners = {
+  name1: {email1, strava1},
+  name2: {email2, strava2}
+}
+*/
+
+
+function readAndStoreRunData() {
+  const sheet = GET_HEADRUNNER_SHEET_();
+  const data = sheet.getDataRange().getValues();
+
+  // Pop header from data
+  const header = data.shift();
+
+  // Get columns indices
+  const THIS_NAME_COL = getColIndex('name');
+  const THIS_EMAIL_COL = getColIndex('email');
+  const THIS_STRAVA_COL = getColIndex('strava');
+  const THIS_LEVEL_COL = getColIndex('level');
+
+  const headrunInfo = {};
+
+  // Package headrun info
+  const headrunners = data.reduce((acc, row) => {
+    let info = {
+      'email' : row[THIS_EMAIL_COL],
+      'strava' : extractStravaId(row[THIS_STRAVA_COL])
+    }
+
+    // Key must be identical in both objects (headruns + headrunners)
+    const nameKey = createVarName(row[THIS_NAME_COL]);
+
+    // Append (or create) headrun schedule entry to 'headrunInfo'
+    appendHeadrunInfo(row, nameKey);
+    
+    // Add headrunner info and return obj
+    acc[nameKey] = info;
+    return acc;
+  }, {});
+
+  console.log(headrunners);
+  console.log(headrunInfo);
+
+  /** Helper function to extract data */
+  function getColIndex(target) {
+    return header.findIndex(val => val.toLowerCase() == target);
+  }
+
+  function createVarName(name) {
+    name = name.replace(/[ \-]/g, '');
+    return name.charAt(0).toLowerCase() + name.slice(1);
+  }
+
+  function extractStravaId(input) {
+    const match = input.match(/\/athletes\/(\d+)/);
+    const athleteId = match ? match[1] : input;
+    return athleteId;
+  }
+
+  /*
+  let headrunnerSchedule = 'Wednesday 6pm (Beginner); Sunday 8am (Intermediate); Sunday 6pm (Beginner)';
+  {
+    'wednesday' : { 
+      '6pm' : { level: 'beginner', people : []}
+    },
+    'sunday' : {
+      '8am' : { level : 'intermediate', people : [] },
+      '6pm' : { level : 'beginner', people : [] }
+    }
+  }
+  */
+
+  function appendHeadrunInfo(row, headrunner) {
+    const levels = row[THIS_LEVEL_COL].split(';');
+    // Entry info: `[weekday] [time-12h] ([run level])`
+    levels.forEach(entry => {
+      const match = entry.trim().match(/^(\w+)\s+([\d:apm]+)\s+\((\w+)\)$/i);
+      if (match) {
+        const [_, day, time, level] = match;    // Get match using dereferencing
+        const dayKey = day.toLowerCase();
+        const timeKey = time.toLowerCase();
+        const levelVal = level.toLowerCase();
+
+        if (!headrunInfo[dayKey]) {
+          headrunInfo[dayKey] = {};
+        }
+
+        // Add time to dayKey if not found
+        if (!headrunInfo[dayKey][timeKey]) {
+           headrunInfo[dayKey][timeKey] = {};
+        }
+
+        const people = headrunInfo[dayKey][timeKey][headrunner] ?? [];
+        headrunInfo[dayKey][timeKey] = { level: levelVal, headrunner: people.concat(headrunner)};
+      }
+    });
+  }
+}
+
+
+function readAndStoreHeadruns() {
   const sheet = GET_COMPILED_SHEET_();
   const data = sheet.getDataRange().getValues();
   console.log(data);
+  return;
   
   const headruns = data.shift();
   const count = headruns.length;

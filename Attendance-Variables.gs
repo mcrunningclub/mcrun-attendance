@@ -63,14 +63,15 @@ const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';
 const GET_ATTENDANCE_GFORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
 
 
-/** GET COMPILED SHEET OR GENERATE REF IF NULL */
-const GET_HEADRUN_SCHEDULE_SS = () => SpreadsheetApp.openById('1FvnfUHO2Xj-Q5j6-B2Wz9DgxEXFX-OoCh6Pf49Kqyac');
-const COMPILED_SHEET_NAME = "Compiled";
-let COMPILED_SHEET = null;
+/** GET HEADRUN SCHEDULE AND HEADRUNNER INFO */
+const GET_HEADRUN_SS = () => SpreadsheetApp.openById('1FvnfUHO2Xj-Q5j6-B2Wz9DgxEXFX-OoCh6Pf49Kqyac');
 
-const GET_COMPILED_SHEET_ = () => {
-  return (COMPILED_SHEET) ?? GET_HEADRUN_SCHEDULE_SS().getSheetByName(COMPILED_SHEET_NAME);
-}
+const COMPILED_SHEET_NAME = "Compiled";
+const GET_COMPILED_SHEET_ = () => GET_HEADRUN_SS().getSheetByName(COMPILED_SHEET_NAME);
+
+const HEADRUNNER_SHEET_NAME = "List of Head Runners";
+const GET_HEADRUNNER_SHEET_ = () => GET_HEADRUN_SS().getSheetByName(HEADRUNNER_SHEET_NAME);
+
 
 /** GET PROP STORE OR GENERATE IF NULL  */
 let PROP_STORE = null;
