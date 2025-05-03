@@ -212,7 +212,7 @@ function checkMissingAttendance() {
   }
 
   // Save result of attendance verification, and get title for email
-  const { isSubmitted: isSubmitted, headrunTitle: headrunTitle } = verifyAttendance_();
+  const { isSubmitted: isSubmitted, headrunTitle: headrunTitle } = verifyAttendance();
 
   // Send copy of submission if true. Otherwise send an email reminder
   isSubmitted ? sendSubmissionCopy_(headrunTitle) : sendEmailReminder_(headrunTitle);
@@ -236,7 +236,7 @@ function checkForNewImport_() {
 }
 
 
-function verifyAttendance_() {
+function verifyAttendance() {
   const sheet = ATTENDANCE_SHEET;
 
   // Gets values of all timelogs

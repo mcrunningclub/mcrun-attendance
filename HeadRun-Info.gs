@@ -8,7 +8,6 @@ const HEADRUN_STORE = 'headruns';
 
 const TRIGGER_FUNC = checkMissingAttendance.name;
 
-
 /**
  * Return headrun day and time from headrun code input `headRunDay`.
  *
@@ -42,9 +41,39 @@ function getHeadrunTitle_(headRunDay) {
     case 'SaturdayAM': return 'Saturday - 10:00am';
     case 'SundayPM': return 'Sunday - 6:00pm';
 
-    default: throw new Error(`No headrunner has been found for ${headRunDay}`);
+    default: throw new Error(`No headrunner has been found for '${headRunDay}'`);
   }
 }
+
+/**
+ * Return headrun day and time from headrun schedule daytime.
+ *
+ * @param {string} headRunDay  The headrun day and time.
+ * @return {string}  String of headrun day and time. (e.g., `'Sunday - 6pm'`)
+ *
+ * Current head runs for semester:
+ *
+ * Tuesday   :  6:00pm
+ * Wednesday :  6:00pm
+ * Thursday  :  7:30am
+ * Saturday  :  10:00am
+ * Sunday    :  6:00pm
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Nov 13, 2023
+ * @update  Sep 24, 2024
+ *
+ * ```javascript
+ * // Sample Script ➜ Getting headrun datetime for Sunday evening run.
+ * const headrun = getHeadRunnerEmail('SundayPM');
+ * Logger.log(headrun) // 'Sunday - 6pm'
+ * ```
+ */
+
+function getHeadrunTitleFromStore(headrunTime) {
+
+}
+
 
 function storeObject_(key, obj) {
   const docProp = PropertiesService.getDocumentProperties();
@@ -61,33 +90,103 @@ function getAllHeadrunners_() {
   return JSON.parse(docProp.getProperty(HEADRUNNER_STORE));
 }
 
-function prettyPrintHeadrunnerObj(headrunnerObj = getAllHeadrunners_()) {
-  const output = Object.entries(headrunnerObj).reduce((acc, [name, prop]) => {
-    acc.push(`${name}:\n  -email: '${prop.email}'\n  -strava: '${prop.strava}'`);
-    return acc;
-  }, []);
+/** Display all headrun and headrunner data */
 
-  console.log(output.join('\n'));
+function prettyPrintRunData() {
+  prettyPrintHeadrunnerObj();
+  prettyPrintHeadrunObj();
+
+  function prettyPrintHeadrunnerObj(headrunnerObj = getAllHeadrunners_()) {
+    const output = Object.entries(headrunnerObj).reduce((acc, [name, prop]) => {
+      acc.push(`${name}:\n  -email: '${prop.email}'\n  -strava: '${prop.strava}'`);
+      return acc;
+    }, []);
+
+    console.log(output.join('\n'));
+  }
+
+  function prettyPrintHeadrunObj(headrunObj = getAllHeadruns_()) {
+    let output = '';
+    for (const day in headrunObj) {
+      output += day + ':\n';
+
+      const times = headrunObj[day];
+      for (const time in times) {
+        output += `  '${time}':\n`;
+
+        var levels = times[time];
+        for (const level in levels) {
+          const people = levels[level];
+          output += `    -${level}: [ '${people.join(', ')}' ]\n`;
+        }
+      }
+    }
+    console.log(output);
+  }
 }
 
 
-function prettyPrintHeadrunObj(headrunObj = getAllHeadruns_()) {
-  let output = '';
-  for (const day in headrunObj) {
-    output += day + ':\n';
+/*
+sunday|0:
+  '6pm':
+    -advanced: [ 'aidenLee' ]
+    -intermediate: [ 'camilaCognac, sophiaLongo' ]
+    -beginner: [ 'charlesVillegas, edmundPaquin, kateRichards' ]
+  '10am':
+    -beginner: [ 'bob' ]
+    -intermediate: [ 'john' ]
+    -advanced: [ 'jane' ]
+*/
 
-    const times = headrunObj[day];
-    for (const time in times) {
-      output += `  '${time}':\n`;
+function checkHeadrunStore(targetString, offsetHours = 2) {
+    // Parse input string
+    const now2 = new Date();
+    console.log(now2);
 
-      var levels = times[time];
-      for (const level in levels) {
-        const people = levels[level];
-        output += `    -${level}: [ '${people.join(', ')}' ]\n`;
-      }
+    const weekdayIndex = now2.getDay();
+    console.log(weekdayIndex);
+    return;
+
+
+    const [weekdayStr, timeStr] = targetString.split(' ');
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    const targetWeekday = weekdays.indexOf(weekdayStr);
+    if (targetWeekday === -1) {
+        throw new Error('Invalid weekday');
     }
-  }
-  console.log(output);
+    
+    // Get current date and time
+    const now = new Date();
+    
+    // Find target date in this week
+    const currentWeekday = now.getDay();
+    let dayDiff = targetWeekday - currentWeekday;
+    
+    // Get target date object
+    const targetDate = new Date(now);
+    targetDate.setDate(now.getDate() + dayDiff);
+    
+    // Parse time string to hours and minutes
+    const timeMatch = timeStr.match(/(\d+)(am|pm)/i);
+    if (!timeMatch) {
+        throw new Error('Invalid time format');
+    }
+    
+    let hours = parseInt(timeMatch[1], 10);
+    const meridian = timeMatch[2].toLowerCase();
+    
+    if (meridian === 'pm' && hours !== 12) hours += 12;
+    if (meridian === 'am' && hours === 12) hours = 0;
+    
+    targetDate.setHours(hours, 0, 0, 0); // Set target time
+    
+    // Create offset bounds
+    const lowerBound = new Date(targetDate.getTime() - offsetHours * 60 * 60 * 1000);
+    const upperBound = new Date(targetDate.getTime() + offsetHours * 60 * 60 * 1000);
+    
+    // Check if now is within bounds
+    return now >= lowerBound && now <= upperBound;
 }
 
 
@@ -98,16 +197,16 @@ function prettyPrintHeadrunObj(headrunObj = getAllHeadruns_()) {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
  * @date  May 2, 2025
- * @update  May 2, 2025
+ * @update  May 3, 2025
  * 
  * ### Sample data structures
  * ```js
- * {sunday: {
+ * { sunday|0 : {
  *    '10:00am' : { 'easy' : ['bobBurger', 'janeDoe'] },
  *    '2:15pm': { 'intermediate' : ['janeDoe'] }
  * }}
- *
- * {'bobBurger' : { email : 'bob@mail.com', strava : '123456789'}}
+ * 
+ * { 'bobBurger' : { email : 'bob.burger@mail.com', strava : '123456789'} }
  * ```
  */
 
@@ -129,7 +228,6 @@ function readAndStoreRunData() {
     const stravaId = extractStravaId(row[colIndex.strava]);
     const levelStr = row[colIndex.level];
 
-
     // Append this runner’s schedule info to the headrun object
     appendHeadrunInfo_(levelStr, nameKey, headrunObj);
     
@@ -142,6 +240,7 @@ function readAndStoreRunData() {
   storeObject_(HEADRUNNER_STORE, headrunnerObj);
   storeObject_(HEADRUN_STORE, headrunObj);
 
+  Logger.log(`Completed parsing and storage of run data from '${SEMESTER_NAME}' sheet`);
 
   /** Helper functions to extract data */
    function getColIndices(targets, headerRow) {
@@ -153,7 +252,6 @@ function readAndStoreRunData() {
         throw new Error(`Column '${key}' not found in header row.`);
       }
       indices[key] = index;
-
     });
     return indices;
   }
@@ -189,23 +287,23 @@ function readAndStoreRunData() {
  * appendHeadrunInfo(headrunnerSchedule, 'Bob');   // Appends to `headrunObj`
  * 
  * Logger.log(headrunObj);
- * // { 'wednesday' : { '6pm' : { 'beginner' : ['Bob'] } },
- * //   'sunday' : { '8am' : { 'intermediate' : ['Bob'] }, '6pm' : { 'beginner' : ['Bob'] }  }
+ * // { 'wednesday|3' : { '6pm' : { 'beginner' : ['Bob'] } },
+ * //   'sunday|0' : { '8am' : { 'intermediate' : ['Bob'] }, '6pm' : { 'beginner' : ['Bob'] }  }
  * ```
  */
 
 function appendHeadrunInfo_(levelsStr, thisHeadrunner, headrunObj) {
   const levels = levelsStr.split(/\s*;\s*/);
 
-  // Entry formatted as: `[weekday] [time-12h] ([run level])`
   levels.forEach(entry => {
+    // Entry formatted as: `[weekday|weekday-index] [time-12h] ([run level])`
     const match = entry.match(/^(\w+)\s+([\d:apm]+)\s+\(([\w\s]+)\)$/i);
     
     if (match) {
       const [_, day, time, level] = match;
       
       // Create data structure (if first time)
-      const dayObj = ensureKey(headrunObj, day, {});
+      const dayObj = ensureKey(headrunObj, getDayCode(day), {});
       const timeObj = ensureKey(dayObj, time, {});
       const levelArr = ensureKey(timeObj, level, []);
 
@@ -224,6 +322,11 @@ function appendHeadrunInfo_(levelsStr, thisHeadrunner, headrunObj) {
   }
 }
 
+/** Returns day code formatted as `weekday|day-index*/
+function getDayCode(day) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return `${day}|${days.indexOf(day)}`;
+}
 
 /**
  * Wrapper function for `formatHeadRunnerInRow` to apply on *ALL* submissions.
