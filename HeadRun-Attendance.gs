@@ -252,7 +252,8 @@ function verifyAttendance() {
 
   // Formats trigger datetime to get head runner emails
   const headrunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
-  const headrunTitle = getHeadrunTitle_(headrunDay); // e.g 'Monday - 9am'
+  //const headrunDay2 = Utilities.formatDate(today, TIMEZONE, 'EEEE hh:mma');
+  const headrunTitle = getHeadrunTitle_(headrunDay);  // e.g 'Monday - 9am'
 
   return { isSubmitted: isSubmitted(), headrunTitle: headrunTitle };
 

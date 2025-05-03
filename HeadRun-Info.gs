@@ -40,38 +40,59 @@ function getHeadrunTitle_(headRunDay) {
     case 'ThursdayAM': return 'Thursday - 7:30am';
     case 'SaturdayAM': return 'Saturday - 10:00am';
     case 'SundayPM': return 'Sunday - 6:00pm';
+    default: return 'Saturday - 12:00pm';
 
-    default: throw new Error(`No headrunner has been found for '${headRunDay}'`);
+    //default: throw new Error(`No headrunner has been found for '${headRunDay}'`);
   }
 }
 
-/**
- * Return headrun day and time from headrun schedule daytime.
- *
- * @param {string} headRunDay  The headrun day and time.
- * @return {string}  String of headrun day and time. (e.g., `'Sunday - 6pm'`)
- *
- * Current head runs for semester:
- *
- * Tuesday   :  6:00pm
- * Wednesday :  6:00pm
- * Thursday  :  7:30am
- * Saturday  :  10:00am
- * Sunday    :  6:00pm
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 13, 2023
- * @update  Sep 24, 2024
- *
- * ```javascript
- * // Sample Script ➜ Getting headrun datetime for Sunday evening run.
- * const headrun = getHeadRunnerEmail('SundayPM');
- * Logger.log(headrun) // 'Sunday - 6pm'
- * ```
- */
 
-function getHeadrunTitleFromStore(headrunTime) {
+function isSubmissionInRange(schedule, submissionTime) {
+  
+}
 
+
+
+function checkThisSubmission(submissionDate, offsetHours = 2) {
+  const thisWeekday = submissionDate.getDay();
+  const currentWeekday = new Date().getDay();
+
+  if (thisWeekday !== currentWeekday) {
+    return false;
+  }
+
+  const runSchedule = getScheduleFromStore_(currentWeekday);
+
+  const timeKey = Object.keys(runSchedule).find((timeStr) => {
+    const timeMatch = timeStr.match(/(\d+)(am|pm)/i);
+
+    // Parse time string to hours and minutes
+    const hours = parseInt(timeMatch[1], 10);
+    const meridian = timeMatch[2].toLowerCase();
+
+    // Convert to number for easy comparaison
+    const unixTimestamp = convertToUnix(hours, meridian);
+    const offsetMilli = offsetHours * 60 * 60 * 1000;
+
+    const lowerBound = unixTimestamp - offsetMilli;
+    const upperBound = unixTimestamp + offsetMilli;
+
+    console.log(new Date(lowerBound), new Date(upperBound));
+    console.log(submissionDate);
+
+    return (submissionDate >= lowerBound && submissionDate <= upperBound);
+  });
+
+  return runSchedule[timeKey] ?? null;
+
+  /** Helper function to get timestamp in unix */
+  function convertToUnix(time12h, meridian) {
+    let hours = time12h;
+
+    if (meridian === 'pm' && hours !== 12) hours += 12;
+    if (meridian === 'am' && hours === 12) hours = 0;
+    return new Date().setHours(hours, 0, 0, 0);
+  }
 }
 
 
@@ -125,9 +146,16 @@ function prettyPrintRunData() {
   }
 }
 
+/** Returns day code formatted as `weekday` in lowercase */
+ // 0-6 (Sunday = 0)
+function getWeekday(weekdayIndex) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[weekdayIndex].toLowerCase();
+}
+
 
 /*
-sunday|0:
+sunday:
   '6pm':
     -advanced: [ 'aidenLee' ]
     -intermediate: [ 'camilaCognac, sophiaLongo' ]
@@ -138,55 +166,11 @@ sunday|0:
     -advanced: [ 'jane' ]
 */
 
-function checkHeadrunStore(targetString, offsetHours = 2) {
-    // Parse input string
-    const now2 = new Date();
-    console.log(now2);
-
-    const weekdayIndex = now2.getDay();
-    console.log(weekdayIndex);
-    return;
-
-
-    const [weekdayStr, timeStr] = targetString.split(' ');
-    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    
-    const targetWeekday = weekdays.indexOf(weekdayStr);
-    if (targetWeekday === -1) {
-        throw new Error('Invalid weekday');
-    }
-    
-    // Get current date and time
-    const now = new Date();
-    
-    // Find target date in this week
-    const currentWeekday = now.getDay();
-    let dayDiff = targetWeekday - currentWeekday;
-    
-    // Get target date object
-    const targetDate = new Date(now);
-    targetDate.setDate(now.getDate() + dayDiff);
-    
-    // Parse time string to hours and minutes
-    const timeMatch = timeStr.match(/(\d+)(am|pm)/i);
-    if (!timeMatch) {
-        throw new Error('Invalid time format');
-    }
-    
-    let hours = parseInt(timeMatch[1], 10);
-    const meridian = timeMatch[2].toLowerCase();
-    
-    if (meridian === 'pm' && hours !== 12) hours += 12;
-    if (meridian === 'am' && hours === 12) hours = 0;
-    
-    targetDate.setHours(hours, 0, 0, 0); // Set target time
-    
-    // Create offset bounds
-    const lowerBound = new Date(targetDate.getTime() - offsetHours * 60 * 60 * 1000);
-    const upperBound = new Date(targetDate.getTime() + offsetHours * 60 * 60 * 1000);
-    
-    // Check if now is within bounds
-    return now >= lowerBound && now <= upperBound;
+// Find schedule for today using weekday index according to JS
+function getScheduleFromStore_(currentWeekday) {
+  const runSchedule = getAllHeadruns_();
+  const weekString = getWeekday(currentWeekday);    // 1 = 'monday'
+  return runSchedule[weekString] ?? null;   // Run schedule for current weekday
 }
 
 
@@ -296,14 +280,14 @@ function appendHeadrunInfo_(levelsStr, thisHeadrunner, headrunObj) {
   const levels = levelsStr.split(/\s*;\s*/);
 
   levels.forEach(entry => {
-    // Entry formatted as: `[weekday|weekday-index] [time-12h] ([run level])`
+    // Entry formatted as: `[weekday] [time-12h] ([run level])`
     const match = entry.match(/^(\w+)\s+([\d:apm]+)\s+\(([\w\s]+)\)$/i);
     
     if (match) {
       const [_, day, time, level] = match;
       
       // Create data structure (if first time)
-      const dayObj = ensureKey(headrunObj, getDayCode(day), {});
+      const dayObj = ensureKey(headrunObj, day, {});
       const timeObj = ensureKey(dayObj, time, {});
       const levelArr = ensureKey(timeObj, level, []);
 
@@ -322,11 +306,7 @@ function appendHeadrunInfo_(levelsStr, thisHeadrunner, headrunObj) {
   }
 }
 
-/** Returns day code formatted as `weekday|day-index*/
-function getDayCode(day) {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return `${day}|${days.indexOf(day)}`;
-}
+
 
 /**
  * Wrapper function for `formatHeadRunnerInRow` to apply on *ALL* submissions.
