@@ -119,7 +119,7 @@ function prettyPrintRunData() {
 
   function prettyPrintHeadrunnerObj(headrunnerObj = getAllHeadrunners_()) {
     const output = Object.entries(headrunnerObj).reduce((acc, [name, prop]) => {
-      acc.push(`${name}:\n  -email: '${prop.email}'\n  -strava: '${prop.strava}'`);
+      acc.push(`${name}:\n  -email: '${prop.email}'\n  -strava: '${prop.strava ?? ''}'`);
       return acc;
     }, []);
 
@@ -146,30 +146,18 @@ function prettyPrintRunData() {
   }
 }
 
-/** Returns day code formatted as `weekday` in lowercase */
- // 0-6 (Sunday = 0)
-function getWeekday(weekdayIndex) {
+/** Returns day code formatted as `weekday` in lowercase. Index [0-6] (Sunday = 0) */
+ 
+function getWeekday_(weekdayIndex) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return days[weekdayIndex].toLowerCase();
 }
 
 
-/*
-sunday:
-  '6pm':
-    -advanced: [ 'aidenLee' ]
-    -intermediate: [ 'camilaCognac, sophiaLongo' ]
-    -beginner: [ 'charlesVillegas, edmundPaquin, kateRichards' ]
-  '10am':
-    -beginner: [ 'bob' ]
-    -intermediate: [ 'john' ]
-    -advanced: [ 'jane' ]
-*/
-
 // Find schedule for today using weekday index according to JS
 function getScheduleFromStore_(currentWeekday) {
   const runSchedule = getAllHeadruns_();
-  const weekString = getWeekday(currentWeekday);    // 1 = 'monday'
+  const weekString = getWeekday_(currentWeekday);    // 1 = 'monday'
   return runSchedule[weekString] ?? null;   // Run schedule for current weekday
 }
 
@@ -471,6 +459,50 @@ function getHeadRunnerEmail_(headrun) {
   }
 }
 
+/*
+aidenLee:
+  -email: 'jihong.lee@mail.mcgill.ca'
+  -strava: 'undefined'
+alyssaAbouChakra:
+  -email: 'alyssa.abouchakra@mail.mcgill.ca'
+  -strava: 'undefined'
+
+sunday:
+  '6pm':
+    -advanced: [ 'aidenLee' ]
+    -intermediate: [ 'camilaCognac, sophiaLongo' ]
+    -beginner: [ 'charlesVillegas, edmundPaquin, kateRichards' ]
+  '10am':
+    -beginner: [ 'bob' ]
+    -intermediate: [ 'john' ]
+    -advanced: [ 'jane' ]
+*/
+
+function getHeadRunnerEmailFromStore_(runSchedule) {
+  const headrunnerStore = getAllHeadrunners_();
+  const allEmails = {};
+
+  for (const level in runSchedule) {
+    const levelHeadrunners = runSchedule[level];
+
+    const levelEmails = levelHeadrunners.reduce((arr, headrunner) => {
+      const email = headrunnerStore[headrunner].email ?? '';
+      arr.push(email);
+      return arr;
+    }, []);
+
+    allEmails[level] = levelEmails;
+  }
+
+  return allEmails;
+}
+
+
+function testIt() {
+  const runSchedule = getScheduleFromStore_(0)['10am'];
+  const res = getHeadRunnerEmailFromStore_(runSchedule);
+  console.log(res);
+}
 
 /**
  * Wrapper function for `formatHeadRunInRow` to apply on *ALL* submissions.
