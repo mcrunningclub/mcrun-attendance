@@ -195,28 +195,40 @@ function toggleAttendanceCheck_() {
  *
  * @trigger 30-60 mins after schedule in `getHeadRunString()`.
  *
- * @UPDATE-EACH-SEMESTER `getHeadRunString()`, `getHeadRunnerEmail()`.
- *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  Mar 24, 2025
+ * @update  May 4, 2025
  */
 
 function checkMissingAttendance() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
-  const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
+  // const scriptProperties = PropertiesService.getScriptProperties();
+  // const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+  // const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
 
-  if (isCheckingAllowed !== "true") {
-    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
-  }
+  // if (isCheckingAllowed !== "true") {
+  //   throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+  // }
+
+  const today = new Date(new Date().getTime() + 4.5 * 60 * 60 * 1000);   // new Date();
+  const currentWeekday = today.getDay();
+
+  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
+  const currentTimeKey = getMatchedTimeKey(today, currentDaySchedule);
+
+  const weekdayStr = getWeekday_(currentWeekday);
+  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;
+
+  // Get emails using runSchedule
+  const runScheduleLevels = currentDaySchedule[currentTimeKey];
+  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
+  const emailObj = { 'emails' : emailsByLevel, 'headrunTitle' : headrunTitle };
 
   // Save result of attendance verification, and get title for email
-  const { isSubmitted: isSubmitted, headrunTitle: headrunTitle } = verifyAttendance();
+  const matchedTimeKey = verifyAttendance_(currentWeekday);
 
   // Send copy of submission if true. Otherwise send an email reminder
-  isSubmitted ? sendSubmissionCopy_(headrunTitle) : sendEmailReminder_(headrunTitle);
-  console.log(`Executed onFormSubmission with 'isSubmitted' ${isSubmitted}`);
+  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj) : sendEmailReminder_(emailObj);
+  console.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
 }
 
 
@@ -236,45 +248,34 @@ function checkForNewImport_() {
 }
 
 
-function verifyAttendance() {
+function verifyAttendance_(currentWeekday) {
   const sheet = ATTENDANCE_SHEET;
 
   // Gets values of all timelogs
   const numRows = sheet.getLastRow() - 1;
   const submissionDates = sheet.getSheetValues(2, TIMESTAMP_COL, numRows, 1);
-  const submissionHeadruns = sheet.getSheetValues(2, HEADRUN_COL, numRows, 1);
-
-  const getDateAmPM = (date) => Utilities.formatDate(date, TIMEZONE, 'yyyy-MM-dd a');
 
   // Get date at trigger time and compare with timestamp of existing submissions
-  const today = new Date();
-  const formattedToday = getDateAmPM(today);   // e.g. '2024-10-27 PM'
-
-  // Formats trigger datetime to get head runner emails
-  const headrunDay = Utilities.formatDate(today, TIMEZONE, 'EEEEa');  // e.g. 'MondayAM'
-  //const headrunDay2 = Utilities.formatDate(today, TIMEZONE, 'EEEE hh:mma');
-  const headrunTitle = getHeadrunTitle_(headrunDay);  // e.g 'Monday - 9am'
-
-  return { isSubmitted: isSubmitted(), headrunTitle: headrunTitle };
-
+  return findMatchingTimeKey();
 
   /** Helper function */
-  function isSubmitted() {
-    let isSubmittedFlag = false;
+  function findMatchingTimeKey() {
+    let timeKey = null;
 
     // Start checking from end of head run attendance submissions
     // Exit loop when submission found or until list exhausted
-    for (let i = numRows - 1; i >= 0 && !isSubmittedFlag; i--) {
-      const submissionDate = getDateAmPM(new Date(submissionDates[i]));
+    for (let i = numRows - 1; i >= 0 && !timeKey; i--) {
+      
+      const submissionDate = submissionDates[i][0];
+      const thisWeekday = submissionDate.getDay();
 
-      // Get detailed head run to compare with today's headrunTitle
-      if (submissionDate === formattedToday) {
-        const submissionHeadrun = normalizeHeadrun(submissionHeadruns[i][0]);
-        isSubmittedFlag = (submissionHeadrun === normalizeHeadrun(headrunTitle));
+      if (thisWeekday === currentWeekday) {
+        const runSchedule = getScheduleFromStore_(thisWeekday);
+        timeKey = getMatchedTimeKey(submissionDate, runSchedule);
       }
     }
-
-    return isSubmittedFlag;
+    
+    return timeKey;
   }
 
   function normalizeHeadrun(headrun) {
@@ -286,7 +287,6 @@ function verifyAttendance() {
     }
     return `${dayOfWeek} - ${time}`;
   }
-
 }
 
 

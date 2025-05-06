@@ -3,10 +3,55 @@ const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
 const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 
 const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
-const HEADRUNNER_STORE = 'headrunners';
-const HEADRUN_STORE = 'headruns';
+const HEADRUNNER_STORE_NAME = 'headrunners';
+const HEADRUN_STORE_NAME = 'headruns';
 
 const TRIGGER_FUNC = checkMissingAttendance.name;
+
+function storeObject_(key, obj) {
+  const docProp = PropertiesService.getDocumentProperties();
+  docProp.setProperty(key, JSON.stringify(obj));
+}
+
+let ALL_HEADRUNS = null;
+
+function getAllHeadruns_() {
+  if (!ALL_HEADRUNS){  
+    const docProp = PropertiesService.getDocumentProperties();
+    ALL_HEADRUNS = JSON.parse(docProp.getProperty(HEADRUN_STORE_NAME));
+  }
+  return ALL_HEADRUNS;
+}
+
+function getAllHeadrunners_() {
+  const docProp = PropertiesService.getDocumentProperties();
+  return JSON.parse(docProp.getProperty(HEADRUNNER_STORE_NAME));
+}
+
+
+/** Returns day code formatted as `weekday` in lowercase. Index [0-6] (Sunday = 0) */
+function getWeekday_(weekdayIndex) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[weekdayIndex].toLowerCase();
+}
+
+
+/** 
+ * Find schedule for current weekday, either as string representation, 
+ * or js integer equivalent (1 = 'monday').
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  May 2, 2025
+ * @update  May 5, 2025
+ */
+
+function getScheduleFromStore_(currentWeekday) {
+  const runSchedule = getAllHeadruns_();
+  const isString = typeof currentWeekday === 'string';
+  const weekString = isString ? currentWeekday.toLowerCase() : getWeekday_(currentWeekday);
+  return runSchedule[weekString] ?? null;   // Run schedule for current weekday
+}
+
 
 /**
  * Return headrun day and time from headrun code input `headRunDay`.
@@ -40,76 +85,81 @@ function getHeadrunTitle_(headRunDay) {
     case 'ThursdayAM': return 'Thursday - 7:30am';
     case 'SaturdayAM': return 'Saturday - 10:00am';
     case 'SundayPM': return 'Sunday - 6:00pm';
-    default: return 'Saturday - 12:00pm';
 
-    //default: throw new Error(`No headrunner has been found for '${headRunDay}'`);
+    default: throw new Error(`No headrunner has been found for '${headRunDay}'`);
   }
 }
 
 
-function isSubmissionInRange(schedule, submissionTime) {
-  
-}
-
-
-
-function checkThisSubmission(submissionDate, offsetHours = 2) {
-  const thisWeekday = submissionDate.getDay();
-  const currentWeekday = new Date().getDay();
-
-  if (thisWeekday !== currentWeekday) {
-    return false;
-  }
-
-  const runSchedule = getScheduleFromStore_(currentWeekday);
-
+function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
   const timeKey = Object.keys(runSchedule).find((timeStr) => {
-    const timeMatch = timeStr.match(/(\d+)(am|pm)/i);
+    const timeMatch = timeStr.match(/(\d+(?::\d+)?)(am|pm)/i);
 
     // Parse time string to hours and minutes
-    const hours = parseInt(timeMatch[1], 10);
-    const meridian = timeMatch[2].toLowerCase();
+    const [, timePart, meridian] = timeMatch;
+    const [hourStr, minuteStr = '0'] = timePart.split(':');
+    const hours = parseInt(hourStr, 10);
+    const minutes = parseInt(minuteStr, 10);
 
     // Convert to number for easy comparaison
-    const unixTimestamp = convertToUnix(hours, meridian);
+    const unixTimestamp = convertToUnix(hours, minutes, meridian.toLowerCase());
     const offsetMilli = offsetHours * 60 * 60 * 1000;
 
     const lowerBound = unixTimestamp - offsetMilli;
     const upperBound = unixTimestamp + offsetMilli;
 
-    console.log(new Date(lowerBound), new Date(upperBound));
-    console.log(submissionDate);
-
     return (submissionDate >= lowerBound && submissionDate <= upperBound);
   });
 
-  return runSchedule[timeKey] ?? null;
+  return timeKey;
+
 
   /** Helper function to get timestamp in unix */
-  function convertToUnix(time12h, meridian) {
+  function convertToUnix(time12h, minutes = 0, meridian) {
     let hours = time12h;
 
     if (meridian === 'pm' && hours !== 12) hours += 12;
     if (meridian === 'am' && hours === 12) hours = 0;
-    return new Date().setHours(hours, 0, 0, 0);
+    return new Date().setHours(hours, minutes, 0, 0);
   }
 }
 
+/** 
+ * Returns emails of headrunners for a run, divided by levels.
+ * 
+ * Replaced initial `getHeadRunnerEmail()`, which was hard-coded and required updating.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  May 2, 2025
+ * @update  May 5, 2025
+ * 
+ * ```js
+ * const run = getScheduleFromStore_('monday')['8am'];
+ * const emails = getHeadrunnerEmailFromStore_(run);
+ * Logger.log(emails)   // { beginner : ['bob@mail.com], advanced : ['jane@mail.com'] };
+ * ```
+ * 
+*/
 
-function storeObject_(key, obj) {
-  const docProp = PropertiesService.getDocumentProperties();
-  docProp.setProperty(key, JSON.stringify(obj));
+function getHeadrunnerEmailFromStore_(runScheduleLevels) {
+  const headrunnerStore = getAllHeadrunners_();
+  const allEmails = {};
+
+  for (const level in runScheduleLevels) {
+    const levelHeadrunners = runScheduleLevels[level];
+
+    const levelEmails = levelHeadrunners.reduce((arr, headrunner) => {
+      const email = headrunnerStore[headrunner].email ?? '';
+      arr.push(email);
+      return arr;
+    }, []);
+
+    allEmails[level] = levelEmails;
+  }
+
+  return allEmails;
 }
 
-function getAllHeadruns_() {
-  const docProp = PropertiesService.getDocumentProperties();
-  return JSON.parse(docProp.getProperty(HEADRUN_STORE));
-}
-
-function getAllHeadrunners_() {
-  const docProp = PropertiesService.getDocumentProperties();
-  return JSON.parse(docProp.getProperty(HEADRUNNER_STORE));
-}
 
 /** Display all headrun and headrunner data */
 
@@ -146,21 +196,6 @@ function prettyPrintRunData() {
   }
 }
 
-/** Returns day code formatted as `weekday` in lowercase. Index [0-6] (Sunday = 0) */
- 
-function getWeekday_(weekdayIndex) {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[weekdayIndex].toLowerCase();
-}
-
-
-// Find schedule for today using weekday index according to JS
-function getScheduleFromStore_(currentWeekday) {
-  const runSchedule = getAllHeadruns_();
-  const weekString = getWeekday_(currentWeekday);    // 1 = 'monday'
-  return runSchedule[weekString] ?? null;   // Run schedule for current weekday
-}
-
 
 /**
  * Parses headrunner information in Headrunner sheet and stores it in Properties store.
@@ -173,7 +208,7 @@ function getScheduleFromStore_(currentWeekday) {
  * 
  * ### Sample data structures
  * ```js
- * { sunday|0 : {
+ * { sunday : {
  *    '10:00am' : { 'easy' : ['bobBurger', 'janeDoe'] },
  *    '2:15pm': { 'intermediate' : ['janeDoe'] }
  * }}
@@ -209,8 +244,8 @@ function readAndStoreRunData() {
   }, {});
 
   // Save information to properties store
-  storeObject_(HEADRUNNER_STORE, headrunnerObj);
-  storeObject_(HEADRUN_STORE, headrunObj);
+  storeObject_(HEADRUNNER_STORE_NAME, headrunnerObj);
+  storeObject_(HEADRUN_STORE_NAME, headrunObj);
 
   Logger.log(`Completed parsing and storage of run data from '${SEMESTER_NAME}' sheet`);
 
@@ -259,8 +294,8 @@ function readAndStoreRunData() {
  * appendHeadrunInfo(headrunnerSchedule, 'Bob');   // Appends to `headrunObj`
  * 
  * Logger.log(headrunObj);
- * // { 'wednesday|3' : { '6pm' : { 'beginner' : ['Bob'] } },
- * //   'sunday|0' : { '8am' : { 'intermediate' : ['Bob'] }, '6pm' : { 'beginner' : ['Bob'] }  }
+ * // { 'wednesday' : { '6pm' : { 'beginner' : ['Bob'] } },
+ * //   'sunday' : { '8am' : { 'intermediate' : ['Bob'] }, '6pm' : { 'beginner' : ['Bob'] }  }
  * ```
  */
 
@@ -372,137 +407,6 @@ function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
   console.log(`[AC] Completed formatting of headrunner names`, formattedNames);
 }
 
-
-/**
- * Returns the headrunners' emails according to input `headrun`.
- *
- * @param {string}  headrun  The headrun code representing specific headrun (e.g., `'SundayPM'`).
- * @return {string[]}  Array of headrunner emails for respective headrun.
- *                      (e.g., `['headrunner1@example.com', 'headrunner2@example.com', ...]`)
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 13, 2023
- * @update  Sep 29, 2024
- *
- * ```javascript
- * // Sample Script ➜ Getting headrunner emails for Sunday evening run.
- * const headrunnerEmails = getHeadRunnerEmail('SundayPM');
- * ```
- */
-
-function getHeadRunnerEmail_(headrun) {
-  // Head Runner Emails
-  const aidenLee = 'jihong.lee@mail.mcgill.ca';
-  const alyssaAbouChakra = 'alyssa.abouchakra@mail.mcgill.ca';
-  const camilaCognac = 'camila.cognac@mail.mcgill.ca';
-  const charlesVillegas = 'charles.villegas@mail.mcgill.ca';
-  const edmundPaquin = 'edmund.paquin@mail.mcgill.ca';
-  const isabellaVignuzzi = 'isabella.vignuzzi@mail.mcgill.ca';
-  const kateRichards = 'katherine.richards@mail.mcgill.ca';
-  const liamGrant = 'liam.grant@mail.mcgill.ca';
-  const liamMurphy = 'liam.murphy3@mail.mcgill.ca';
-  const lizzyVreendeburg = 'elizabeth.vreedenburgh@mail.mcgill.ca';
-  const michaelRafferty = 'michael.rafferty@mail.mcgill.ca';
-  const sachiKapoor = 'sachi.kapoor@mail.mcgill.ca';
-  const sophiaLongo = 'sophia.longo@mail.mcgill.ca';
-  const theoGhanem = 'theo.ghanem@mail.mcgill.ca';
-  const zishengHong = 'zisheng.hong@mail.mcgill.ca';
-
-
-  // Head Runners associated to each head run
-  const tuesdayHeadRunner = [
-    kateRichards,
-    liamMurphy,
-    zishengHong,
-  ];
-
-  const wednesdayHeadRunner = [
-    lizzyVreendeburg,
-    edmundPaquin,
-    sophiaLongo,
-    michaelRafferty,
-  ];
-
-  const thursdayHeadRunner = [
-    alyssaAbouChakra,
-    sachiKapoor,
-    liamGrant,
-  ];
-
-  const saturdayHeadRunner = [
-    michaelRafferty,
-    liamMurphy,
-    isabellaVignuzzi,
-    theoGhanem,
-    liamGrant,
-  ];
-
-  const sundayHeadRunner = [
-    charlesVillegas,
-    kateRichards,
-    edmundPaquin,
-    sophiaLongo,
-    camilaCognac,
-    aidenLee,
-  ];
-
-  const thisHeadrun = headrun.toLowerCase();
-  // Easier to decode from input `headrun`
-  switch (thisHeadrun) {
-    case 'tuesdaypm': return tuesdayHeadRunner;
-    case 'wednesdaypm': return wednesdayHeadRunner;
-    case 'thursdayam': return thursdayHeadRunner;
-    case 'saturdayam': return saturdayHeadRunner;
-    case 'sundaypm': return sundayHeadRunner;
-
-    default: throw Error(`No headrun found for ${thisHeadrun}`);
-  }
-}
-
-/*
-aidenLee:
-  -email: 'jihong.lee@mail.mcgill.ca'
-  -strava: 'undefined'
-alyssaAbouChakra:
-  -email: 'alyssa.abouchakra@mail.mcgill.ca'
-  -strava: 'undefined'
-
-sunday:
-  '6pm':
-    -advanced: [ 'aidenLee' ]
-    -intermediate: [ 'camilaCognac, sophiaLongo' ]
-    -beginner: [ 'charlesVillegas, edmundPaquin, kateRichards' ]
-  '10am':
-    -beginner: [ 'bob' ]
-    -intermediate: [ 'john' ]
-    -advanced: [ 'jane' ]
-*/
-
-function getHeadRunnerEmailFromStore_(runSchedule) {
-  const headrunnerStore = getAllHeadrunners_();
-  const allEmails = {};
-
-  for (const level in runSchedule) {
-    const levelHeadrunners = runSchedule[level];
-
-    const levelEmails = levelHeadrunners.reduce((arr, headrunner) => {
-      const email = headrunnerStore[headrunner].email ?? '';
-      arr.push(email);
-      return arr;
-    }, []);
-
-    allEmails[level] = levelEmails;
-  }
-
-  return allEmails;
-}
-
-
-function testIt() {
-  const runSchedule = getScheduleFromStore_(0)['10am'];
-  const res = getHeadRunnerEmailFromStore_(runSchedule);
-  console.log(res);
-}
 
 /**
  * Wrapper function for `formatHeadRunInRow` to apply on *ALL* submissions.
@@ -621,9 +525,6 @@ function updateCalendarTriggers() {
 
   const calendar = CalendarApp.getDefaultCalendar();
   const events = calendar.getEvents(start, now);
-
-
-
 
 
   const offset = now - 10*60 * 1000;    // Search 6 sec ago
