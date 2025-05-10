@@ -209,7 +209,7 @@ function checkMissingAttendance() {
   //   throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
   // }
 
-  const today = new Date(new Date().getTime() + 4.5 * 60 * 60 * 1000);   // new Date();
+  const today = new Date(new Date().getTime() + 23 * 60 * 60 * 1000);   // new Date();
   const currentWeekday = today.getDay();
 
   const currentDaySchedule = getScheduleFromStore_(currentWeekday);

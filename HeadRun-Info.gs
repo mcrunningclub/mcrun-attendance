@@ -108,6 +108,9 @@ function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
     const lowerBound = unixTimestamp - offsetMilli;
     const upperBound = unixTimestamp + offsetMilli;
 
+    Logger.log(`lowerBound: ${new Date(lowerBound)}`);
+    Logger.log(`upperBound: ${new Date(upperBound)}`);
+
     return (submissionDate >= lowerBound && submissionDate <= upperBound);
   });
 
@@ -120,7 +123,8 @@ function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
 
     if (meridian === 'pm' && hours !== 12) hours += 12;
     if (meridian === 'am' && hours === 12) hours = 0;
-    return new Date().setHours(hours, minutes, 0, 0);
+    return new Date(1715440100000 + 31536000000).setHours(hours, minutes, 0, 0);
+    //return new Date().setHours(hours, minutes, 0, 0);
   }
 }
 
@@ -169,7 +173,7 @@ function prettyPrintRunData() {
 
   function prettyPrintHeadrunnerObj(headrunnerObj = getAllHeadrunners_()) {
     const output = Object.entries(headrunnerObj).reduce((acc, [name, prop]) => {
-      acc.push(`${name}:\n  -email: '${prop.email}'\n  -strava: '${prop.strava ?? ''}'`);
+      acc.push(`${name}:\n  -email: '${prop.email}'\n  -strava: '${prop.stravaId ?? ''}'`);
       return acc;
     }, []);
 
