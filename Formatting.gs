@@ -16,26 +16,6 @@ function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
 
 
 /**
- * Sets sendEmail column to `true` so emailSubmission() can proceed.
- *
- * @trigger New Google Form submission.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Feb 9, 2025
- * @update  Apr 7, 2025
- *
- */
-
-function setCopySent_(row = ATTENDANCE_SHEET.getLastRow()) {
-  const sheet = GET_ATTENDANCE_SHEET_();
-  const rangeIsCopySent = sheet.getRange(row, IS_COPY_SENT_COL);
-
-  // Since GForm automatically sends copy to submitter, set isCopySent `true`.
-  rangeIsCopySent.insertCheckboxes().setValue(true);
-}
-
-
-/**
  * Sorts `ATTENDANCE_SHEET` according to submission time.
  *
  * @trigger  Edit time.
@@ -170,7 +150,7 @@ function formatSpecificColumns() {
     [CONFIRMATION_COL]: 300,
     [DISTANCE_COL]: 160,
     [COMMENTS_COL]: 355,
-    [IS_COPY_SENT_COL]: 135,
+    [TRANSFER_STATUS_COL]: 135,
     [PLATFORM_COL]: 160,
     [NAMES_NOT_FOUND_COL]: 225,
   }

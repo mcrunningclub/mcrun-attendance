@@ -87,6 +87,50 @@ function getLastSubmission_(sheet = GET_ATTENDANCE_SHEET_()) {
 
 
 /**
+ * Check for missing submission after scheduled headrun.
+ *
+ * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
+ *
+ * @trigger 30-60 mins after schedule in `getHeadRunString()`.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 15, 2023
+ * @update  May 4, 2025
+ */
+
+function checkMissingAttendance() {
+  // const scriptProperties = PropertiesService.getScriptProperties();
+  // const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+  // const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
+
+  // if (isCheckingAllowed !== "true") {
+  //   throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+  // }
+
+  const today = new Date(new Date().getTime() + 23 * 60 * 60 * 1000);   // new Date();
+  const currentWeekday = today.getDay();
+
+  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
+  const currentTimeKey = getMatchedTimeKey(today, currentDaySchedule);
+
+  const weekdayStr = getWeekday_(currentWeekday);
+  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;
+
+  // Get emails using runSchedule
+  const runScheduleLevels = currentDaySchedule[currentTimeKey];
+  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
+  const emailObj = { 'emails' : emailsByLevel, 'headrunTitle' : headrunTitle };
+
+  // Save result of attendance verification, and get title for email
+  const matchedTimeKey = verifyAttendance_(currentWeekday);
+
+  // Send copy of submission if true. Otherwise send an email reminder
+  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj) : sendEmailReminder_(emailObj);
+  console.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
+}
+
+
+/**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
  *
  * Attendees are separated by level.
@@ -130,10 +174,6 @@ function emailSubmission() {
 
   // Read and edit sheet values
   const rangeConfirmation = sheet.getRange(lastRow, CONFIRMATION_COL);
-  const rangeIsCopySent = sheet.getRange(lastRow, IS_COPY_SENT_COL);
-
-  // Only send if submitter wants copy && email has not been sent yet
-  if (rangeIsCopySent.getValue()) return;
 
   // Replace newline delimiter with comma-space if non-empty or matches "None"
   const attendeesStr = headrun.attendees.toString();
@@ -159,11 +199,6 @@ function emailSubmission() {
   }
 
   //MailApp.sendEmail(message);   // REMOVE AFTER TEST!
-
-  // As of Oct 2024, MailApp is void and cannot return a confirmation.
-  // Assume sent and set isCopySend as true.
-  rangeIsCopySent.setValue(true);
-  rangeIsCopySent.insertCheckboxes();
 }
 
 
@@ -188,48 +223,7 @@ function toggleAttendanceCheck_() {
   return toggledState;
 }
 
-/**
- * Check for missing submission after scheduled headrun.
- *
- * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
- *
- * @trigger 30-60 mins after schedule in `getHeadRunString()`.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 15, 2023
- * @update  May 4, 2025
- */
 
-function checkMissingAttendance() {
-  // const scriptProperties = PropertiesService.getScriptProperties();
-  // const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
-  // const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
-
-  // if (isCheckingAllowed !== "true") {
-  //   throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
-  // }
-
-  const today = new Date(new Date().getTime() + 23 * 60 * 60 * 1000);   // new Date();
-  const currentWeekday = today.getDay();
-
-  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
-  const currentTimeKey = getMatchedTimeKey(today, currentDaySchedule);
-
-  const weekdayStr = getWeekday_(currentWeekday);
-  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;
-
-  // Get emails using runSchedule
-  const runScheduleLevels = currentDaySchedule[currentTimeKey];
-  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
-  const emailObj = { 'emails' : emailsByLevel, 'headrunTitle' : headrunTitle };
-
-  // Save result of attendance verification, and get title for email
-  const matchedTimeKey = verifyAttendance_(currentWeekday);
-
-  // Send copy of submission if true. Otherwise send an email reminder
-  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj) : sendEmailReminder_(emailObj);
-  console.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
-}
 
 
 function checkForNewImport_() {
