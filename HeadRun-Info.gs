@@ -16,11 +16,13 @@ function storeObject_(key, obj) {
 let ALL_HEADRUNS = null;
 
 function getAllHeadruns_() {
-  if (!ALL_HEADRUNS){  
+  return ALL_HEADRUNS ?? initializeRef();
+
+  function initializeRef() {
     const docProp = PropertiesService.getDocumentProperties();
     ALL_HEADRUNS = JSON.parse(docProp.getProperty(HEADRUN_STORE_NAME));
+    return ALL_HEADRUNS;
   }
-  return ALL_HEADRUNS;
 }
 
 function getAllHeadrunners_() {
@@ -37,8 +39,7 @@ function getWeekday_(weekdayIndex) {
 
 
 /** 
- * Find schedule for current weekday, either as string representation, 
- * or js integer equivalent (1 = 'monday').
+ * Find schedule for current weekday, either as string representation, or js equivalent (1 = 'monday').
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  May 2, 2025
@@ -59,37 +60,12 @@ function getScheduleFromStore_(currentWeekday) {
  * @param {string} headRunDay  The headrun code representing specific headrun (e.g., `'SundayPM'`).
  * @return {string}  String of headrun day and time. (e.g., `'Sunday - 6pm'`)
  *
- * Current head runs for semester:
- *
- * Tuesday   :  6:00pm
- * Wednesday :  6:00pm
- * Thursday  :  7:30am
- * Saturday  :  10:00am
- * Sunday    :  6:00pm
- *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 13, 2023
  * @update  Sep 24, 2024
  *
- * ```javascript
- * // Sample Script ➜ Getting headrun datetime for Sunday evening run.
- * const headrun = getHeadRunnerEmail('SundayPM');
- * Logger.log(headrun) // 'Sunday - 6pm'
  * ```
  */
-
-function getHeadrunTitle_(headRunDay) {
-  switch (headRunDay) {
-    case 'TuesdayPM': return 'Tuesday - 6:00pm';
-    case 'WednesdayPM': return 'Wednesday - 6:00pm';
-    case 'ThursdayAM': return 'Thursday - 7:30am';
-    case 'SaturdayAM': return 'Saturday - 10:00am';
-    case 'SundayPM': return 'Sunday - 6:00pm';
-
-    default: throw new Error(`No headrunner has been found for '${headRunDay}'`);
-  }
-}
-
 
 function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
   const timeKey = Object.keys(runSchedule).find((timeStr) => {
@@ -107,7 +83,8 @@ function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
 
     const lowerBound = unixTimestamp - offsetMilli;
     const upperBound = unixTimestamp + offsetMilli;
-
+    
+    // Debug messages
     Logger.log(`lowerBound: ${new Date(lowerBound)}`);
     Logger.log(`upperBound: ${new Date(upperBound)}`);
 
@@ -118,15 +95,14 @@ function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
 
 
   /** Helper function to get timestamp in unix */
-  function convertToUnix(time12h, minutes = 0, meridian) {
-    let hours = time12h;
+  function convertToUnix(hour12h, minutes = 0, meridian) {
 
-    if (meridian === 'pm' && hours !== 12) hours += 12;
-    if (meridian === 'am' && hours === 12) hours = 0;
-    return new Date(1715440100000 + 31536000000).setHours(hours, minutes, 0, 0);
-    //return new Date().setHours(hours, minutes, 0, 0);
+    if (meridian === 'pm' && hour12h !== 12) hour12h += 12;
+    if (meridian === 'am' && hour12h === 12) hour12h = 0;
+    return new Date().setHours(hour12h, minutes, 0, 0);
   }
 }
+
 
 /** 
  * Returns emails of headrunners for a run, divided by levels.
@@ -138,12 +114,11 @@ function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
  * @update  May 5, 2025
  * 
  * ```js
- * const run = getScheduleFromStore_('monday')['8am'];
- * const emails = getHeadrunnerEmailFromStore_(run);
- * Logger.log(emails)   // { beginner : ['bob@mail.com], advanced : ['jane@mail.com'] };
+ * const runs = getScheduleFromStore_('monday');
+ * const emails = getHeadrunnerEmailFromStore_(runs['8am']);
+ * Logger.log(emails)   // { beginner : ['bob@mail.com'], advanced : ['jane@mail.com'] };
  * ```
- * 
-*/
+ */
 
 function getHeadrunnerEmailFromStore_(runScheduleLevels) {
   const headrunnerStore = getAllHeadrunners_();
@@ -160,7 +135,6 @@ function getHeadrunnerEmailFromStore_(runScheduleLevels) {
 
     allEmails[level] = levelEmails;
   }
-
   return allEmails;
 }
 
@@ -171,6 +145,7 @@ function prettyPrintRunData() {
   prettyPrintHeadrunnerObj();
   prettyPrintHeadrunObj();
 
+  /** Headrunner printer  */
   function prettyPrintHeadrunnerObj(headrunnerObj = getAllHeadrunners_()) {
     const output = Object.entries(headrunnerObj).reduce((acc, [name, prop]) => {
       acc.push(`${name}:\n  -email: '${prop.email}'\n  -strava: '${prop.stravaId ?? ''}'`);
@@ -180,6 +155,7 @@ function prettyPrintRunData() {
     console.log(output.join('\n'));
   }
 
+  /** Headrun printer  */
   function prettyPrintHeadrunObj(headrunObj = getAllHeadruns_()) {
     let output = '';
     for (const day in headrunObj) {
@@ -204,7 +180,7 @@ function prettyPrintRunData() {
 /**
  * Parses headrunner information in Headrunner sheet and stores it in Properties store.
  * 
- * Only execute when information needs updating.
+ * @warning  Only execute when information needs updating.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
  * @date  May 2, 2025
@@ -216,7 +192,6 @@ function prettyPrintRunData() {
  *    '10:00am' : { 'easy' : ['bobBurger', 'janeDoe'] },
  *    '2:15pm': { 'intermediate' : ['janeDoe'] }
  * }}
- * 
  * { 'bobBurger' : { email : 'bob.burger@mail.com', strava : '123456789'} }
  * ```
  */
@@ -334,6 +309,7 @@ function appendHeadrunInfo_(levelsStr, thisHeadrunner, headrunObj) {
 }
 
 
+/** Functions to format headrunner name if submission via Google Form */
 
 /**
  * Wrapper function for `formatHeadRunnerInRow` to apply on *ALL* submissions.
@@ -438,10 +414,9 @@ function formatAllHeadRun() {
 
 function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
   const sheet = GET_ATTENDANCE_SHEET_();
-  const headrunCol = HEADRUN_COL;
 
   // Get the cell value, and remove hyphen-space in each cell
-  const rangeToFormat = sheet.getRange(startRow, headrunCol, numRow);
+  const rangeToFormat = sheet.getRange(startRow, HEADRUN_COL, numRow);
   var values = rangeToFormat.getValues();
 
   // Bulk format if applicable
@@ -452,186 +427,4 @@ function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 
 
   // Replace with formatted value
   rangeToFormat.setValues(formattedHeadRun);  // setValues requires 2d array
-}
-
-
-/**
- * Adds new events as time-based triggers and removed expired ones
- * 
- * @trigger  Every Sunday at 1am.
- */
-
-function updateWeeklyCalendarTriggers() {
-  createDailyAttendanceTrigger_();
-  deleteExpiredCalendarTriggers_();
-}
-
-/**
- * Add new McRUN event from calendar to Apps Script trigger for today.
- * 
- * @trigger  Updated calendar.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Apr 17, 2025
- * @update  Apr 17, 2025
- */
-
-function addSingleEventTrigger() {
-  const now = new Date();
-  const midnight = new Date(new Date().setHours(23, 59, 59, 59));
-
-  const calendar = CalendarApp.getDefaultCalendar();
-  const events = calendar.getEvents(now, midnight);
-  events.forEach(e => createAndStoreTrigger_(e));
-}
-
-
-/**
- * Get events from calendar and create time-based triggers.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
- * @date  Apr 17, 2025
- * @update  Apr 27, 2025
- */
-
-function createDailyAttendanceTrigger_() {
-  const calendar = CalendarApp.getDefaultCalendar();
-
-  const now = new Date();
-  const startOfWeek = getStartOfWeek(now); // Sunday
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(endOfWeek.getDate() + 7); // Saturday end
-
-  const events = calendar.getEvents(startOfWeek, endOfWeek);
-
-  const filteredEvents = events.filter(event =>
-    !event.isAllDayEvent() &&
-    event.getStartTime() > now
-  );
-
-  filteredEvents.forEach(event => createAndStoreTrigger_(event));
-
-  // Helper: Gets the Sunday of the current week
-  function getStartOfWeek(date) {
-    const start = new Date(date);
-    const day = start.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    start.setDate(start.getDate() - day);
-    start.setHours(0, 0, 0, 0);
-    return start;
-  }
-}
-
-
-function updateCalendarTriggers() {
-  // Get events from day start (midnight)
-  const now = new Date();
-  const start = new Date().setHours(0, 0, 0, 0);
-
-  const calendar = CalendarApp.getDefaultCalendar();
-  const events = calendar.getEvents(start, now);
-
-
-  const offset = now - 10*60 * 1000;    // Search 6 sec ago
-
-  
-
-  const cancelledRegex = /cancel{1,2}ed/i;
-
-  for (const event of events) {
-    if (offset < event.getLastUpdated()) {
-      console.log(event.getDescription());
-      console.log(event.getTitle);
-      console.log(`This event has been cancelled: ${isCancelled(event)}`)
-    }
-  }
-
-  function isCancelled(event) {
-    const str = event.getDescription() + event.getTitle();
-    return cancelledRegex.test(str);
-  }
-}
-
-
-/**
- * Add time-based trigger using event information from Calendar.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
- * @date  Apr 15, 2025
- * @update  Apr 17, 2025
- */
-
-function createAndStoreTrigger_(event) {
-  const props = GET_PROP_STORE_();
-  const stored = JSON.parse(props.getProperty(CALENDAR_STORE) || "{}");
-
-  const offset = 60 * 60 * 1000;
-  const startTime = new Date(event.getStartTime().getTime() + offset);
-
-  // Only add trigger if new
-  if (isExistingTrigger_(startTime, stored)) return;
-
-  const trigger = ScriptApp.newTrigger(TRIGGER_FUNC)
-    .timeBased()
-    .at(startTime)
-    .create();
-
-  stored[trigger.getUniqueId()] = startTime.toISOString();
-
-  // Store updated calendar triggers
-  props.setProperty(CALENDAR_STORE, JSON.stringify(stored));
-  Logger.log(`Trigger created and stored for "${event.getTitle()}" at ${startTime}`);
-
-  // Helper function
-  function isExistingTrigger_(time, stored) {
-    const triggerTimes = Object.values(stored);
-    return (time in triggerTimes);
-  }
-}
-
-
-/**
- * Removes expired calendar triggers and updates store in Properties.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
- * @date  Apr 15, 2025
- * @update  Apr 17, 2025
- */
-
-function deleteExpiredCalendarTriggers_() {
-  const now = new Date();
-  const props = GET_PROP_STORE_();
-  const stored = JSON.parse(props.getProperty(CALENDAR_STORE) || "{}");
-
-  const triggers = ScriptApp.getProjectTriggers();
-  const updated = {};
-
-  triggers.forEach(trigger => {
-    const id = trigger.getUniqueId();
-    const scheduledTime = stored[id] ? new Date(stored[id]) : null;
-
-    if (scheduledTime && scheduledTime < now) {
-      ScriptApp.deleteTrigger(trigger);
-      Logger.log(`Deleted expired calendar trigger: ${id} for ${scheduledTime}`);
-    } else if (scheduledTime) {
-      updated[id] = stored[id];
-    }
-  });
-
-  props.setProperty(CALENDAR_STORE, JSON.stringify(updated));
-  console.log(`Updated store ${CALENDAR_STORE} with values`, updated);
-}
-
-
-function testRepeatTrigger() {
-  // Trigger every 6 hours.
-  ScriptApp.newTrigger('myFunction')
-      .timeBased()
-      .everyHours(6)
-      .create();
-  // Trigger every Monday at 09:00.
-  ScriptApp.newTrigger('myFunction')
-      .timeBased()
-      .onWeekDay(ScriptApp.WeekDay.MONDAY)
-      .atHour(9)
-      .create();
 }

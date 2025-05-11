@@ -89,8 +89,6 @@ function transferThisRow_(row) {
 }
 
 
-
-
 function toggleSuccessfulImport_(row, colIndex = null) {
   const sheet = GET_IMPORT_SHEET_();
   let isImportedCol = colIndex;

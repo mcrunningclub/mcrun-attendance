@@ -70,7 +70,7 @@ function transferAndFormat_(row) {
  */
 
 function getLastSubmission_(sheet = GET_ATTENDANCE_SHEET_()) {
-  const startRow = 1;
+  const startRow = 2;   // Skip header row
   const numRow = sheet.getLastRow();
 
   // Fetch all values in the TIMESTAMP_COL
@@ -95,38 +95,62 @@ function getLastSubmission_(sheet = GET_ATTENDANCE_SHEET_()) {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  May 4, 2025
+ * @update  May 11, 2025
  */
 
 function checkMissingAttendance() {
-  // const scriptProperties = PropertiesService.getScriptProperties();
-  // const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
-  // const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+  const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
 
-  // if (isCheckingAllowed !== "true") {
-  //   throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
-  // }
+  if (isCheckingAllowed !== "true") {
+    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+  }
 
-  const today = new Date(new Date().getTime() + 23 * 60 * 60 * 1000);   // new Date();
+  const today = new Date();  //new Date(new Date().getTime() + 23 * 60 * 60 * 1000);
   const currentWeekday = today.getDay();
 
   const currentDaySchedule = getScheduleFromStore_(currentWeekday);
   const currentTimeKey = getMatchedTimeKey(today, currentDaySchedule);
 
   const weekdayStr = getWeekday_(currentWeekday);
-  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;
+  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday - 9am'
 
-  // Get emails using runSchedule
+  // Get emails using run schedule for current day
   const runScheduleLevels = currentDaySchedule[currentTimeKey];
+
+  // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
   const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
   const emailObj = { 'emails' : emailsByLevel, 'headrunTitle' : headrunTitle };
 
   // Save result of attendance verification, and get title for email
   const matchedTimeKey = verifyAttendance_(currentWeekday);
 
-  // Send copy of submission if true. Otherwise send an email reminder
+  // Send copy of submission if true. Otherwise send an email reminder to headrunners
   (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj) : sendEmailReminder_(emailObj);
   console.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
+}
+
+
+/**
+ * Toggles flag to run `checkAttendance()` by updating value in `ScriptProperties` bank.
+ *
+ * @trigger User choice in custom menu.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 5, 2024
+ * @update  Dec 6, 2024
+ */
+
+function toggleAttendanceCheck_() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+
+  const isChecking = scriptProperties.getProperty(propertyName);  // !! converts str to bool
+  const toggledState = (isChecking == "true") ? "false" : "true";   // toggle bool, but save as str
+  scriptProperties.setProperty(propertyName, toggledState);    // function requires property as str
+
+  return toggledState;
 }
 
 
@@ -201,45 +225,6 @@ function emailSubmission() {
   //MailApp.sendEmail(message);   // REMOVE AFTER TEST!
 }
 
-
-/**
- * Toggles flag to run `checkAttendance()` by updating value in `ScriptProperties` bank.
- *
- * @trigger User choice in custom menu.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 5, 2024
- * @update  Dec 6, 2024
- */
-
-function toggleAttendanceCheck_() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
-
-  const isChecking = scriptProperties.getProperty(propertyName);  // !! converts str to bool
-  const toggledState = (isChecking == "true") ? "false" : "true";   // toggle bool, but save as str
-  scriptProperties.setProperty(propertyName, toggledState);    // function requires property as str
-
-  return toggledState;
-}
-
-
-
-
-function checkForNewImport_() {
-  const importSheet = IMPORT_SHEET;
-  const numRow = importSheet.getLastRow();
-  const numCol = importSheet.getLastColumn();
-
-  // Check the last 5 rows
-  const numRowToCheck = 5;
-  const startRow = numRow - numRowToCheck;
-
-  // Get range but do not sort sheet. Non-imported submissions most likely at bottom.
-  const rangeToCheck = importSheet.getRange(startRow, 1, numRowToCheck, numCol);
-
-  throw new Error('Function is incomplete. Please review.');
-}
 
 
 function verifyAttendance_(currentWeekday) {
@@ -429,8 +414,7 @@ function formatThisName_(name) {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
     .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
     .toLowerCase()
-    .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize each name
-    ;
+    .replace(/\b\w/g, l => l.toUpperCase());  // Capitalize each name
 }
 
 
