@@ -55,19 +55,22 @@ function getScheduleFromStore_(currentWeekday) {
 
 
 /**
- * Return headrun day and time from headrun code input `headRunDay`.
+ * Finds timekey in runSchedule within [submissionDate - offsetHours, submissionDate + offsetHours].
  *
- * @param {string} headRunDay  The headrun code representing specific headrun (e.g., `'SundayPM'`).
- * @return {string}  String of headrun day and time. (e.g., `'Sunday - 6pm'`)
+ * @param {Date} submissionDate  Date object of submission time.
+ * @param {Object} runSchedule  Run schedule to search.
+ * @param {integer} [offsetHours=2]  Offset time to search for submission.
+ *                                   Defaults to 2 hours.
+ * 
+ * @return {string}  Matched time key. e.g. `'6pm'`
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 13, 2023
- * @update  Sep 24, 2024
+ * @date  May 4, 2025
+ * @update  May 11, 2025
  *
- * ```
  */
 
-function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
+function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
   const timeKey = Object.keys(runSchedule).find((timeStr) => {
     const timeMatch = timeStr.match(/(\d+(?::\d+)?)(am|pm)/i);
 
@@ -96,7 +99,6 @@ function getMatchedTimeKey(submissionDate, runSchedule, offsetHours = 2) {
 
   /** Helper function to get timestamp in unix */
   function convertToUnix(hour12h, minutes = 0, meridian) {
-
     if (meridian === 'pm' && hour12h !== 12) hour12h += 12;
     if (meridian === 'am' && hour12h === 12) hour12h = 0;
     return new Date().setHours(hour12h, minutes, 0, 0);
@@ -139,7 +141,7 @@ function getHeadrunnerEmailFromStore_(runScheduleLevels) {
 }
 
 
-/** Display all headrun and headrunner data */
+/** Display all headrun and headrunner data in user-friendly log */
 
 function prettyPrintRunData() {
   prettyPrintHeadrunnerObj();

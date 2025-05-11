@@ -87,52 +87,6 @@ function getLastSubmission_(sheet = GET_ATTENDANCE_SHEET_()) {
 
 
 /**
- * Check for missing submission after scheduled headrun.
- *
- * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
- *
- * @trigger 30-60 mins after schedule in `getHeadRunString()`.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 15, 2023
- * @update  May 11, 2025
- */
-
-function checkMissingAttendance() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
-  const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
-
-  if (isCheckingAllowed !== "true") {
-    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
-  }
-
-  const today = new Date();  //new Date(new Date().getTime() + 23 * 60 * 60 * 1000);
-  const currentWeekday = today.getDay();
-
-  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
-  const currentTimeKey = getMatchedTimeKey(today, currentDaySchedule);
-
-  const weekdayStr = getWeekday_(currentWeekday);
-  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday - 9am'
-
-  // Get emails using run schedule for current day
-  const runScheduleLevels = currentDaySchedule[currentTimeKey];
-
-  // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
-  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
-  const emailObj = { 'emails' : emailsByLevel, 'headrunTitle' : headrunTitle };
-
-  // Save result of attendance verification, and get title for email
-  const matchedTimeKey = verifyAttendance_(currentWeekday);
-
-  // Send copy of submission if true. Otherwise send an email reminder to headrunners
-  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj) : sendEmailReminder_(emailObj);
-  console.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
-}
-
-
-/**
  * Toggles flag to run `checkAttendance()` by updating value in `ScriptProperties` bank.
  *
  * @trigger User choice in custom menu.
@@ -151,6 +105,100 @@ function toggleAttendanceCheck_() {
   scriptProperties.setProperty(propertyName, toggledState);    // function requires property as str
 
   return toggledState;
+}
+
+
+/**
+ * Check for missing submission after scheduled headrun.
+ *
+ * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
+ *
+ * @trigger 30-60 mins after schedule in `getHeadRunString()`.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 15, 2023
+ * @update  May 11, 2025
+ */
+
+function checkMissingAttendance() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+  const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
+
+  // if (isCheckingAllowed !== "true") {
+  //   throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+  // }
+
+  const today = new Date();  // new Date(new Date().getTime() + 23 * 60 * 60 * 1000);
+  const currentWeekday = today.getDay();
+
+  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
+  const currentTimeKey = getMatchedTimeKey_(today, currentDaySchedule);
+
+  // Verify if valid timekey
+  if (!currentTimeKey) {
+    throw new Error(`No timekey found for ${today} with run schedule ${currentDaySchedule}`);
+  }
+
+  const weekdayStr = getWeekday_(currentWeekday);
+  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday - 9am'
+
+  // Get emails using run schedule for current day
+  const runScheduleLevels = currentDaySchedule[currentTimeKey];
+
+  // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
+  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
+  const emailObj = { 'emails' : emailsByLevel, 'headrunTitle' : headrunTitle };
+
+  // Save result of attendance verification, and get title for email
+  const matchedTimeKey = verifyAttendance_(currentWeekday);
+
+  // Send copy of submission if true. Otherwise send an email reminder to headrunners
+  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj) : sendEmailReminder_(emailObj);
+  Logger.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
+
+
+  /** Helper function */
+  function verifyAttendance_(currentWeekday) {
+    const sheet = ATTENDANCE_SHEET;
+
+    // Gets values of all timelogs
+    const numRows = sheet.getLastRow() - 1;
+    const submissionDates = sheet.getSheetValues(2, TIMESTAMP_COL, numRows, 1);
+
+    // Get date at trigger time and compare with timestamp of existing submissions
+    return findMatchingTimeKey();
+
+    /** Helper function */
+    function findMatchingTimeKey() {
+      let timeKey = null;
+
+      // Start checking from end of head run attendance submissions
+      // Exit loop when submission found or until list exhausted
+      for (let i = numRows - 1; i >= 0 && !timeKey; i--) {
+        
+        const submissionDate = submissionDates[i][0];
+        const thisWeekday = submissionDate.getDay();
+
+        if (thisWeekday === currentWeekday) {
+          const runSchedule = getScheduleFromStore_(thisWeekday);
+          timeKey = getMatchedTimeKey_(submissionDate, runSchedule);
+        }
+      }
+      
+      return timeKey;
+    }
+  }
+
+  function normalizeHeadrun(headrun) {
+    [dayOfWeek, time,] = headrun.toLowerCase().split(/\s*-\s*|\s+/);
+
+    // Add missing ':00' if needed
+    if (/^\d{1,2}(am|pm)$/i.test(time)) {
+      time = time.replace(/(am|pm)$/i, ':00$1');
+    }
+    return `${dayOfWeek} - ${time}`;
+  }
 }
 
 
@@ -223,49 +271,6 @@ function emailSubmission() {
   }
 
   //MailApp.sendEmail(message);   // REMOVE AFTER TEST!
-}
-
-
-
-function verifyAttendance_(currentWeekday) {
-  const sheet = ATTENDANCE_SHEET;
-
-  // Gets values of all timelogs
-  const numRows = sheet.getLastRow() - 1;
-  const submissionDates = sheet.getSheetValues(2, TIMESTAMP_COL, numRows, 1);
-
-  // Get date at trigger time and compare with timestamp of existing submissions
-  return findMatchingTimeKey();
-
-  /** Helper function */
-  function findMatchingTimeKey() {
-    let timeKey = null;
-
-    // Start checking from end of head run attendance submissions
-    // Exit loop when submission found or until list exhausted
-    for (let i = numRows - 1; i >= 0 && !timeKey; i--) {
-      
-      const submissionDate = submissionDates[i][0];
-      const thisWeekday = submissionDate.getDay();
-
-      if (thisWeekday === currentWeekday) {
-        const runSchedule = getScheduleFromStore_(thisWeekday);
-        timeKey = getMatchedTimeKey(submissionDate, runSchedule);
-      }
-    }
-    
-    return timeKey;
-  }
-
-  function normalizeHeadrun(headrun) {
-    [dayOfWeek, time,] = headrun.toLowerCase().split(/\s*-\s*|\s+/);
-
-    // Add missing ':00' if needed
-    if (/^\d{1,2}(am|pm)$/i.test(time)) {
-      time = time.replace(/(am|pm)$/i, ':00$1');
-    }
-    return `${dayOfWeek} - ${time}`;
-  }
 }
 
 
