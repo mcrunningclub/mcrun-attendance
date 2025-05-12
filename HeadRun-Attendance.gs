@@ -125,9 +125,9 @@ function checkMissingAttendance() {
   const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
   const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
 
-  // if (isCheckingAllowed !== "true") {
-  //   throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
-  // }
+  if (isCheckingAllowed !== "true") {
+    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
+  }
 
   const today = new Date();  // new Date(new Date().getTime() + 23 * 60 * 60 * 1000);
   const currentWeekday = today.getDay();
@@ -216,7 +216,7 @@ function checkMissingAttendance() {
 
 function emailSubmission() {
   // Error Management: prevent wrong user sending email
-  if (getCurrentUserEmail() != 'mcrunningclub@ssmu.ca') return;
+  if (getCurrentUserEmail_() != CLUB_EMAIL) return;
 
   const sheet = GET_ATTENDANCE_SHEET_();
   const lastRow = getLastSubmission_();
@@ -263,7 +263,7 @@ function emailSubmission() {
   var message = {
     to: headrun.toEmail,
     bcc: PRESIDENT_EMAIL,
-    cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
+    cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
     subject: "McRUN Attendance Form (" + formattedDate + ")",
     htmlBody: emailBodyHTML,
     noReply: true,
@@ -295,7 +295,7 @@ function sendEmailReminder_(headrunTitle) {
   var reminderEmail = {
     to: headRunnerEmail,
     bcc: PRESIDENT_EMAIL,
-    cc: "mcrunningclub@ssmu.ca" + ", " + VP_INTERNAL_EMAIL,
+    cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
     subject: "McRUN Missing Attendance Form - " + headrunTitle,
     htmlBody: reminderEmailBodyHTML,
     noReply: true,

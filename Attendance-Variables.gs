@@ -56,6 +56,7 @@ const SCRIPT_PROPERTY = {
   calendarTriggers: 'calendarTriggers',
 };
 
+
 // NAME OF HTML TEMPLATES. ENSURE CORRECT FILE NAME!!
 const COPY_EMAIL_HTML_FILE = 'Confirmation-Email';
 const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';

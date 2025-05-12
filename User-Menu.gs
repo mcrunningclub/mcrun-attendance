@@ -4,7 +4,7 @@
  * Prevents unwanted data overwrite in Gsheet.
  */
 const PERM_USER_ = [
-  'mcrunningclub@ssmu.ca',
+  CLUB_EMAIL,
   'ademetriou8@gmail.com',
   'andreysebastian10.g@gmail.com',
   'thecharlesvillegas@gmail.com',

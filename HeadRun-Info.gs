@@ -1,6 +1,7 @@
 // Emails of current execs
 const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
 const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
+const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
 
 const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
 const HEADRUNNER_STORE_NAME = 'headrunners';

@@ -5,6 +5,9 @@
  */
 
 function updateWeeklyCalendarTriggers() {
+  // Error Management: ensure correct calendar is used
+  if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
+
   createDailyAttendanceTrigger_();
   deleteExpiredCalendarTriggers_();
 }
@@ -65,14 +68,20 @@ function createDailyAttendanceTrigger_() {
 }
 
 
+function getStartOfDay_(date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+
 function updateCalendarTriggers() {
   // Get events from day start (midnight)
   const now = new Date();
-  const start = new Date().setHours(0, 0, 0, 0);
+  const start = getStartOfDay_(now);
 
   const calendar = CalendarApp.getDefaultCalendar();
   const events = calendar.getEvents(start, now);
-
 
   const offset = now - 10*60 * 1000;    // Search 6 sec ago
 
