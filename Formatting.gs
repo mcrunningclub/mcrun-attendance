@@ -74,7 +74,7 @@ function removePresenceChecks() {
 }
 
 
-function toTitleCase(inputString) {
+function toTitleCase_(inputString) {
   return inputString.replace(/\w\S*/g, word => {
     return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
   });
@@ -82,7 +82,7 @@ function toTitleCase(inputString) {
 
 
 function prettifySheet() {
-  formatSpecificColumns();
+  formatSpecificColumns_();
 }
 
 /**
@@ -94,10 +94,10 @@ function prettifySheet() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Apr 7, 2025
+ * @update  May 13, 2025
  */
 
-function formatSpecificColumns() {
+function formatSpecificColumns_() {
   const sheet = GET_ATTENDANCE_SHEET_();
 
   // Helper fuction to improve readability
@@ -110,26 +110,26 @@ function formatSpecificColumns() {
 
   // 2. Bold formatting
   getThisRange([
-    'A1:N1',  // Header Row
+    'A1:O1',  // Header Row
     'A2:A',   // Timestamp
     'D2:D',   // Headrun
-    'L2:M'    // Copy Sent + Submission Platform
+    'M2:O'    // Transfer Status + ... + Not Found
   ]).setFontWeight('bold');
 
   // 3. Font size adjustments
-  getThisRange(['A2:A', 'D2:D', 'M2:M']).setFontSize(11); // for Headrun + Submission Platform
-  getThisRange(['C2:C', 'F2:H']).setFontSize(9);  // Headrunners + Attendees
+  getThisRange(['A2:A', 'D2:D', 'N2:N']).setFontSize(11); // for Headrun + Submission Platform
+  getThisRange(['C2:C', 'F2:I']).setFontSize(9);  // Headrunners + Attendees
 
   // 4. Text wrapping
-  getThisRange(['B2:E', 'I2:K']).setWrap(true);  // Referral + Waiver + Payment Choice
-  getThisRange('F2:H').setWrap(false);  // Attendees
+  getThisRange(['B2:E', 'J2:L']).setWrap(true);
+  getThisRange('F2:I').setWrap(false);  // Attendees
 
   // 5. Horizontal and vertical alignment
-  getThisRange(['E2:E', 'L2:M']).setHorizontalAlignment('center');  // Headrun + Copy Sent + Submission Platform
+  getThisRange(['E2:E', 'M2:N']).setHorizontalAlignment('center');  // Headrun + Transfer Status + Submission Platform
 
   getThisRange([
-    'D2:H',   // Headrun Details + Attendees
-    'L2:M',   // Copy Sent + Submission Platform
+    'D2:I',   // Headrun Details + Attendees
+    'M2:N',   // Transfer Status + Submission Platform
   ]).setVerticalAlignment('middle');
 
   // 6. Update banding colours by extending range
@@ -145,6 +145,7 @@ function formatSpecificColumns() {
     [HEADRUN_COL]: 155,
     [RUN_LEVEL_COL]: 170,
     [ATTENDEES_BEGINNER_COL]: 160,
+    [ATTENDEES_EASY_COL]: 160,
     [ATTENDEES_INTERMEDIATE_COL]: 160,
     [ATTENDEES_ADVANCED_COL]: 160,
     [CONFIRMATION_COL]: 300,
@@ -152,7 +153,7 @@ function formatSpecificColumns() {
     [COMMENTS_COL]: 355,
     [TRANSFER_STATUS_COL]: 135,
     [PLATFORM_COL]: 160,
-    [NAMES_NOT_FOUND_COL]: 225,
+    [NAMES_NOT_FOUND_COL]: 225
   }
 
   Object.entries(sizeMap).forEach(([col, width]) => {

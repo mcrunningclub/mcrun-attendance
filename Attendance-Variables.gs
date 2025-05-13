@@ -5,17 +5,22 @@ const HEADRUNNERS_COL = 3;
 const HEADRUN_COL = 4;
 const RUN_LEVEL_COL = 5;
 const ATTENDEES_BEGINNER_COL = 6;
-const ATTENDEES_INTERMEDIATE_COL = 7;
-const ATTENDEES_ADVANCED_COL = 8;
-const CONFIRMATION_COL = 9;
-const DISTANCE_COL = 10;
-const COMMENTS_COL = 11;
-const TRANSFER_STATUS_COL = 12;
-const PLATFORM_COL = 13;
-const NAMES_NOT_FOUND_COL = 14;
+const ATTENDEES_EASY_COL = 7;
+const ATTENDEES_INTERMEDIATE_COL = 8;
+const ATTENDEES_ADVANCED_COL = 9;
+const CONFIRMATION_COL = 10;
+const DISTANCE_COL = 11;
+const COMMENTS_COL = 12;
+const TRANSFER_STATUS_COL = 13;
+const PLATFORM_COL = 14;
+const NAMES_NOT_FOUND_COL = 15;
 
 
-const ATTENDANCE_SHEET_NAME = 'HR Attendance W25';
+/** TO UPDATE EACH SEMESTER */
+const ATTENDANCE_SHEET_NAME = 'HR Attendance S25';
+const SEMESTER_NAME = 'Summer 2025';
+
+
 const ATTENDANCE_SS_ID = '1SnaD9UO4idXXb07X8EakiItOOORw5UuEOg0dX_an3T4';
 const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
 
@@ -30,7 +35,7 @@ const TIMEZONE = getUserTimeZone_();
 // RUN LEVELS
 const ATTENDEE_MAP = {
   'beginner': ATTENDEES_BEGINNER_COL,
-  //'easy': ATTENDEES_BEGINNER_COL,
+  'easy': ATTENDEES_EASY_COL,
   'intermediate': ATTENDEES_INTERMEDIATE_COL,
   'advanced': ATTENDEES_ADVANCED_COL,
 };
@@ -43,7 +48,6 @@ const MEMBER_SEARCH_KEY_COL = 6;  // Found in 'Members' sheet
 
 // EXTERNAL SHEETS USED IN SCRIPTS
 const MASTER_NAME = 'MASTER';
-const SEMESTER_NAME = 'Winter 2025';
 const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y70sI-FAktCiSWqEmkDxfZWz0lFu4/";
 
 // LEDGER SPREADSHEET
@@ -58,20 +62,20 @@ const SCRIPT_PROPERTY = {
 
 
 // NAME OF HTML TEMPLATES. ENSURE CORRECT FILE NAME!!
-const COPY_EMAIL_HTML_FILE = 'Confirmation-Email';
+const COPY_EMAIL_HTML_FILE = 'Copy-Email';
 const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';
 
 const GET_ATTENDANCE_GFORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
 
 
 /** GET HEADRUN SCHEDULE AND HEADRUNNER INFO */
-const GET_HEADRUN_SS = () => SpreadsheetApp.openById('1FvnfUHO2Xj-Q5j6-B2Wz9DgxEXFX-OoCh6Pf49Kqyac');
+const GET_HEADRUN_SS_ = () => SpreadsheetApp.openById('1Hx4R4gkMjQ71Jj1oeaxS6G6uMvoHzSKkhBLVVi3yHBs');
 
 const COMPILED_SHEET_NAME = "Compiled";
-const GET_COMPILED_SHEET_ = () => GET_HEADRUN_SS().getSheetByName(COMPILED_SHEET_NAME);
+const GET_COMPILED_SHEET_ = () => GET_HEADRUN_SS_().getSheetByName(COMPILED_SHEET_NAME);
 
 const HEADRUNNER_SHEET_NAME = "List of Head Runners";
-const GET_HEADRUNNER_SHEET_ = () => GET_HEADRUN_SS().getSheetByName(HEADRUNNER_SHEET_NAME);
+const GET_HEADRUNNER_SHEET_ = () => GET_HEADRUN_SS_().getSheetByName(HEADRUNNER_SHEET_NAME);
 
 
 /** GET PROP STORE OR GENERATE IF NULL  */

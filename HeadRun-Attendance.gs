@@ -53,7 +53,7 @@ function bulkFormatting_(row) {
 function transferAndFormat_(row) {
   const logRow = transferSubmissionToLedger(row);
   triggerEmailInLedger_(logRow)
-  formatSpecificColumns();
+  formatSpecificColumns_();
 }
 
 /**
@@ -141,7 +141,7 @@ function checkMissingAttendance() {
   }
 
   const weekdayStr = getWeekday_(currentWeekday);
-  const headrunTitle = toTitleCase(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday - 9am'
+  const headrunTitle = toTitleCase_(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday - 9am'
 
   // Get emails using run schedule for current day
   const runScheduleLevels = currentDaySchedule[currentTimeKey];

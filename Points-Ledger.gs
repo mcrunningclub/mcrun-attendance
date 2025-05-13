@@ -8,7 +8,7 @@
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Dec 14, 2024
- * @update  April 1, 2025
+ * @update  Apr 1, 2025
  */
 
 function appendMemberEmail_(row, registered, unregistered) {

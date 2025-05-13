@@ -7,7 +7,6 @@ const PERM_USER_ = [
   CLUB_EMAIL,
   'ademetriou8@gmail.com',
   'andreysebastian10.g@gmail.com',
-  'thecharlesvillegas@gmail.com',
   'monaliu832@gmail.com'
 ];
 
