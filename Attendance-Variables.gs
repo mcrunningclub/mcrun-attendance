@@ -112,22 +112,137 @@ function getCurrentUserEmail_() {
 
 
 /**
- * Registers column positions from `ATTENDANCE_SHEET`.
- *
- * Prevents user from updating column variables manually.
- *
- * CURRENTLY IN REVIEW!
+ * Sorts `ATTENDANCE_SHEET` according to submission time.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 23, 2024
- * @update  Oct 23, 2024
+ * @date  Nov 1, 2024
+ * @update  Apr 7, 2025
  */
 
-function getColumnPosition() {
-  var rangeList = ATTENDANCE_SHEET.getNamedRanges();
-  var dRange = ATTENDANCE_SHEET.getNamedRanges()[0].getRange();
+function sortAttendanceForm() {
+  const sheet = GET_ATTENDANCE_SHEET_();
+
+  const numRows = sheet.getLastRow() - 1;     // Remove header row from count
+  const numCols = sheet.getLastColumn();
+  const range = sheet.getRange(2, 1, numRows, numCols);
+
+  // Sorts values by `Timestamp` without the header row
+  range.sort([{ column: 1, ascending: true }]);
+}
+
+
+/**
+ * Change attendance status of all members to not present.
+ *
+ * Helper function for `consolidateMemberData()`.
+ *
+ * @trigger New head run or McRUN attendance submission.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 9, 2023
+ * @update  Oct 29, 2024
+ */
+
+function removePresenceChecks() {
+  // `Membership Collected (main)` Google Sheet
+  const sheetURL = MEMBERSHIP_URL;
+  const ss = SpreadsheetApp.openByUrl(sheetURL);
+
+  // `MASTER` sheet in `Membership Collected (main)`
+  const masterSheetName = MASTER_NAME;
+  const sheet = ss.getSheetByName(masterSheetName);
+
+  var rangeAttendance;
+  var rangeList = sheet.getNamedRanges();
 
   for (var i = 0; i < rangeList.length; i++) {
-    Logger.log(rangeList[i].getName());
+    if (rangeList[i].getName() == "attendanceStatus") {
+      rangeAttendance = rangeList[i];
+      break;
+    }
   }
+
+  rangeAttendance.getRange().uncheck(); // remove all Presence checks
+}
+
+
+function prettifySheet() {
+  formatSpecificColumns_();
+}
+
+/**
+ * Formats certain columns of `HR Attendance` sheet.
+ *
+ * Modifies confirmation bool into user-friendly message.
+ *
+ * @trigger New Google form or app submission.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 9, 2023
+ * @update  May 13, 2025
+ */
+
+function formatSpecificColumns_() {
+  const sheet = GET_ATTENDANCE_SHEET_();
+
+  // Helper fuction to improve readability
+  const getThisRange = (ranges) =>
+    Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
+
+  // 1. Freeze panes
+  sheet.setFrozenRows(1);
+  sheet.setFrozenColumns(1);
+
+  // 2. Bold formatting
+  getThisRange([
+    'A1:O1',  // Header Row
+    'A2:A',   // Timestamp
+    'D2:D',   // Headrun
+    'M2:O'    // Transfer Status + ... + Not Found
+  ]).setFontWeight('bold');
+
+  // 3. Font size adjustments
+  getThisRange(['A2:A', 'D2:D', 'N2:N']).setFontSize(11); // for Headrun + Submission Platform
+  getThisRange(['C2:C', 'F2:I']).setFontSize(9);  // Headrunners + Attendees
+
+  // 4. Text wrapping
+  getThisRange(['B2:E', 'J2:L']).setWrap(true);
+  getThisRange('F2:I').setWrap(false);  // Attendees
+
+  // 5. Horizontal and vertical alignment
+  getThisRange(['E2:E', 'M2:N']).setHorizontalAlignment('center');  // Headrun + Transfer Status + Submission Platform
+
+  getThisRange([
+    'D2:I',   // Headrun Details + Attendees
+    'M2:N',   // Transfer Status + Submission Platform
+  ]).setVerticalAlignment('middle');
+
+  // 6. Update banding colours by extending range
+  const dataRange = sheet.getRange(1,1);
+  const banding = dataRange.getBandings()[0];
+  banding.setRange(sheet.getDataRange());
+
+  // 7. Resize columns using `sizeMap`
+  const sizeMap = {
+    [TIMESTAMP_COL]: 150,
+    [EMAIL_COL]: 240,
+    [HEADRUNNERS_COL]: 240,
+    [HEADRUN_COL]: 155,
+    [RUN_LEVEL_COL]: 170,
+    [ATTENDEES_BEGINNER_COL]: 160,
+    [ATTENDEES_EASY_COL]: 160,
+    [ATTENDEES_INTERMEDIATE_COL]: 160,
+    [ATTENDEES_ADVANCED_COL]: 160,
+    [CONFIRMATION_COL]: 300,
+    [DISTANCE_COL]: 160,
+    [COMMENTS_COL]: 355,
+    [TRANSFER_STATUS_COL]: 135,
+    [PLATFORM_COL]: 160,
+    [NAMES_NOT_FOUND_COL]: 225
+  }
+
+  Object.entries(sizeMap).forEach(([col, width]) => {
+    sheet.setColumnWidth(col, width);
+  });
+
 }

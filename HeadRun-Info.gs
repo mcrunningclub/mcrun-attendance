@@ -3,11 +3,8 @@ const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
 const VP_INTERNAL_EMAIL = 'emmanuelle.blais@mail.mcgill.ca';
 const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
 
-const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
 const HEADRUNNER_STORE_NAME = 'headrunners';
 const HEADRUN_STORE_NAME = 'headruns';
-
-const TRIGGER_FUNC = checkMissingAttendance.name;
 
 function storeObject_(key, obj) {
   const docProp = PropertiesService.getDocumentProperties();
@@ -36,7 +33,6 @@ function getWeekday_(weekdayIndex) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return days[weekdayIndex].toLowerCase();
 }
-
 
 /** 
  * Find schedule for current weekday, either as string representation, or js equivalent (1 = 'monday').
@@ -107,7 +103,7 @@ function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
 
 
 /** 
- * Returns emails of headrunners for a run, divided by levels.
+ * Returns email address of headrunners for a run, divided by levels.
  * 
  * Replaced initial `getHeadRunnerEmail()`, which was hard-coded and required updating.
  * 
@@ -320,7 +316,7 @@ function appendHeadrunInfo_(levelsStr, thisHeadrunner, headrunObj) {
  */
 
 function formatAllHeadRunner() {
-  runOnSheet_(formatHeadRunnerInRow_.name);
+  runOnSheet_(formatHeadrunnerInRow_.name);
 }
 
 /**
@@ -340,16 +336,16 @@ function formatAllHeadRunner() {
  * ```javascript
  * // Sample Script ➜ Format names in row `7`.
  * const rowToFormat = 7;
- * formatHeadRunnerInRow(rowToFormat);
+ * formatHeadrunnerInRow(rowToFormat);
  *
  * // Sample Script ➜ Format names from row `3` to `9`.
  * const startRow = 3;
  * const numRow = 9 - startRow;
- * formatHeadRunnerInRow(startRow, numRow);
+ * formatHeadrunnerInRow(startRow, numRow);
  * ```
  */
 
-function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
+function formatHeadrunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
   const sheet = GET_ATTENDANCE_SHEET_();
   const headrunnerCol = HEADRUNNERS_COL;
 
@@ -397,7 +393,7 @@ function formatHeadRunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
  */
 
 function formatAllHeadRun() {
-  runOnSheet_(formatHeadRunInRow_.name);
+  runOnSheet_(formatHeadrunInRow_.name);
 }
 
 /**
@@ -414,7 +410,7 @@ function formatAllHeadRun() {
  * @update  Apr 7, 2025
  */
 
-function formatHeadRunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
+function formatHeadrunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
   const sheet = GET_ATTENDANCE_SHEET_();
 
   // Get the cell value, and remove hyphen-space in each cell

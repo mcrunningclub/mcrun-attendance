@@ -15,151 +15,10 @@ function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
 }
 
 
-/**
- * Sorts `ATTENDANCE_SHEET` according to submission time.
- *
- * @trigger  Edit time.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 1, 2024
- * @update  Apr 7, 2025
- *
- */
-
-function sortAttendanceForm() {
-  const sheet = GET_ATTENDANCE_SHEET_();
-
-  const numRows = sheet.getLastRow() - 1;     // Remove header row from count
-  const numCols = sheet.getLastColumn();
-  const range = sheet.getRange(2, 1, numRows, numCols);
-
-  // Sorts values by `Timestamp` without the header row
-  range.sort([{ column: 1, ascending: true }]);
-}
-
-
-/**
- * Change attendance status of all members to not present.
- *
- * Helper function for `consolidateMemberData()`.
- *
- * @trigger New head run or McRUN attendance submission.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 9, 2023
- * @update  Oct 29, 2024
- *
- */
-
-function removePresenceChecks() {
-  // `Membership Collected (main)` Google Sheet
-  const sheetURL = MEMBERSHIP_URL;
-  const ss = SpreadsheetApp.openByUrl(sheetURL);
-
-  // `MASTER` sheet in `Membership Collected (main)`
-  const masterSheetName = MASTER_NAME;
-  const sheet = ss.getSheetByName(masterSheetName);
-
-  var rangeAttendance;
-  var rangeList = sheet.getNamedRanges();
-
-  for (var i = 0; i < rangeList.length; i++) {
-    if (rangeList[i].getName() == "attendanceStatus") {
-      rangeAttendance = rangeList[i];
-      break;
-    }
-  }
-
-  rangeAttendance.getRange().uncheck(); // remove all Presence checks
-}
-
-
 function toTitleCase_(inputString) {
   return inputString.replace(/\w\S*/g, word => {
     return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
   });
-}
-
-
-function prettifySheet() {
-  formatSpecificColumns_();
-}
-
-/**
- * Formats certain columns of `HR Attendance` sheet.
- *
- * Modifies confirmation bool into user-friendly message.
- *
- * @trigger New Google form or app submission.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 9, 2023
- * @update  May 13, 2025
- */
-
-function formatSpecificColumns_() {
-  const sheet = GET_ATTENDANCE_SHEET_();
-
-  // Helper fuction to improve readability
-  const getThisRange = (ranges) =>
-    Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
-
-  // 1. Freeze panes
-  sheet.setFrozenRows(1);
-  sheet.setFrozenColumns(1);
-
-  // 2. Bold formatting
-  getThisRange([
-    'A1:O1',  // Header Row
-    'A2:A',   // Timestamp
-    'D2:D',   // Headrun
-    'M2:O'    // Transfer Status + ... + Not Found
-  ]).setFontWeight('bold');
-
-  // 3. Font size adjustments
-  getThisRange(['A2:A', 'D2:D', 'N2:N']).setFontSize(11); // for Headrun + Submission Platform
-  getThisRange(['C2:C', 'F2:I']).setFontSize(9);  // Headrunners + Attendees
-
-  // 4. Text wrapping
-  getThisRange(['B2:E', 'J2:L']).setWrap(true);
-  getThisRange('F2:I').setWrap(false);  // Attendees
-
-  // 5. Horizontal and vertical alignment
-  getThisRange(['E2:E', 'M2:N']).setHorizontalAlignment('center');  // Headrun + Transfer Status + Submission Platform
-
-  getThisRange([
-    'D2:I',   // Headrun Details + Attendees
-    'M2:N',   // Transfer Status + Submission Platform
-  ]).setVerticalAlignment('middle');
-
-  // 6. Update banding colours by extending range
-  const dataRange = sheet.getRange(1,1);
-  const banding = dataRange.getBandings()[0];
-  banding.setRange(sheet.getDataRange());
-
-  // 7. Resize columns using `sizeMap`
-  const sizeMap = {
-    [TIMESTAMP_COL]: 150,
-    [EMAIL_COL]: 240,
-    [HEADRUNNERS_COL]: 240,
-    [HEADRUN_COL]: 155,
-    [RUN_LEVEL_COL]: 170,
-    [ATTENDEES_BEGINNER_COL]: 160,
-    [ATTENDEES_EASY_COL]: 160,
-    [ATTENDEES_INTERMEDIATE_COL]: 160,
-    [ATTENDEES_ADVANCED_COL]: 160,
-    [CONFIRMATION_COL]: 300,
-    [DISTANCE_COL]: 160,
-    [COMMENTS_COL]: 355,
-    [TRANSFER_STATUS_COL]: 135,
-    [PLATFORM_COL]: 160,
-    [NAMES_NOT_FOUND_COL]: 225
-  }
-
-  Object.entries(sizeMap).forEach(([col, width]) => {
-    sheet.setColumnWidth(col, width);
-  });
-
 }
 
 
@@ -214,7 +73,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const confirmationResp = rangeConfirmation.getValue().toString();    // Options: TRUE or FALSE;
 
   // Ensure that current value is bool to prevent overwrite
-  var isBool = (confirmationResp === 'true' || confirmationResp === 'false');
+  const isBool = (confirmationResp === 'true' || confirmationResp === 'false');
   if (!isBool) return;
 
   // Format and set value according to TRUE/FALSE response
@@ -235,7 +94,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
 function formatAllNames() {
   const funcA = formatAttendeeNamesInRow_.name;
-  const funcB = formatHeadRunnerInRow_.name;
+  const funcB = formatHeadrunnerInRow_.name;
   runOnSheet_(funcA, funcB);  // Run both functions
 }
 
@@ -251,7 +110,7 @@ function formatAllNames() {
 function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   console.log('[AC] Now attempting to format headrunner and attendee names');
   formatAttendeeNamesInRow_(row);
-  formatHeadRunnerInRow_(row);
+  formatHeadrunnerInRow_(row);
   SpreadsheetApp.flush();   // Apply all changes
 }
 
@@ -343,19 +202,18 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 29, 2024
- * @update  Jan 15, 2025
+ * @update  May 15, 2025
  *
- * ```javascript
+ * ```js
  * // Sample Script ➜ Create email using info.
  * const emailDetails = {
- *    name : 'Monday - 6pm',
+ *    title : 'Monday - 6pm',
  *    distance : '5km',
- *    attendees : 'Bob Burger, Marge Simpson, Mabel Pines',
- *    toEmail : 'alex-the-headrunner@mcrun.ca',
- *    confirmation : false,
- *    notes : 'Bob will pay fee next time.'
+ *    attendees : `['- Beginner: Bob Burger', '- Easy: Marge Simpson, Mabel Pines']`,
+ *    confirmation : No,
+ *    comments : 'Bob will pay fee next time.'
  * };
- * var emailHTML = createEmailCopy(emailDetails);
+ * const emailHTML = createEmailCopy(emailDetails);
  * ```
  */
 
@@ -380,91 +238,6 @@ function createEmailCopy_(emailDetails) {
   template.COMMENTS = emailDetails.comments;
 
   return template.evaluate().getContent();  // Returns string content from populated html template
-}
-
-
-/**
- * Formats all entries in `memberMap` then sorts by searchKey.
- *
- * Removes whitespace and hyphens, strip accents, and capitalize names.
- *
- * @param {string[][]} memberMap  Array of searchkey and their emails.
- * @return {string[]}  Sorted array of formatted names.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 1, 2024
- * @update  Dec 14, 2024
- *
- * ```javascript
- * // Sample Script ➜ Format, then sort names.
- * const rawData = [["Francine de-Blé", "francine.de-ble@mail.com"],
- *                  ["BOb-Burger belChEr ", "bob.belcher@mail.com"]];
- * const result = formatAndSortMemberMap_(rawData);
- * Logger.log(result)  // [["Bob Burger Belcher", "bob.belcher@mail.com"],
- *                         [ "Francine De ble", "francine.de-ble@mail.com"]]
- * ```
- */
-function formatAndSortMemberMap_(memberMap, searchKeyIndex, emailIndex) {
-  const formattedMap = memberMap.map(row => {
-    const memberEmail = row[emailIndex];
-    const formattedSearchKey = row[searchKeyIndex]
-      .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // Strip accents
-      .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
-      .toLowerCase()
-      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each word
-
-    // Combine formatted searchkey and email
-    return [formattedSearchKey, memberEmail];
-  });
-
-  // Sort by formatted searchKey
-  formattedMap.sort((a, b) => a[0].localeCompare(b[0]));
-  return formattedMap;
-}
-
-
-/**
- * Formats all entries in `names`, swaps lastName and firstName before sorting.
- *
- * Removes whitespace and apostrophes, strip accents and capitalize names.
- *
- * @param {string[]} names  Array of names to format.
- * @return {string[]}  Sorted array of formatted names.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Dec 6, 2024
- * @update  Dec 11, 2024
- *
- * ```javascript
- * // Sample Script ➜ Format, swap first and last name, then sort.
- * const rawNames = ["BOb-Burger bulChEr ", "Francine de-Blé"];
- * const result = swapAndFormatName_(rawNames);
- * Logger.log(result)  // ["Bulcher, Bob Burger", "De ble, Francine"]
- * ```
- */
-
-function swapAndFormatName_(names) {
-  const formattedNames = names.map(name => {
-    let nameParts = name
-      .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // Strip accents
-      .replace(/[\u2018\u2019']/g, "")  // Remove apostrophes (`, ', ’)
-      .toLowerCase()
-      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each name
-      .split(/\s+/) // Split by spaces
-      ;
-
-    // Replace hyphens with spaces. Can only perform after splitting first and last name.
-    nameParts = nameParts.map(name => name.replace(/-/g, " "));
-
-    // If first name is not hyphenated, only left-most substring stored in first name
-    const firstName = nameParts[0];
-    const lastName = nameParts[nameParts.length - 1];
-    return `${lastName}, ${firstName}`; // Format as "LastName, FirstName"
-  });
-
-  return formattedNames.sort();
 }
 
 

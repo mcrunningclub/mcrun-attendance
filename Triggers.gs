@@ -1,3 +1,7 @@
+
+const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
+const TRIGGER_FUNC = checkMissingAttendance.name;
+
 /**
  * Adds new events as time-based triggers and removed expired ones
  * 
