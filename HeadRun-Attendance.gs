@@ -148,13 +148,13 @@ function checkMissingAttendance() {
 
   // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
   const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
-  const emailObj = { 'emails' : emailsByLevel, 'headrunTitle' : headrunTitle };
+  const emailObj = { 'emailsByLevel' : emailsByLevel, 'headrunTitle' : headrunTitle };
 
   // Save result of attendance verification, and get title for email
-  const matchedTimeKey = verifyAttendance_(currentWeekday);
+  const { 'timeKey' : matchedTimeKey, 'submission' : submission } = verifyAttendance_(currentWeekday);
 
   // Send copy of submission if true. Otherwise send an email reminder to headrunners
-  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj) : sendEmailReminder_(emailObj);
+  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj, submission) : sendEmailReminder_(emailObj);
   Logger.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
 
 
@@ -164,29 +164,31 @@ function checkMissingAttendance() {
 
     // Gets values of all timelogs
     const numRows = sheet.getLastRow() - 1;
-    const submissionDates = sheet.getSheetValues(2, TIMESTAMP_COL, numRows, 1);
+    const numCols = COMMENTS_COL;
+    const submissionArr = sheet.getSheetValues(2, TIMESTAMP_COL, numRows, numCols);
 
     // Get date at trigger time and compare with timestamp of existing submissions
     return findMatchingTimeKey();
 
     /** Helper function */
     function findMatchingTimeKey() {
-      let timeKey = null;
+      const ret = { timeKey : null, submission : null }
 
       // Start checking from end of head run attendance submissions
       // Exit loop when submission found or until list exhausted
-      for (let i = numRows - 1; i >= 0 && !timeKey; i--) {
+      for (let i = numRows - 1; i >= 0 && !ret.timeKey; i--) {
         
-        const submissionDate = submissionDates[i][0];
+        const submissionDate = submissionArr[i][0];   // Date index = 0
         const thisWeekday = submissionDate.getDay();
 
         if (thisWeekday === currentWeekday) {
           const runSchedule = getScheduleFromStore_(thisWeekday);
-          timeKey = getMatchedTimeKey_(submissionDate, runSchedule);
+          ret.timeKey = getMatchedTimeKey_(submissionDate, runSchedule);
+          ret.submission = submissionArr[i];    // Need values for confirmation email
         }
       }
       
-      return timeKey;
+      return ret;
     }
   }
 
@@ -202,6 +204,22 @@ function checkMissingAttendance() {
 }
 
 
+
+function copyTest() {
+  const weekdayStr = 'tuesday';
+  const currentTimeKey = '6pm';
+
+  const headrunTitle = toTitleCase_(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday - 9am'
+  const runSchedule = getScheduleFromStore_(weekdayStr);
+  const emailsByLevel = getHeadrunnerEmailFromStore_(runSchedule[currentTimeKey]);
+
+  const emailObj = { 'emailsByLevel' : emailsByLevel, 'headrunTitle' : headrunTitle };
+  const numCols = COMMENTS_COL;
+  const submission = GET_ATTENDANCE_SHEET_().getSheetValues(2, TIMESTAMP_COL, 1, numCols)[0];
+
+  sendSubmissionCopy_(emailObj, submission);
+}
+
 /**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
  *
@@ -211,76 +229,108 @@ function checkMissingAttendance() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  Apr 7, 2025
+ * @update  May 14, 2025
  */
 
-function emailSubmission() {
+// e.g. 'Tuesday - 9am'
+function sendSubmissionCopy_({ emailsByLevel, headrunTitle}, submission) {
   // Error Management: prevent wrong user sending email
-  if (getCurrentUserEmail_() != CLUB_EMAIL) return;
+  //if (getCurrentUserEmail_() != CLUB_EMAIL) return;
 
-  const sheet = GET_ATTENDANCE_SHEET_();
-  const lastRow = getLastSubmission_();
+  // Create regex extract fun for attendees of each level, and return None for empty levels
+  const nameRegex = /^(.*?):/gm;
+  const emptyRegex = new RegExp(EMPTY_ATTENDEE_FLAG, 'i');
+  const extractNames = (nameEmail) => [...nameEmail.matchAll(nameRegex)].map(m => m[1]).join(', ');
 
-  // Save values in 0-indexed array, then transform into 1-indexed by appending empty
-  // string to the front. Now, access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
-  const submission = sheet.getSheetValues(lastRow, 1, 1, sheet.getLastColumn())[0];
-  submission.unshift('');   // append '' to front for 1-indexed access
+  // const extractNames = (nameEmail) => {
+  //   emptyRegex.test(nameEmail) ? nameEmail : [...nameEmail.matchAll(nameRegex)].map(m => m[1]);
+  // }
 
-  var timestamp = new Date(submission[TIMESTAMP_COL]);
-  const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MM/dd/yyyy');
+  // Make submission 1-indexed
+  submission.unshift('');
+  
+  // Replace newline with comma-space and format as
+  // `['Easy: Bob Burger, Cat Fox', 'Intermediate: None', Advanced:' Catherine Rex']`
+  const allAttendees = Object.entries(ATTENDEE_MAP).map(([level, index]) => {
+    const label = toTitleCase_(level);
+    const levelAttendee = extractNames(submission[index]) || EMPTY_ATTENDEE_FLAG;
+    return `    - ${label}: ${levelAttendee}`;
+  });
 
-  // Replace newline with comma-space
-  const allAttendees = Object.values(ATTENDEE_MAP).map(
-    level => submission[level].replaceAll('\n', ', ')
-  );
-
-  // Read only (cannot edit values in sheet)
+  // Prepare values to populate copy email template
   const headrun = {
-    name: submission[HEADRUN_COL],
-    distance: submission[DISTANCE_COL],
-    attendees: allAttendees,
-    toEmail: submission[EMAIL_COL],
-    confirmation: submission[CONFIRMATION_COL],
-    notes: submission[COMMENTS_COL]
+    title : headrunTitle,
+    distance : submission[DISTANCE_COL],
+    attendees : allAttendees.join('<br>'),
+    toEmail : Object.values(emailsByLevel).join(','),
+    confirmation : submission[CONFIRMATION_COL],
+    comments : submission[COMMENTS_COL]
   };
-
-  // Read and edit sheet values
-  const rangeConfirmation = sheet.getRange(lastRow, CONFIRMATION_COL);
-
-  // Replace newline delimiter with comma-space if non-empty or matches "None"
-  const attendeesStr = headrun.attendees.toString();
-
-  if (attendeesStr.length > 1) {
-    headrun.attendees = attendeesStr.replaceAll('\n', ', ');
-  }
-  else headrun.attendees = EMPTY_ATTENDEE_FLAG;  // otherwise replace empty string by 'none'
-
-  headrun.confirmation = (headrun.confirmation ? 'Yes' : 'No (explain in comment section)');
-  rangeConfirmation.setValue(headrun.confirmation);
 
   const emailBodyHTML = createEmailCopy_(headrun);
 
-  var message = {
-    to: headrun.toEmail,
-    bcc: PRESIDENT_EMAIL,
-    cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
-    subject: "McRUN Attendance Form (" + formattedDate + ")",
+  console.log(emailBodyHTML);
+
+  const message = {
+    to: 'andreysebastian10.g@gmail.com',
+    //to: headrun.toEmail,
+    //bcc: PRESIDENT_EMAIL,
+    //cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
+    subject: "McRUN Attendance Form (" + headrunTitle + ")",
     htmlBody: emailBodyHTML,
     noReply: true,
     name: "McRUN Attendance Bot"
   }
 
-  //MailApp.sendEmail(message);   // REMOVE AFTER TEST!
+  MailApp.sendEmail(message);
 }
 
 
-function sendEmailReminder_(headrunTitle) {
-  [dayOfWeek, time,] = headrunTitle.split(/\s*-\s*|\s+/);
-  const amPmOfDay = time.match(/(am|pm)/i);
-  const headrunDay = (dayOfWeek + amPmOfDay[0]);    // e.g. 'MondayAM'
+// e.g. 'Tuesday - 9am'
+function sendSubmissionCopyB_() {
+  // Error Management: prevent wrong user sending email
+  if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
 
-  // Get head runners email using input headrun
-  const headRunnerEmail = getHeadRunnerEmail_(headrunDay).join();
+  const timestamp = new Date(submission[TIMESTAMP_COL]);
+  const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MMM-dd-yyyy');
+
+  // Get HTML template from file
+  const templateName = REMINDER_EMAIL_HTML_FILE;
+
+  for (const level in emailsByLevel) {
+    // Create template for each level, and replace placeholders
+    const template = HtmlService.createTemplateFromFile(templateName);
+
+    headrunTitle = headrunTitle + ` ${level}`
+
+    template.TITLE = headrunTitle;
+    //DISTANCE, ATTENDEES, CONFIRMATION, COMMENTS)
+
+    // Returns string content from populated html template
+    const copyEmailBodyHTML = template.evaluate().getContent();
+
+
+    const copyEmail = {
+      to: emailsByLevel[level],
+      bcc: PRESIDENT_EMAIL,
+      cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
+      subject: "McRUN Attendance Form (" + headrunTitle + ")",
+      htmlBody: copyEmailBodyHTML,
+      noReply: true,
+      name: "McRUN Attendance Bot"
+    }
+
+    //MailApp.sendEmail(copyEmail);
+    console.log(`Reminder sent successfully for missing attendance submission (${headrunTitle})`);
+    }
+
+  return;
+}
+
+
+function sendEmailReminder_({ emailsByLevel, headrunTitle }) {
+  // Error Management: prevent wrong user sending email
+  if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
 
   // Load HTML template and replace placeholders
   const templateName = REMINDER_EMAIL_HTML_FILE;
@@ -292,8 +342,8 @@ function sendEmailReminder_(headrunTitle) {
   // Returns string content from populated html template
   const reminderEmailBodyHTML = template.evaluate().getContent();
 
-  var reminderEmail = {
-    to: headRunnerEmail,
+  const reminderEmail = {
+    to: Object.values(emailsByLevel),
     bcc: PRESIDENT_EMAIL,
     cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
     subject: "McRUN Missing Attendance Form - " + headrunTitle,
@@ -304,12 +354,6 @@ function sendEmailReminder_(headrunTitle) {
 
   MailApp.sendEmail(reminderEmail);
   console.log(`Reminder sent successfully for missing attendance submission (${headrunTitle})`);
-}
-
-
-function sendSubmissionCopy_() {
-  console.log("Please complete 'sendSubmissionCopy'");
-  return;
 }
 
 

@@ -31,7 +31,6 @@ function getAllHeadrunners_() {
   return JSON.parse(docProp.getProperty(HEADRUNNER_STORE_NAME));
 }
 
-
 /** Returns day code formatted as `weekday` in lowercase. Index [0-6] (Sunday = 0) */
 function getWeekday_(weekdayIndex) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];

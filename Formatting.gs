@@ -363,7 +363,7 @@ function createEmailCopy_(emailDetails) {
   // Check for non-empty key-value object
   const size = Object.keys(emailDetails).length;
 
-  if (size != 6) {
+  if (size < 5) {
     const objectPrint = JSON.stringify(emailDetails);
     throw Error(`Confirmation email cannot be created due to incorrect mapping of \`emailDetails\` argument:
       ${objectPrint}`);
@@ -373,12 +373,11 @@ function createEmailCopy_(emailDetails) {
   const templateName = COPY_EMAIL_HTML_FILE;
   const template = HtmlService.createTemplateFromFile(templateName);
 
-  template.NAME = emailDetails.name;
+  template.TITLE = emailDetails.title;
   template.DISTANCE = emailDetails.distance;
   template.ATTENDEES = emailDetails.attendees;
-  template.EMAIL = emailDetails.toEmail;
   template.CONFIRMATION = emailDetails.confirmation;
-  template.NOTES = emailDetails.notes;
+  template.COMMENTS = emailDetails.comments;
 
   return template.evaluate().getContent();  // Returns string content from populated html template
 }
