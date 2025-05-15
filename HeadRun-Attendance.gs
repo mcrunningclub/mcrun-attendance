@@ -220,6 +220,21 @@ function copyTest() {
   sendSubmissionCopy_(emailObj, submission);
 }
 
+
+function sendBotEmail(subject, recipient, htmlBody) {
+  const reminderEmail = {
+    to: recipient,
+    bcc: PRESIDENT_EMAIL,
+    cc: CLUB_EMAIL + "," + VP_INTERNAL_EMAIL,
+    subject: subject,
+    htmlBody: htmlBody,
+    noReply: true,
+    name: "McRUN Attendance Bot"
+  }
+
+  MailApp.sendEmail(reminderEmail);
+}
+
 /**
  * Send a copy of attendance submission to headrunners, President & VP Internal.
  *
@@ -232,99 +247,54 @@ function copyTest() {
  * @update  May 14, 2025
  */
 
-// e.g. 'Tuesday - 9am'
 function sendSubmissionCopy_({ emailsByLevel, headrunTitle}, submission) {
   // Error Management: prevent wrong user sending email
-  //if (getCurrentUserEmail_() != CLUB_EMAIL) return;
-
-  // Create regex extract fun for attendees of each level, and return None for empty levels
-  const nameRegex = /^(.*?):/gm;
-  const emptyRegex = new RegExp(EMPTY_ATTENDEE_FLAG, 'i');
-  const extractNames = (nameEmail) => [...nameEmail.matchAll(nameRegex)].map(m => m[1]).join(', ');
-
-  // const extractNames = (nameEmail) => {
-  //   emptyRegex.test(nameEmail) ? nameEmail : [...nameEmail.matchAll(nameRegex)].map(m => m[1]);
-  // }
+  if (getCurrentUserEmail_() != CLUB_EMAIL) return;
 
   // Make submission 1-indexed
   submission.unshift('');
-  
-  // Replace newline with comma-space and format as
-  // `['Easy: Bob Burger, Cat Fox', 'Intermediate: None', Advanced:' Catherine Rex']`
+
+  // Create regex to extract name from name-email pairings, e.g. `Bob Burger:bob@mail.com` -> `Bob Burger`
+  const nameRegex = /^(.*?):/gm;
+  const extractNames = (nameEmail) => [...nameEmail.matchAll(nameRegex)].map(m => m[1]).join(', ');
+
+  // Format attendees as `['Easy: Bob Burger, Cat Fox', 'Intermediate: None', Advanced:' Catherine Rex']`
   const allAttendees = Object.entries(ATTENDEE_MAP).map(([level, index]) => {
     const label = toTitleCase_(level);
     const levelAttendee = extractNames(submission[index]) || EMPTY_ATTENDEE_FLAG;
-    return `    - ${label}: ${levelAttendee}`;
+    return `- ${label}: ${levelAttendee}`;
   });
 
   // Prepare values to populate copy email template
   const headrun = {
     title : headrunTitle,
     distance : submission[DISTANCE_COL],
-    attendees : allAttendees.join('<br>'),
+    attendees : allAttendees,
     toEmail : Object.values(emailsByLevel).join(','),
     confirmation : submission[CONFIRMATION_COL],
-    comments : submission[COMMENTS_COL]
+    comments : submission[COMMENTS_COL] || 'None'
   };
 
-  const emailBodyHTML = createEmailCopy_(headrun);
+  // Create html code and populate placeholders
+  const copyEmailHTML = createEmailCopy_(headrun);
 
-  console.log(emailBodyHTML);
+  // Send email with following arguments
+  const subject = "McRUN Attendance Form (" + headrunTitle + ")"
+  sendBotEmail(subject, headrun.toEmail, copyEmailHTML);
+  Logger.log(`Successfully sent copy of attendance submission for (${headrunTitle})`);
 
-  const message = {
-    to: 'andreysebastian10.g@gmail.com',
-    //to: headrun.toEmail,
-    //bcc: PRESIDENT_EMAIL,
-    //cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
-    subject: "McRUN Attendance Form (" + headrunTitle + ")",
-    htmlBody: emailBodyHTML,
-    noReply: true,
-    name: "McRUN Attendance Bot"
-  }
+  // const message = {
+  //   to: headrun.toEmail,
+  //   bcc: PRESIDENT_EMAIL,
+  //   cc: CLUB_EMAIL + "," + VP_INTERNAL_EMAIL,
+  //   subject: "McRUN Attendance Form (" + headrunTitle + ")",
+  //   htmlBody: emailBodyHTML,
+  //   noReply: true,
+  //   name: "McRUN Attendance Bot"
+  // }
 
-  MailApp.sendEmail(message);
-}
-
-
-// e.g. 'Tuesday - 9am'
-function sendSubmissionCopyB_() {
-  // Error Management: prevent wrong user sending email
-  if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
-
-  const timestamp = new Date(submission[TIMESTAMP_COL]);
-  const formattedDate = Utilities.formatDate(timestamp, TIMEZONE, 'MMM-dd-yyyy');
-
-  // Get HTML template from file
-  const templateName = REMINDER_EMAIL_HTML_FILE;
-
-  for (const level in emailsByLevel) {
-    // Create template for each level, and replace placeholders
-    const template = HtmlService.createTemplateFromFile(templateName);
-
-    headrunTitle = headrunTitle + ` ${level}`
-
-    template.TITLE = headrunTitle;
-    //DISTANCE, ATTENDEES, CONFIRMATION, COMMENTS)
-
-    // Returns string content from populated html template
-    const copyEmailBodyHTML = template.evaluate().getContent();
-
-
-    const copyEmail = {
-      to: emailsByLevel[level],
-      bcc: PRESIDENT_EMAIL,
-      cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
-      subject: "McRUN Attendance Form (" + headrunTitle + ")",
-      htmlBody: copyEmailBodyHTML,
-      noReply: true,
-      name: "McRUN Attendance Bot"
-    }
-
-    //MailApp.sendEmail(copyEmail);
-    console.log(`Reminder sent successfully for missing attendance submission (${headrunTitle})`);
-    }
-
-  return;
+  // MailApp.sendEmail(message);
+  // console.log(`Successfully sent copy of attendance submission for (${headrunTitle})`);
 }
 
 
@@ -340,19 +310,24 @@ function sendEmailReminder_({ emailsByLevel, headrunTitle }) {
   template.SEMESTER = SEMESTER_NAME;
 
   // Returns string content from populated html template
-  const reminderEmailBodyHTML = template.evaluate().getContent();
+  const reminderEmailHTML = template.evaluate().getContent();
+  const subject = "McRUN Missing Attendance Form - " + headrunTitle;
+  const recipients = Object.values(emailsByLevel).join(",");
 
-  const reminderEmail = {
-    to: Object.values(emailsByLevel),
-    bcc: PRESIDENT_EMAIL,
-    cc: CLUB_EMAIL + ", " + VP_INTERNAL_EMAIL,
-    subject: "McRUN Missing Attendance Form - " + headrunTitle,
-    htmlBody: reminderEmailBodyHTML,
-    noReply: true,
-    name: "McRUN Attendance Bot"
-  }
+  // Send reminder email with following paramaters
+  sendBotEmail(subject, recipients, reminderEmailHTML);
 
-  MailApp.sendEmail(reminderEmail);
+  // const reminderEmail = {
+  //   to: Object.values(emailsByLevel).join(","),
+  //   bcc: PRESIDENT_EMAIL,
+  //   cc: CLUB_EMAIL + "," + VP_INTERNAL_EMAIL,
+  //   subject: "McRUN Missing Attendance Form - " + headrunTitle,
+  //   htmlBody: reminderEmailHTML,
+  //   noReply: true,
+  //   name: "McRUN Attendance Bot"
+  // }
+
+  // MailApp.sendEmail(reminderEmail);
   console.log(`Reminder sent successfully for missing attendance submission (${headrunTitle})`);
 }
 

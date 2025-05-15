@@ -2,7 +2,7 @@
 <!--             
 AUTHOR Andrey Gonzalez
 
-TEMPLATE VERSION 2024
+TEMPLATE VERSION 2025
 -->
 
 <html>
@@ -10,40 +10,95 @@ TEMPLATE VERSION 2024
 <head>
   <base target="_top">
   <title>Copy of Attendance Submission</title>
+
+  <style>
+    body {
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    .greeting {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .imp-font {
+      font-family: "Verdana", sans-serif;
+      font-size: 15px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 1.5em;
+      background: #efefef;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .indent {
+      display: inline-block;
+      margin-left: 1.3em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    td {
+      padding: 6px 0 3px 1.5em;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-style: italic;
+    }
+  </style>
 </head>
 
 <body>
-  <p>
-    Hi,
-  </p>
-  <p>
-    Here is a copy of the latest submission:
-  </p>
-  <p>
-    <strong>&nbsp;&nbsp;&nbsp;Head Run: </strong>
-    <?= TITLE ?>
-  </p>
-  <p>
-    <strong>&nbsp;&nbsp;&nbsp;Distance: </strong>
-    <?= DISTANCE ?>
-  </p>
-  <p>
-    <strong>&nbsp;&nbsp;&nbsp;Attendees: </strong>
-    <?= ATTENDEES ?>
-  </p>
-  <p>
-    &nbsp;&nbsp;
-    <strong><em>I declare all attendees have provided their waiver and paid the one-time member fee: </em></strong>
-    <?= CONFIRMATION ?>
-  </p>
-  <p>
-    <strong>&nbsp;&nbsp;&nbsp;Comments: </strong>
-    <?= COMMENTS ?>
-  </p>
-  <p>
-    <br>
-      - McRUN Bot
-  </p>
+  <div class="container imp-font">
+    <p class="greeting"><strong>Hi headrunner!</strong></p>
+
+    <p>Here is a copy of the latest submission:</p>
+
+    <p><strong class="indent">Head Run:</strong>
+      <?= TITLE ?>
+    </p>
+
+    <p><strong class="indent">Distance:</strong>
+      <?= DISTANCE ?>
+    </p>
+
+    <p><strong class="indent">Attendees:</strong></p>
+    <table>
+      <? for (let i = 0; i < ATTENDEES.length; i++) { ?>
+      <tr>
+        <td>
+          <?= ATTENDEES[i] ?>
+        </td>
+      </tr>
+      <? } ?>
+    </table>
+
+    <p class="indent">
+      <strong>
+        <em>I declare all attendees have provided their waiver and paid the one-time member fee:</em>
+      </strong>
+      <?= CONFIRMATION ?>
+    </p>
+
+    <p><strong class="indent">Comments:</strong>
+      <?= COMMENTS ?>
+    </p>
+
+    <p class="footer">- McRUN Bot</p>
+  </div>
 </body>
+
 
 </html>
