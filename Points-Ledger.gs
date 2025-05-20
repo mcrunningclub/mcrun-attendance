@@ -90,20 +90,14 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
     Logger.log(`[AC] Successfully transferred event attendance submission to Ledger row ${logNewRow}`);
   }
 
-  // STEP 3: Find and store strava activity
+  // STEP 3: Set trigger(s) to find and store strava activity, then send stats email
+  // Previously used `storeStravaInLogSheet` and `triggerEmailInLedger`
   try {
-    storeStravaInLogSheet_(logNewRow);
+    setNewStravaTrigger_(logNewRow);
   }
-  catch {
-    Logger.log(`[AC] Unable to store Strava activity correctly using Points Ledger library`);
-  }
-
-  // STEP 4: Send stats email if Strava activity exists
-  try {
-    triggerEmailInLedger_(logNewRow);
-  } 
-  catch {
-    Logger.log(`[AC] Unable to send stats email successfully using Points Ledger library`);
+  catch (e) {
+    Logger.log(`[AC] Unable to create trigger to find Strava activity correctly using Points Ledger library`);
+    console.error(e);
   }
 }
 
@@ -153,11 +147,22 @@ function sendNewSubmission_(submissionArr) {
   return executePointsLedgerFunction_(funcName, [submissionArr]);
 }
 
+function setNewStravaTrigger_(logRow) {
+  const funcName = PointsLedgerCode.createNewStravaTrigger.name;
+  return executePointsLedgerFunction_(funcName, [logRow]);
+}
+
+/**
+ * @deprecated  Difficult to debug and properly execute.
+ */
 function storeStravaInLogSheet_(logRow) {
   const funcName = PointsLedgerCode.findAndStoreStravaActivity.name;
   return executePointsLedgerFunction_(funcName, [logRow]);
 }
 
+/**
+ * @deprecated. Difficult to debug and properly execute.
+ */
 function triggerEmailInLedger_(logRow) {
   const funcName = PointsLedgerCode.sendStatsEmail.name;
   executePointsLedgerFunction_(funcName, [undefined, logRow]);

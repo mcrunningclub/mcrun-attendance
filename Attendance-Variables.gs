@@ -20,7 +20,6 @@ const NAMES_NOT_FOUND_COL = 15;
 const ATTENDANCE_SHEET_NAME = 'HR Attendance S25';
 const SEMESTER_NAME = 'Summer 2025';
 
-
 const ATTENDANCE_SS_ID = '1SnaD9UO4idXXb07X8EakiItOOORw5UuEOg0dX_an3T4';
 const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
 
@@ -84,6 +83,18 @@ const GET_PROP_STORE_ = () => {
   return PROP_STORE ?? PropertiesService.getScriptProperties();
 }
 
+
+/**
+ * Returns the attendance sheet name to store current semester attendance.
+ * 
+ * @return  Current semester sheet
+ * 
+ * @customfunction
+ */
+
+function GET_SEMESTER_SHEET_NAME() {
+  return ATTENDANCE_SHEET_NAME;
+}
 
 /**
  * Returns timezone for currently running script.

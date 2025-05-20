@@ -111,23 +111,18 @@ function toggleAttendanceCheck_() {
 /**
  * Check for missing submission after scheduled headrun.
  *
- * Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
+ * @warning Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
  *
- * @trigger 30-60 mins after schedule in `getHeadRunString()`.
+ * @trigger 30-60 mins after headrun schedule.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  May 11, 2025
+ * @update  May 15, 2025
  */
 
 function checkMissingAttendance() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
-  const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
-
-  if (isCheckingAllowed !== "true") {
-    throw new Error("`verifyAttendance()` is not allowed to run. Set script property to true.");
-  }
+  // First, check if attendance can be verified
+  checkIfLegal();
 
   const today = new Date();  // new Date(new Date().getTime() + 23 * 60 * 60 * 1000);
   const currentWeekday = today.getDay();
@@ -137,28 +132,36 @@ function checkMissingAttendance() {
 
   // Verify if valid timekey
   if (!currentTimeKey) {
-    throw new Error(`No timekey found for ${today} with run schedule ${currentDaySchedule}`);
+    throw new Error(`No timekey found for ${today} with run schedule\n\n${JSON.stringify(currentDaySchedule)}\n\n`);
   }
 
   const weekdayStr = getWeekday_(currentWeekday);
-  const headrunTitle = toTitleCase_(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday - 9am'
+  const headrunTitle = toTitleCase_(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday 9am'
 
-  // Get emails using run schedule for current day
+  // Get emails using run schedule for current day, then proceed to actual verification
   const runScheduleLevels = currentDaySchedule[currentTimeKey];
+  const { 'timeKey' : matchedTimeKey, 'submission' : submission } = verifyAttendance_(currentWeekday);
 
   // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
   const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
   const emailObj = { 'emailsByLevel' : emailsByLevel, 'headrunTitle' : headrunTitle };
 
-  // Save result of attendance verification, and get title for email
-  const { 'timeKey' : matchedTimeKey, 'submission' : submission } = verifyAttendance_(currentWeekday);
-
   // Send copy of submission if true. Otherwise send an email reminder to headrunners
   (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj, submission) : sendEmailReminder_(emailObj);
-  Logger.log(`Executed 'checkMissingAttendance' with\n`, emailObj);
+  Logger.log(`Executed 'checkMissingAttendance' with ${JSON.stringify(emailObj)}`);
 
 
-  /** Helper function */
+  /** Helper functions */
+  function checkIfLegal() {
+    const scriptProperties = GET_PROP_STORE_();
+    const propertyName = SCRIPT_PROPERTY.isCheckingAttendance;  // User defined in `Attendance-Variables.gs`
+    const isCheckingAllowed = scriptProperties.getProperty(propertyName).toString();
+
+    if (isCheckingAllowed !== "true") {
+      throw new Error("'verifyAttendance()' is not allowed to run. Set script property to true.");
+    }
+  }
+
   function verifyAttendance_(currentWeekday) {
     const sheet = ATTENDANCE_SHEET;
 
@@ -192,7 +195,6 @@ function checkMissingAttendance() {
     }
   }
 }
-
 
 function sendBotEmail_(subject, recipient, htmlBody) {
   const reminderEmail = {
@@ -240,7 +242,7 @@ function sendSubmissionCopy_({ emailsByLevel, headrunTitle}, submission) {
   const copyEmailHTML = createEmailCopy_(headrun);
 
   // Send email using email bot helper function
-  sendBotEmail(
+  sendBotEmail_(
     "McRUN Attendance Copy (" + headrunTitle + ")",  // Subject
     Object.values(emailsByLevel).join(','),   // Headrunner recipients
     copyEmailHTML   // HTML body

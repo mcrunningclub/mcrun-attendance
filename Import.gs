@@ -39,7 +39,6 @@ const IMPORT_MAP = {
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 10, 2025
  * @update  Apr 7, 2025
- * 
  */
 
 function processImportFromApp(importObj) {

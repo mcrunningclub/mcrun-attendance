@@ -1,3 +1,7 @@
+const SCRIPT_PROPERTY = {
+  isCheckingAttendance: 'IS_CHECKING_ATTENDANCE',
+  calendarTriggers: 'calendarTriggers',
+};
 
 const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
 const TRIGGER_FUNC = checkMissingAttendance.name;
