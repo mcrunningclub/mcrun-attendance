@@ -51,7 +51,7 @@ const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y7
 
 // LEDGER SPREADSHEET
 const LOG_SHEET_NAME = 'Event Log';
-const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/13ps2HsOz-ZLg8xc0RYhKl7eg3BOs1MYVrwS0jxP3FTc/";
+const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/1DwmnZgLftSqegfsoFA5fekuT0sosgCntVMmTylbj8o4/";
 
 // SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
 const SCRIPT_PROPERTY = {

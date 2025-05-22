@@ -52,7 +52,7 @@ function bulkFormatting_(row) {
 
 function transferAndFormat_(row) {
   const logRow = transferSubmissionToLedger(row);
-  triggerEmailInLedger_(logRow)
+  //triggerEmailInLedger_(logRow);  @deprecated
   formatSpecificColumns_();
 }
 

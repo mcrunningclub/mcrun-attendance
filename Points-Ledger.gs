@@ -96,7 +96,7 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
     setNewStravaTrigger_(logNewRow);
   }
   catch (e) {
-    Logger.log(`[AC] Unable to create trigger to find Strava activity correctly using Points Ledger library`);
+    Logger.log(`[AC] Unable to create trigger to find Strava activity using Points Ledger library`);
     console.error(e);
   }
 }
@@ -147,7 +147,32 @@ function sendNewSubmission_(submissionArr) {
   return executePointsLedgerFunction_(funcName, [submissionArr]);
 }
 
+
 function setNewStravaTrigger_(logRow) {
+  const base = "https://script.google.com/macros/s/";
+  const fetchUrl = base + getWebAppId_() + `/exec?rowNum=${logRow}&key=${getSecretWebKey_()}`;
+
+  const response = UrlFetchApp.fetch(fetchUrl);
+  Logger.log(`[AC] UrlFetchApp Response code '${response.getResponseCode()}': ${response.getContentText()}`);
+
+  /** Helper: get secret key in script properties */
+  function getSecretWebKey_() {
+    const property = 'WEB_APP_KEY';
+    return PropertiesService.getScriptProperties().getProperty(property);
+  }
+  /** Helper: get web app id for 'Points Ledger Code' in script properties */
+  function getWebAppId_() {
+    const property = 'WEB_APP_ID';
+    return PropertiesService.getScriptProperties().getProperty(property);
+  }
+}
+
+
+/**
+ * @deprecated  Does not set trigger in 'Points Ledger' scope.
+ */
+
+function setNewStravaTriggerOld_(logRow) {
   const funcName = PointsLedgerCode.createNewStravaTrigger.name;
   return executePointsLedgerFunction_(funcName, [logRow]);
 }
