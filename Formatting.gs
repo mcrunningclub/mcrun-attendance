@@ -15,6 +15,13 @@ function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
 }
 
 
+/**
+ * Converts a string to title case.
+ *
+ * @param {string} inputString  The string to be converted to title case.
+ * @return {string}  The title-cased string.
+ */
+
 function toTitleCase_(inputString) {
   return inputString.replace(/\w\S*/g, word => {
     return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
@@ -43,15 +50,26 @@ function cleanSheetData() {
   formatAllAttendeeNames();  // Applies uniform formatting to attendees
 }
 
+/**
+ * Formats all headrun entries in the attendance sheet.
+ *
+ * Removes hyphen-space if applicable.
+ */
+
+function formatAllHeadRun() {
+  runOnSheet_(formatHeadrunInRow_.name);
+}
 
 /**
  * Wrapper function for `formatAllConfirmation` for **ALL** submissions.
  *
  * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  */
+
 function formatAllConfirmations() {
   runOnSheet_(formatConfirmationInRow_.name);
 }
+
 
 /**
  * Formats confirmation bool in `row` into user-friendly string.

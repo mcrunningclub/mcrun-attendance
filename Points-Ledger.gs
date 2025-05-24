@@ -5,6 +5,7 @@
  *
  * @param {integer} row  Row in `ATTENDANCE_SHEET` to append email.
  * @param {string[][]} registered  All search keys of registered members (sorted) and emails.
+ * @param {string[][]} unregistered  All unregistered attendees grouped by levels.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Dec 14, 2024
@@ -56,6 +57,15 @@ function appendMemberEmail_(row, registered, unregistered) {
 }
 
 
+/**
+ * Transfers a submission from the attendance sheet to the Points Ledger.
+ *
+ * Packages all non-empty submission levels into a 2D array and sends it to the ledger.
+ * If the transfer fails, it retries using `openByUrl`.
+ *
+ * @param {integer} [row=getLastSubmission_()] - The row in the attendance sheet to transfer.
+ */
+
 function transferSubmissionToLedger(row = getLastSubmission_()) {
   // STEP 1: Package all non-empty submission levels in single 2d arr
   const packagedEvents = packageRowForLedger_(row);
@@ -102,6 +112,13 @@ function transferSubmissionToLedger(row = getLastSubmission_()) {
 }
 
 
+/**
+ * Packages a row from the attendance sheet for transfer to the Points Ledger.
+ *
+ * @param {integer} row - The row in the attendance sheet to package.
+ * @return {Array<Array<string>>} - A 2D array of packaged event data.
+ */
+
 function packageRowForLedger_(row) {
   const sheet = GET_ATTENDANCE_SHEET_();
 
@@ -142,11 +159,24 @@ function packageRowForLedger_(row) {
 }
 
 
+/**
+ * Sends a new submission to the Points Ledger using the library function.
+ *
+ * @param {Array<Array<string>>} submissionArr - The submission data to send.
+ * @return {integer} - The row index in the Points Ledger where the submission was logged.
+ */
+
 function sendNewSubmission_(submissionArr) {
   const funcName = PointsLedgerCode.storeImportFromAttendanceSheet.name;
   return executePointsLedgerFunction_(funcName, [submissionArr]);
 }
 
+
+/**
+ * Sets a new trigger to find and store Strava activity for a logged row in the Points Ledger.
+ *
+ * @param {integer} logRow - The row index in the Points Ledger to set the trigger for.
+ */
 
 function setNewStravaTrigger_(logRow) {
   const base = "https://script.google.com/macros/s/";
@@ -192,6 +222,15 @@ function triggerEmailInLedger_(logRow) {
   const funcName = PointsLedgerCode.sendStatsEmail.name;
   executePointsLedgerFunction_(funcName, [undefined, logRow]);
 }
+
+
+/**
+ * Executes a function from the Points Ledger library with the given arguments.
+ *
+ * @param {string} funcName - The name of the function to execute.
+ * @param {Array} args - The arguments to pass to the function.
+ * @return {*} - The return value of the executed function.
+ */
 
 function executePointsLedgerFunction_(funcName, args) {
   console.log(`\n---[AC] START OF '${funcName}()' LOG MESSAGES\n\n`);

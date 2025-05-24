@@ -69,6 +69,12 @@ function processImportFromApp(importObj) {
 }
 
 
+/**
+ * Transfers the last imported attendance submission to the semester sheet.
+ *
+ * @trigger  New head run or McRUN attendance submission.
+ */
+
 function transferLastImport() {
   const thisLastRow = getLastSubmission_(IMPORT_SHEET);
   transferThisRow_(thisLastRow);
@@ -115,7 +121,6 @@ function toggleSuccessfulImport_(row, colIndex = null) {
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Mar 20, 2025
  * @update  Mar 20, 2025
- * 
  */
 
 function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
@@ -151,7 +156,6 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 8, 2025
  * @update  Apr 7, 2025
- * 
  */
 
 function copyToSemesterSheet_(attendanceJSON, row = GET_ATTENDANCE_SHEET_().getLastRow()) {
@@ -210,7 +214,6 @@ function copyToSemesterSheet_(attendanceJSON, row = GET_ATTENDANCE_SHEET_().getL
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 9, 2025
  * @update  Feb 9, 2025
- * 
  */
 
 function packageAttendance_(keyArr, valArr) {
@@ -239,7 +242,6 @@ function packageAttendance_(keyArr, valArr) {
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 9, 2025
  * @update  Feb 10, 2025
- * 
  */
 
 function formatTimestamp_(raw) {
@@ -269,7 +271,6 @@ function formatTimestamp_(raw) {
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Mar 20, 2025
  * @update  Mar 20, 2025
- * 
  */
 
 function isSameTimestamp_(timestamp1, timestamp2) {

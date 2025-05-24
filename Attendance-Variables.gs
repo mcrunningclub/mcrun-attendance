@@ -23,8 +23,12 @@ const SEMESTER_NAME = 'Summer 2025';
 const ATTENDANCE_SS_ID = '1SnaD9UO4idXXb07X8EakiItOOORw5UuEOg0dX_an3T4';
 const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
 
-// ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
-// SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+/**
+ * Retrieves the attendance sheet for the current semester.
+ * Ensures proper sheet reference when accessing as a library from an external script.
+ *
+ * @return {GoogleAppsScript.Spreadsheet.Sheet} The attendance sheet object.
+ */
 const GET_ATTENDANCE_SHEET_ = () => {
   return (ATTENDANCE_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SS_ID).getSheetByName(ATTENDANCE_SHEET_NAME);
 }
@@ -85,10 +89,9 @@ const GET_PROP_STORE_ = () => {
 
 
 /**
- * Returns the attendance sheet name to store current semester attendance.
- * 
- * @return  Current semester sheet
- * 
+ * Returns the attendance sheet name for the current semester.
+ *
+ * @return {string} The name of the attendance sheet.
  * @customfunction
  */
 
@@ -101,7 +104,7 @@ function GET_SEMESTER_SHEET_NAME() {
  *
  * Prevents incorrect time formatting during time changes like Daylight Savings Time.
  *
- * @return {string}  Timezone as geographical location (e.g.`'America/Montreal'`).
+ * @return {string} Timezone as a geographical location (e.g., `'America/Montreal'`).
  */
 
 function getUserTimeZone_() {
@@ -110,11 +113,10 @@ function getUserTimeZone_() {
 
 
 /**
- * Returns email of current user executing Google Apps Script functions.
+ * Returns the email of the current user executing Google Apps Script functions.
+ * Useful for ensuring the correct account is executing Google automations.
  *
- * Prevents incorrect account executing Google automations (e.g. McRUN bot.)
- *
- * @return {string}  Email of current user.
+ * @return {string} Email of the current user.
  */
 
 function getCurrentUserEmail_() {
@@ -123,7 +125,8 @@ function getCurrentUserEmail_() {
 
 
 /**
- * Sorts `ATTENDANCE_SHEET` according to submission time.
+ * Sorts the `ATTENDANCE_SHEET` by submission time.
+ * Excludes the header row from sorting.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 1, 2024
@@ -133,7 +136,7 @@ function getCurrentUserEmail_() {
 function sortAttendanceForm() {
   const sheet = GET_ATTENDANCE_SHEET_();
 
-  const numRows = sheet.getLastRow() - 1;     // Remove header row from count
+  const numRows = sheet.getLastRow() - 1;  // Remove header row from count
   const numCols = sheet.getLastColumn();
   const range = sheet.getRange(2, 1, numRows, numCols);
 
@@ -143,8 +146,7 @@ function sortAttendanceForm() {
 
 
 /**
- * Change attendance status of all members to not present.
- *
+ * Changes the attendance status of all members to "not present."
  * Helper function for `consolidateMemberData()`.
  *
  * @trigger New head run or McRUN attendance submission.
@@ -155,36 +157,28 @@ function sortAttendanceForm() {
  */
 
 function removePresenceChecks() {
-  // `Membership Collected (main)` Google Sheet
   const sheetURL = MEMBERSHIP_URL;
   const ss = SpreadsheetApp.openByUrl(sheetURL);
 
-  // `MASTER` sheet in `Membership Collected (main)`
   const masterSheetName = MASTER_NAME;
   const sheet = ss.getSheetByName(masterSheetName);
 
-  var rangeAttendance;
-  var rangeList = sheet.getNamedRanges();
+  let rangeAttendance;
+  const rangeList = sheet.getNamedRanges();
 
-  for (var i = 0; i < rangeList.length; i++) {
-    if (rangeList[i].getName() == "attendanceStatus") {
+  for (let i = 0; i < rangeList.length; i++) {
+    if (rangeList[i].getName() === "attendanceStatus") {
       rangeAttendance = rangeList[i];
       break;
     }
   }
 
-  rangeAttendance.getRange().uncheck(); // remove all Presence checks
-}
-
-
-function prettifySheet() {
-  formatSpecificColumns_();
+  rangeAttendance.getRange().uncheck(); // Remove all Presence checks
 }
 
 /**
- * Formats certain columns of `HR Attendance` sheet.
- *
- * Modifies confirmation bool into user-friendly message.
+ * Formats specific columns of the `HR Attendance` sheet for better readability.
+ * Includes freezing panes, bold formatting, text wrapping, alignment, and column resizing.
  *
  * @trigger New Google form or app submission.
  *
@@ -196,7 +190,7 @@ function prettifySheet() {
 function formatSpecificColumns_() {
   const sheet = GET_ATTENDANCE_SHEET_();
 
-  // Helper fuction to improve readability
+  // Helper function to improve readability
   const getThisRange = (ranges) =>
     Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
 
@@ -255,5 +249,5 @@ function formatSpecificColumns_() {
   Object.entries(sizeMap).forEach(([col, width]) => {
     sheet.setColumnWidth(col, width);
   });
-
 }
+

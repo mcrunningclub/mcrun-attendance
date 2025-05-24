@@ -2,6 +2,8 @@
  * Users authorized to use the McRUN menu.
  *
  * Prevents unwanted data overwrite in Gsheet.
+ *
+ * @constant {string[]} PERM_USER_ - List of authorized user emails.
  */
 const PERM_USER_ = [
   CLUB_EMAIL,
@@ -10,16 +12,14 @@ const PERM_USER_ = [
   'monaliu832@gmail.com'
 ];
 
-
 /**
- * Log user attempting to use custom McRUN menu.
+ * Logs the user attempting to use the custom McRUN menu.
  *
- * If input empty, then extract email using `getCurrentUserEmail_()`.
+ * If the input is empty, the email is extracted using `getCurrentUserEmail_()`.
  *
  * @trigger User choice in custom menu.
  *
- * @param {string} [email=""]  Email of active user.
- *                             Defaults to empty string.
+ * @param {string} [email=""]  Email of the active user. Defaults to an empty string.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 21, 2024
@@ -32,12 +32,12 @@ function logMenuAttempt_(email = "") {
 }
 
 /**
- * Creates custom menu to run frequently used scripts in Google App Script.
+ * Creates a custom menu to run frequently used scripts in Google App Script.
  *
- * Extracting function name using `name` property to allow for refactoring.
+ * Extracts function names using the `name` property to allow for refactoring.
  *
- * Cannot check if user authorized here, or custom menu will not be
- * displayed due to Google Apps Script limitation.
+ * Note: Authorization checks cannot be performed here, as unauthorized users
+ * would not see the menu due to Google Apps Script limitations.
  *
  * @trigger Open Google Spreadsheet.
  *
@@ -80,7 +80,7 @@ function onOpen() {
     )
     .addToUi();
 
-  checkValidScriptProperties(); // verify validity of `SCRIPT_PROPERTY`
+  checkValidScriptProperties(); // Verify validity of `SCRIPT_PROPERTY`
 }
 
 
@@ -109,19 +109,13 @@ function helpUI_() {
 
 
 /**
- * Boiler plate function to display custom UI to user.
- *
- * Executes function `functionName` with optional argument `funcArg`.
- *
- * Verifies if user is authorized before executing script.
+ * Displays a confirmation dialog and executes a function if the user is authorized.
  *
  * @trigger User choice in custom menu.
  *
- * @param {string}  functionName  Name of function to execute.
- * @param {string}  [additionalMsg=""]  Custom message for executing function.
- *                                      Defaults to empty string.
- * @param {string}  [funcArg=""]  Function argument to pass with `functionName`.
- *                                Defaults to empty string.
+ * @param {string} functionName  Name of the function to execute.
+ * @param {string} [additionalMsg=""]  Custom message to display during execution. Defaults to an empty string.
+ * @param {string} [funcArg=""]  Argument to pass to the function. Defaults to an empty string.
  *
  * @return {string}  Return value of the executed function.
  *
@@ -134,17 +128,17 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
   const ui = SpreadsheetApp.getUi();
   const userEmail = getCurrentUserEmail_();
 
-  // Check if authorized user to prevent illegal execution
+  // Check if the user is authorized
   if (!PERM_USER_.includes(userEmail)) {
-    const warningMsgHeader = "🛑 You are not authorized 🛑"
+    const warningMsgHeader = "🛑 You are not authorized 🛑";
     const warningMsgBody = "Please contact the exec team if you believe this is an error.";
 
     ui.alert(warningMsgHeader, warningMsgBody, ui.ButtonSet.OK);
     return;
   }
 
-  // Continue execution if user is authorized
-  var message = `
+  // Continue execution if the user is authorized
+  let message = `
     ⚙️ Now executing ${functionName}().
 
     🚨 Press cancel to stop.
@@ -158,17 +152,16 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
   let retValue = "";
 
   if (response == ui.Button.OK) {
-    // Execute function `functionName` (with arg if non-empty)
+    // Execute the function (with argument if non-empty)
     retValue = funcArg ? this[functionName](funcArg) : this[functionName]();
-  }
-  else {
+  } else {
     ui.alert('Execution cancelled...');
   }
 
-  // Log attempt in console using active user email
+  // Log the attempt in the console using the active user's email
   logMenuAttempt_(userEmail);
 
-  // Return value from executed function if required
+  // Return the value from the executed function if required
   return retValue;
 }
 

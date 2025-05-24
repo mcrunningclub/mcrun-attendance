@@ -1,8 +1,7 @@
 /**
  * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
- * 
- * Row number is 1-indexed in GSheet. Executes top to bottom. Header row skipped.
- * 
+ *
+ * Executes the function for all rows in the attendance sheet, skipping the header row.
  */
 
 function getAllUnregisteredMembers_() {
@@ -11,13 +10,13 @@ function getAllUnregisteredMembers_() {
 
 
 /**
- * Find attendees in `row` of `ATTENDANCE_SHEET `that are unregistered members.
+ * Find attendees in a specific row of the attendance sheet who are unregistered members.
  *
- * Sets unregistered members in `NOT_FOUND_COL`.
- *
+ * Sets unregistered members in the `NOT_FOUND_COL` column.
+ * 
  * List of members found in `Members` sheet.
  *
- * @param {number} [row=ATTENDANCE_SHEET.getLastRow()]  The row number in `ATTENDANCE_SHEET` 1-indexed.
+ * @param {number} [row=ATTENDANCE_SHEET.getLastRow()] - The row number in the attendance sheet (1-indexed).
  *                                                      Defaults to the last row in the sheet.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
@@ -93,9 +92,12 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 /**
  * Helper function to find unregistered attendees.
  *
- * @param {string[]} attendees  All attendees of the head run (sorted).
- * @param {string[][]} memberMap  All search keys of registered members (sorted) and emails.
- * @return {Map<Map<String,String>, List>}  Returns attendees not found in `members`.
+ * Compares attendees against the member map to identify unregistered members.
+ *
+ * @param {string[]} attendees - All attendees of the head run (sorted).
+ * @param {string[][]} memberMap - All search keys of registered members (sorted) and emails.
+ * @return {Object} - An object containing registered and unregistered attendees.
+ *                    { registered: string[], unregistered: string[] }
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
  * @date  Oct 30, 2024
@@ -176,8 +178,14 @@ function compose_(...fns) {
   return (input) => fns.reduce((v, f) => f(v), input);
 }
 
-// Remove whitespace, strip accents and capitalize names
-// Swap order of attendee names to `lastName, firstName`
+
+/**
+ * Formats a name by removing whitespace, stripping accents, and capitalizing names.
+ *
+ * @param {string} name - The name to format.
+ * @return {string} - The formatted name.
+ */
+
 function formatThisName_(name) {
   return name
     .trim()
@@ -188,7 +196,13 @@ function formatThisName_(name) {
 }
 
 
-// Format as `LastName, FirstName`
+/**
+ * Reverses the order of a name to `LastName, FirstName` format.
+ *
+ * @param {string} name - The name to reverse.
+ * @return {string} - The reversed name.
+ */
+
 function reverseThisName_(name) {
   let nameParts = name.split(/\s+/)   // Split by spaces;
 
@@ -207,12 +221,14 @@ function reverseThisName_(name) {
 
 
 /**
- * Formats all entries in `memberMap` then sorts by searchKey.
+ * Formats and sorts all entries in the member map by search key.
  *
- * Removes whitespace and hyphens, strip accents, and capitalize names.
+ * Removes whitespace, hyphens, and accents, and capitalizes names.
  *
- * @param {string[][]} memberMap  Array of searchkey and their emails.
- * @return {string[]}  Sorted array of formatted names.
+ * @param {string[][]} memberMap - Array of search keys and their emails.
+ * @param {number} searchKeyIndex - The index of the search key in the member map.
+ * @param {number} emailIndex - The index of the email in the member map.
+ * @return {string[][]} - A sorted array of formatted names and emails.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Nov 1, 2024
@@ -248,12 +264,12 @@ function formatAndSortMemberMap_(memberMap, searchKeyIndex, emailIndex) {
 
 
 /**
- * Formats all entries in `names`, swaps lastName and firstName before sorting.
+ * Formats and sorts an array of names, swapping last and first names.
  *
- * Removes whitespace and apostrophes, strip accents and capitalize names.
+ * Removes whitespace, apostrophes, and accents, and capitalizes names.
  *
- * @param {string[]} names  Array of names to format.
- * @return {string[]}  Sorted array of formatted names.
+ * @param {string[]} names - Array of names to format.
+ * @return {string[]} - A sorted array of formatted names.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 6, 2024
@@ -290,6 +306,14 @@ function swapAndFormatName_(names) {
   return formattedNames.sort();
 }
 
+
+/**
+ * Retrieves the member map from the `Members` sheet.
+ *
+ * Combines member search keys and emails, filtering out empty rows.
+ *
+ * @return {string[][]} - An array of member search keys and emails.
+ */
 
 function getMemberMap_() {
   // Get existing member registry in `Members` sheet

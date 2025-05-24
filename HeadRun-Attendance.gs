@@ -2,7 +2,7 @@
 
 /**
  * Functions to execute after form submission.
- * 
+ *
  * To use as a trigger function, it cannot have parameters.
  * Otherwise, a runtime exception is raised for new form submission.
  *
@@ -22,6 +22,12 @@ function onFormSubmission() {
 }
 
 
+/**
+ * Executes functions for a specific row after form submission.
+ *
+ * @param {number} row - The row index in the attendance sheet to process.
+ */
+
 function onFormSubmissionInRow_(row) {
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
   bulkFormatting_(row);
@@ -33,6 +39,8 @@ function onFormSubmissionInRow_(row) {
  * Functions to execute after McRUN app submission.
  *
  * @trigger McRUN App Attendance Submission.
+ *
+ * @param {number} [row=ATTENDANCE_SHEET.getLastRow()] - The row index in the attendance sheet to process.
  */
 
 function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
@@ -45,10 +53,23 @@ function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
 }
 
 
+/**
+ * Applies bulk formatting to a specific row in the attendance sheet.
+ *
+ * @param {number} row - The row index in the attendance sheet to format.
+ */
+
 function bulkFormatting_(row) {
   formatConfirmationInRow_(row);  // Transforms bool to user-friendly message
   formatNamesInRow_(row);     // Formats names in last row
 }
+
+
+/**
+ * Transfers and formats a specific row in the attendance sheet.
+ *
+ * @param {number} row - The row index in the attendance sheet to transfer and format.
+ */
 
 function transferAndFormat_(row) {
   const logRow = transferSubmissionToLedger(row);
@@ -87,10 +108,12 @@ function getLastSubmission_(sheet = GET_ATTENDANCE_SHEET_()) {
 
 
 /**
- * Toggles flag to run `checkAttendance()` by updating value in `ScriptProperties` bank.
+ * Toggles the flag to run `checkAttendance()` by updating the value in the `ScriptProperties` bank.
  *
  * @trigger User choice in custom menu.
- *
+ * 
+ * @return {string} - The new state of the attendance checker ("true" or "false").
+ * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Dec 5, 2024
  * @update  Dec 6, 2024
@@ -109,9 +132,9 @@ function toggleAttendanceCheck_() {
 
 
 /**
- * Check for missing submission after scheduled headrun.
+ * Checks for missing submissions after a scheduled headrun.
  *
- * @warning Service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
+ * @warning The service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
  *
  * @trigger 30-60 mins after headrun schedule.
  *
@@ -196,6 +219,14 @@ function checkMissingAttendance() {
   }
 }
 
+/**
+ * Sends an email using the McRUN bot.
+ *
+ * @param {string} subject - The subject of the email.
+ * @param {string} recipient - The recipient's email address.
+ * @param {string} htmlBody - The HTML content of the email.
+ */
+
 function sendBotEmail_(subject, recipient, htmlBody) {
   const reminderEmail = {
     to: recipient,
@@ -221,9 +252,14 @@ function sendBotEmail_(subject, recipient, htmlBody) {
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
  * @update  May 15, 2025
+ *
+ * @param {Object} emailObj - Contains email details.
+ * @param {Object} emailObj.emailsByLevel - Emails of headrunners grouped by levels.
+ * @param {string} emailObj.headrunTitle - The title of the headrun.
+ * @param {Array} submission - The attendance submission data.
  */
 
-function sendSubmissionCopy_({ emailsByLevel, headrunTitle}, submission) {
+function sendSubmissionCopy_({ emailsByLevel, headrunTitle }, submission) {
   // Error Management: prevent wrong user sending email
   if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
 
@@ -267,11 +303,15 @@ function sendSubmissionCopy_({ emailsByLevel, headrunTitle}, submission) {
 
 
 /**
- * Send a reminder email to headrunners when attendance for respective headrun not found.
+ * Send a reminder email to headrunners when attendance for a respective headrun not found.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  May 2, 2025
  * @update  May 15, 2025
+ *
+ * @param {Object} emailObj - Contains email details.
+ * @param {Object} emailObj.emailsByLevel - Emails of headrunners grouped by levels.
+ * @param {string} emailObj.headrunTitle - The title of the headrun.
  */
 
 function sendEmailReminder_({ emailsByLevel, headrunTitle }) {

@@ -6,6 +6,12 @@ const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
 const HEADRUNNER_STORE_NAME = 'headrunners';
 const HEADRUN_STORE_NAME = 'headruns';
 
+/**
+ * Stores an object in the document properties store.
+ *
+ * @param {string} key - The key under which the object will be stored.
+ * @param {Object} obj - The object to store.
+ */
 function storeObject_(key, obj) {
   const docProp = PropertiesService.getDocumentProperties();
   docProp.setProperty(key, JSON.stringify(obj));
@@ -13,6 +19,11 @@ function storeObject_(key, obj) {
 
 let ALL_HEADRUNS = null;
 
+/**
+ * Retrieves all headruns from the properties store.
+ *
+ * @return {Object} - An object containing all headruns.
+ */
 function getAllHeadruns_() {
   return ALL_HEADRUNS ?? initializeRef();
 
@@ -212,7 +223,7 @@ function readAndStoreRunData() {
     const stravaId = extractStravaId(row[colIndex.strava]);
     const levelStr = row[colIndex.level];
 
-    // Append this runner’s schedule info to the headrun object
+    // Append this runner's schedule info to the headrun object
     appendHeadrunInfo_(levelStr, nameKey, headrunObj);
     
     // Store runner info

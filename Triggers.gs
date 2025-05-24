@@ -70,6 +70,12 @@ function createDailyAttendanceTrigger_() {
   }
 }
 
+/**
+ * Gets the start of the day for a given date.
+ *
+ * @param {Date} date - The date for which to get the start of the day.
+ * @return {Date} - A new Date object set to the start of the given day.
+ */
 
 function getStartOfDay_(date) {
   const start = new Date(date);
