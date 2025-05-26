@@ -278,4 +278,3 @@ function isSameTimestamp_(timestamp1, timestamp2) {
   const ts2 = (timestamp2 instanceof Date) ? timestamp2 : new Date(timestamp2);
   return ts1.getTime() === ts2.getTime();
 }
-

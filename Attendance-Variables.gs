@@ -61,6 +61,8 @@ const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/1DwmnZgLftSqeg
 const SCRIPT_PROPERTY = {
   isCheckingAttendance: 'IS_CHECKING_ATTENDANCE',
   calendarTriggers: 'calendarTriggers',
+  webAppId: 'WEB_APP_ID',
+  webAppKey: 'WEB_APP_KEY',
 };
 
 
@@ -250,4 +252,3 @@ function formatSpecificColumns_() {
     sheet.setColumnWidth(col, width);
   });
 }
-

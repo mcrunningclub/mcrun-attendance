@@ -334,4 +334,3 @@ function sendEmailReminder_({ emailsByLevel, headrunTitle }) {
   sendBotEmail_(subject, recipients, reminderEmailHTML);
   Logger.log(`Reminder sent successfully for missing attendance submission (${headrunTitle})`);
 }
-

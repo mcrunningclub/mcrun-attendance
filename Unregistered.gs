@@ -338,4 +338,3 @@ function getMemberMap_() {
 
   return memberMap;
 }
-
