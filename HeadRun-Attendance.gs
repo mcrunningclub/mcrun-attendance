@@ -14,7 +14,7 @@ function onFormSubmission() {
   sortAttendanceForm();
   SpreadsheetApp.flush();
 
-  const row = getLastSubmission_();  // Get submission row index
+  const row = getLastRow_();  // Get submission row index
   console.log(`Latest row number: ${row}`);
 
   onFormSubmissionInRow_(row);
@@ -25,7 +25,7 @@ function onFormSubmission() {
 /**
  * Executes functions for a specific row after form submission.
  *
- * @param {number} row - The row index in the attendance sheet to process.
+ * @param {number} row  The row index in the attendance sheet to process.
  */
 
 function onFormSubmissionInRow_(row) {
@@ -40,18 +40,45 @@ function onFormSubmissionInRow_(row) {
  *
  * @trigger McRUN App Attendance Submission.
  *
- * @param {number} [row=ATTENDANCE_SHEET.getLastRow()] - The row index in the attendance sheet to process.
+ * @param {number} [row=getLastRow_()]  The row index in the attendance sheet to process.
+ *                                             Defaults to the last row.
  */
 
-function onAppSubmission(row = ATTENDANCE_SHEET.getLastRow()) {
+function onAppSubmission(row = getLastRow_()) {
   console.log(`[AC] Starting 'onAppSubmission' for row ${row}`);
   bulkFormatting_(row);
   transferAndFormat_(row);
 
+ 
+  packageAndEmailSubmission_(row);
   sortAttendanceForm();
   console.log(`[AC] Completed 'onAppSubmission' successfully!`);
 }
 
+function rTest() {
+  const row = getLastRow_();
+  packageAndEmailSubmission_(row);
+}
+
+
+function packageAndEmailSubmission_(row) {
+  // Get submission values for 'row' and timestamp
+  const submission = GET_ATTENDANCE_SHEET_().getSheetValues(row, 1, 1, -1)[0];
+  const timestamp = submission[TIMESTAMP_COL - 1];
+
+  // Get corresponding run schedule and time for 'timestamp'
+  const currentWeekday = new Date(timestamp).getDay();
+  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
+  const currentTimeKey = getMatchedTimeKey_(timestamp, currentDaySchedule);
+
+  // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
+  const runScheduleLevels = currentDaySchedule[currentTimeKey];
+  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
+
+  // Finally send copy of submission to headrunners
+  const headrunTitle = getHeadrunTitle_(submission);
+  sendSubmissionCopy_({ headrunTitle, emailsByLevel}, submission);
+}
 
 /**
  * Applies bulk formatting to a specific row in the attendance sheet.
@@ -90,8 +117,8 @@ function transferAndFormat_(row) {
  * @update  Apr 10, 2025
  */
 
-function getLastSubmission_(sheet = GET_ATTENDANCE_SHEET_()) {
-  const startRow = 2;   // Skip header row
+function getLastRow_(sheet = GET_ATTENDANCE_SHEET_()) {
+  const startRow = 1;
   const numRow = sheet.getLastRow();
 
   // Fetch all values in the TIMESTAMP_COL
@@ -131,6 +158,15 @@ function toggleAttendanceCheck_() {
 }
 
 
+function getHeadrunTitle_(submission) {
+  if (submission) {
+    return submission[HEADRUN_COL - 1];
+  }
+  const today = new Date();
+  return `${getWeekday_(today.getDay())} ${today.getHours() >= 12 ? "PM" : "AM"}`;   // e.g. 'Tuesday AM';
+}
+
+
 /**
  * Checks for missing submissions after a scheduled headrun.
  *
@@ -140,40 +176,35 @@ function toggleAttendanceCheck_() {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 15, 2023
- * @update  May 15, 2025
+ * @update  Jun 2, 2025
  */
 
-function checkMissingAttendance() {
+function checkAttendanceSubmission(today = new Date(), headrunTitle, level) {
   // First, check if attendance can be verified
   checkIfLegal();
 
-  const today = new Date();  // new Date(new Date().getTime() + 23 * 60 * 60 * 1000);
+  today = new Date(new Date().getTime() - 1.6 * 24 * 60 * 60 * 1000);
+
   const currentWeekday = today.getDay();
 
   const currentDaySchedule = getScheduleFromStore_(currentWeekday);
   const currentTimeKey = getMatchedTimeKey_(today, currentDaySchedule);
 
-  // Verify if valid timekey
-  if (!currentTimeKey) {
-    throw new Error(`No timekey found for ${today} with run schedule\n\n${JSON.stringify(currentDaySchedule)}\n\n`);
-  }
-
-  const weekdayStr = getWeekday_(currentWeekday);
-  const headrunTitle = toTitleCase_(weekdayStr) + ' ' + currentTimeKey;    // e.g. 'Tuesday 9am'
-
   // Get emails using run schedule for current day, then proceed to actual verification
   const runScheduleLevels = currentDaySchedule[currentTimeKey];
   const { 'timeKey' : matchedTimeKey, 'submission' : submission } = verifyAttendance_(currentWeekday);
+
+  headrunTitle = headrunTitle ?? getHeadrunTitle_(submission);
 
   // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
   const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
   const emailObj = { 'emailsByLevel' : emailsByLevel, 'headrunTitle' : headrunTitle };
 
-  // Send copy of submission if true. Otherwise send an email reminder to headrunners
-  (currentTimeKey === matchedTimeKey) ? sendSubmissionCopy_(emailObj, submission) : sendEmailReminder_(emailObj);
   Logger.log(`Executed 'checkMissingAttendance' with ${JSON.stringify(emailObj)}`);
+  return currentTimeKey === matchedTimeKey;
 
-
+  // Send copy of submission if true. Otherwise send an email reminder to headrunners
+ 
   /** Helper functions */
   function checkIfLegal() {
     const scriptProperties = GET_PROP_STORE_();
@@ -186,7 +217,7 @@ function checkMissingAttendance() {
   }
 
   function verifyAttendance_(currentWeekday) {
-    const sheet = ATTENDANCE_SHEET;
+    const sheet = GET_ATTENDANCE_SHEET_();
 
     // Gets values of all timelogs
     const numRows = sheet.getLastRow() - 1;
@@ -253,10 +284,10 @@ function sendBotEmail_(subject, recipient, htmlBody) {
  * @date  Oct 9, 2023
  * @update  May 15, 2025
  *
- * @param {Object} emailObj - Contains email details.
- * @param {Object} emailObj.emailsByLevel - Emails of headrunners grouped by levels.
- * @param {string} emailObj.headrunTitle - The title of the headrun.
- * @param {Array} submission - The attendance submission data.
+ * @param {Object} emailObj  Contains email details.
+ * @param {Object} emailObj.emailsByLevel  Emails of headrunners grouped by levels.
+ * @param {string} emailObj.headrunTitle  The title of the headrun.
+ * @param {Array} submission  The attendance submission data.
  */
 
 function sendSubmissionCopy_({ emailsByLevel, headrunTitle }, submission) {

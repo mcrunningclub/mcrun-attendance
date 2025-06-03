@@ -80,7 +80,7 @@ function onOpen() {
     )
     .addToUi();
 
-  checkValidScriptProperties(); // Verify validity of `SCRIPT_PROPERTY`
+  //checkValidScriptProperties(); // Verify validity of `SCRIPT_PROPERTY`
 }
 
 
@@ -233,7 +233,7 @@ function removePresenceCheckUI_() {
 }
 
 function checkMissingAttendanceUI_() {
-  const functionName = checkMissingAttendance.name;
+  const functionName = checkAttendanceSubmission.name;
   const customMsg = "WARNING. This will send an email reminder to headrunners if attendance is missing."
   confirmAndRunUserChoice_(functionName, customMsg);
 }

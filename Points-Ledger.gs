@@ -63,10 +63,10 @@ function appendMemberEmail_(row, registered, unregistered) {
  * Packages all non-empty submission levels into a 2D array and sends it to the ledger.
  * If the transfer fails, it retries using `openByUrl`.
  *
- * @param {integer} [row=getLastSubmission_()] - The row in the attendance sheet to transfer.
+ * @param {integer} [row=getLastRow_()] - The row in the attendance sheet to transfer.
  */
 
-function transferSubmissionToLedger(row = getLastSubmission_()) {
+function transferSubmissionToLedger(row = getLastRow_()) {
   // STEP 1: Package all non-empty submission levels in single 2d arr
   const packagedEvents = packageRowForLedger_(row);
 

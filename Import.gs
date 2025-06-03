@@ -76,7 +76,7 @@ function processImportFromApp(importObj) {
  */
 
 function transferLastImport() {
-  const thisLastRow = getLastSubmission_(IMPORT_SHEET);
+  const thisLastRow = getLastRow_(IMPORT_SHEET);
   transferThisRow_(thisLastRow);
 }
 
@@ -149,16 +149,16 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  * Transfer new attendance submission from `Import` to semester sheet.
  * 
  * @param {Object<JSON>} attendanceJSON   Attendance information as JSON object.
- * @param {integer} [row=getLastSubmission()]  Target row in `Attendance_Sheet`.
+ * @param {integer} [row=getLastRow_()]  Target row in `Attendance_Sheet`.
  * 
  * @return {integer}  Latest row in `Attendance_Sheet`.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 8, 2025
- * @update  Apr 7, 2025
+ * @update  Jun 2, 2025
  */
 
-function copyToSemesterSheet_(attendanceJSON, row = GET_ATTENDANCE_SHEET_().getLastRow()) {
+function copyToSemesterSheet_(attendanceJSON, row = getLastRow_()) {
   const attendanceSheet = GET_ATTENDANCE_SHEET_();
   const importMap = IMPORT_MAP;
 

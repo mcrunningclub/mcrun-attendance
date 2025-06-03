@@ -42,7 +42,7 @@ function getAllHeadrunners_() {
 /** Returns day code formatted as `weekday` in lowercase. Index [0-6] (Sunday = 0) */
 function getWeekday_(weekdayIndex) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[weekdayIndex].toLowerCase();
+  return days[weekdayIndex];
 }
 
 /** 
@@ -56,8 +56,13 @@ function getWeekday_(weekdayIndex) {
 function getScheduleFromStore_(currentWeekday) {
   const runSchedule = getAllHeadruns_();
   const isString = typeof currentWeekday === 'string';
-  const weekString = isString ? currentWeekday.toLowerCase() : getWeekday_(currentWeekday);
-  return runSchedule[weekString] ?? null;   // Run schedule for current weekday
+  const weekString = (isString ? currentWeekday : getWeekday_(currentWeekday)).toLowerCase();
+
+  // Verify valid run schedule for current weekday, else throw error
+  if (runSchedule[weekString]) {
+    return runSchedule[weekString];
+  }
+  throw new Error(`No run schedule found for ${currentWeekday}`);
 }
 
 
@@ -73,8 +78,7 @@ function getScheduleFromStore_(currentWeekday) {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  May 4, 2025
- * @update  May 11, 2025
- *
+ * @update  Jun 1, 2025
  */
 
 function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
@@ -101,15 +105,23 @@ function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
     return (submissionDate >= lowerBound && submissionDate <= upperBound);
   });
 
-  return timeKey;
-
+  // Check timekey found, else return error
+  if (timeKey) {
+    return timeKey;
+  }
+  throw new Error(`No timekey found for ${submissionDate} with run schedule\n\n${JSON.stringify(runSchedule)}\n\n`);
 
   /** Helper function to get timestamp in unix */
   function convertToUnix(hour12h, minutes = 0, meridian) {
     if (meridian === 'pm' && hour12h !== 12) hour12h += 12;
     if (meridian === 'am' && hour12h === 12) hour12h = 0;
-    return new Date().setHours(hour12h, minutes, 0, 0);
+    return submissionDate.setHours(hour12h, minutes, 0, 0);
   }
+}
+
+
+function matchTimeRange() {
+  
 }
 
 
