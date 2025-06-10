@@ -33,6 +33,7 @@ function updateWeeklyCalendarTriggers() {
   deleteExpiredCalendarTriggers_();
 }
 
+
 /**
  * Add new McRUN event from calendar to Apps Script trigger for today.
  * 
@@ -71,9 +72,6 @@ function cTest() {
     )
   })
 }
-
-
-
 
 
 /**
@@ -156,8 +154,6 @@ function updateCalendarTriggers() {
     return cancelledRegex.test(str);
   }
 }
-
-
 
 
 
