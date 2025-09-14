@@ -33,10 +33,10 @@ const NAMES_NOT_FOUND_COL = 15;
 
 
 /** TO UPDATE EACH SEMESTER */
-const ATTENDANCE_SHEET_NAME = 'HR Attendance S25';
-const SEMESTER_NAME = 'Summer 2025';
+const ATTENDANCE_SHEET_NAME = 'HR Attendance F25';
+const SEMESTER_NAME = 'Fall 2025';
 
-const ATTENDANCE_SS_ID = '1SnaD9UO4idXXb07X8EakiItOOORw5UuEOg0dX_an3T4';
+const ATTENDANCE_SS_ID = '1kUevgOCN1wCdbNiVY412-7ejnlSjtIyKNHFVLV9KK1Q';
 const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
 
 /**
@@ -71,7 +71,8 @@ const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y7
 
 // LEDGER SPREADSHEET
 const LOG_SHEET_NAME = 'Event Log';
-const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/1DwmnZgLftSqegfsoFA5fekuT0sosgCntVMmTylbj8o4/";
+const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/1sar-Pmfb_Nar0Lc9u8-rXyllLvQMqBFlSwolCoHX-_4/";
+
 
 // SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
 const SCRIPT_PROPERTY = {
@@ -90,7 +91,7 @@ const GET_ATTENDANCE_GFORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
 
 
 /** GET HEADRUN SCHEDULE AND HEADRUNNER INFO */
-const GET_HEADRUN_SS_ = () => SpreadsheetApp.openById('1Hx4R4gkMjQ71Jj1oeaxS6G6uMvoHzSKkhBLVVi3yHBs');
+const GET_HEADRUN_SS_ = () => SpreadsheetApp.openById('14uhswSruvsR2TT94CPYsPfCPfuvUmHeYZ4xqZ1IbWTg');
 
 const COMPILED_SHEET_NAME = "Compiled";
 const GET_COMPILED_SHEET_ = () => GET_HEADRUN_SS_().getSheetByName(COMPILED_SHEET_NAME);
