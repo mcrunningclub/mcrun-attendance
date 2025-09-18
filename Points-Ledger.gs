@@ -83,6 +83,7 @@ function appendMemberEmail_(row, registered, unregistered) {
  */
 
 function transferSubmissionToLedger(row = getLastRow_()) {
+  console.log(`Executing function '${transferSubmissionToLedger.name}'...`);
   // STEP 1: Package all non-empty submission levels in single 2d arr
   const packagedEvents = packageRowForLedger_(row);
 
@@ -199,6 +200,7 @@ function setNewStravaTrigger_(logRow) {
   const fetchUrl = base + getWebAppId_() + `/exec?rowNum=${logRow}&key=${getSecretWebKey_()}`;
 
   const response = UrlFetchApp.fetch(fetchUrl);
+  Logger.log(`[AC] Setting new trigger in ${setNewStravaTrigger_.name}`);
   Logger.log(`[AC] UrlFetchApp Response code '${response.getResponseCode()}': ${response.getContentText()}`);
 
   /** Helper: get secret key in script properties */

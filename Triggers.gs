@@ -57,7 +57,6 @@ function addSingleEventTrigger() {
 
 
 
-
 function cTest() {
   const calendar = CalendarApp.getDefaultCalendar();
   const day = new Date('2025-04-22 1:00:00');
@@ -271,10 +270,6 @@ function deleteTriggerById(triggerId) {
   // If we reach here, the trigger was not found
   throw new Error(`⚠️ Trigger with id ${triggerId} not found`);
 }
-
-
-
-
 
 
 

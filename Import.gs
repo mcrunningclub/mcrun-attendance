@@ -59,7 +59,7 @@ const IMPORT_MAP = {
 
 function processImportFromApp(importObj) {
   const importSheet = GET_IMPORT_SHEET_();
-  Logger.log('[AC] Processing following import...');
+  Logger.log(`[AC] Processing following import in '${processImportFromApp.name}'...`);
   Logger.log(importObj);
 
   try {
@@ -79,7 +79,7 @@ function processImportFromApp(importObj) {
     onAppSubmission(newSemesterRow);
   }
   catch (e) {
-    Logger.log("[AC] Unable to fully process 'importObj' in Import Sheet");
+    Logger.log(`[AC] Unable to fully process 'importObj' in ${processImportFromApp.name}`);
     throw e;
   }
 }
@@ -121,7 +121,7 @@ function toggleSuccessfulImport_(row, colIndex = null) {
 
   const isImportedRange = sheet.getRange(row, isImportedCol);
   isImportedRange.setValue(true);
-  console.log(`[AC] Toggled successful import in row ${row} (Import sheet)`);
+  console.log(`[AC] Toggled successful import in row ${row} (${toggleSuccessfulImport_.name})`);
 }
 
 
@@ -171,10 +171,12 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 8, 2025
- * @update  Jun 2, 2025
+ * @update  Sep 18, 2025
  */
 
 function copyToSemesterSheet_(attendanceJSON, row = getLastRow_()) {
+  Logger.log(`Executing function '${copyToSemesterSheet_.name}'...`);
+
   const attendanceSheet = GET_ATTENDANCE_SHEET_();
   const importMap = IMPORT_MAP;
 

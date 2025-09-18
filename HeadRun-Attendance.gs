@@ -61,11 +61,10 @@ function onFormSubmissionInRow_(row) {
  */
 
 function onAppSubmission(row = getLastRow_()) {
-  console.log(`[AC] Starting 'onAppSubmission' for row ${row}`);
+  console.log(`[AC] Starting ${onAppSubmission.name} for row ${row}`);
   bulkFormatting_(row);
   transferAndFormat_(row);
 
- 
   packageAndEmailSubmission_(row);
   sortAttendanceForm();
   console.log(`[AC] Completed 'onAppSubmission' successfully!`);
