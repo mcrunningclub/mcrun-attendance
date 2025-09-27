@@ -68,7 +68,6 @@ function getWeekday_(weekdayIndex) {
  * @date  May 2, 2025
  * @update  May 5, 2025
  */
-
 function getScheduleFromStore_(currentWeekday) {
   const runSchedule = getAllHeadruns_();
   const isString = typeof currentWeekday === 'string';
@@ -96,7 +95,6 @@ function getScheduleFromStore_(currentWeekday) {
  * @date  May 4, 2025
  * @update  Jun 1, 2025
  */
-
 function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
   const timeKey = Object.keys(runSchedule).find((timeStr) => {
     const timeMatch = timeStr.match(/(\d+(?::\d+)?)(am|pm)/i);
@@ -156,7 +154,6 @@ function matchTimeRange() {
  * Logger.log(emails)   // { beginner : ['bob@mail.com'], advanced : ['jane@mail.com'] };
  * ```
  */
-
 function getHeadrunnerEmailFromStore_(runScheduleLevels) {
   const headrunnerStore = getAllHeadrunners_();
   const allEmails = {};
@@ -173,6 +170,66 @@ function getHeadrunnerEmailFromStore_(runScheduleLevels) {
     allEmails[level] = levelEmails;
   }
   return allEmails;
+}
+
+
+/** 
+ * Iterates array of headrunner names and returns array of email address if found.
+ * Names are formatted as `firstName [middleName] initialLastName.`
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Sep 27, 2025
+ * @update  Sep 27, 2025
+ * 
+ * ```js
+ * const headrunners = ['Bob B.', 'Jane D.', 'Bart S.'];
+ * const emails = getHeadrunnerEmailFromName_(headrunners);
+ * Logger.log(emails)   // ['bob@mail.com', 'bart@mail.com'] };
+ * ```
+ */
+function getHeadrunnerEmailFromName_(names) {
+  // Get all headrunner info (e.g. nameKey, email, strava, ...)
+  if (!names) return;
+  const headrunnerStore = getAllHeadrunners_();
+
+  // Reduce list of headrunners for their emails
+  return names.reduce((acc, nameKey) => {
+    const email = headrunnerStore[nameKey]?.email || "";
+    if (email) acc.push(email);
+    return acc;
+  }, []);
+}
+
+
+/**
+ * Returns string of headrunner info as `name:email` delimited by newlines.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Sep 27, 2025
+ * @update  Sep 27, 2025
+ * 
+ * ```js
+ * const headrunners = "Bob B.\nJane D.\nBart S.";
+ * const nameEmails = appendHeadrunnerEmail_(headrunners);
+ * Logger.log(nameEmails)   // "Bob B.:bob@mail.com\nJane D.\nBart S.:bart@mail.com";
+ * ```
+ */
+function appendHeadrunnerEmail_(namesString, delimiter = '\n') {
+  if (!namesString) return;
+  const names = namesString.split(delimiter);
+
+  // Get all headrunner info (e.g. nameKey, email, strava, ...)
+  const headrunnerStore = getAllHeadrunners_();
+
+  // Append email to name if found in store
+  const headrunnerNameEmail = [];
+  for(let i = 0; i < names.length; i++) {
+    const email = headrunnerStore[names[i]]?.email || "";
+    const nameEmail = names[i] + (email ? `:${email}` : '');
+    headrunnerNameEmail.push(nameEmail);
+  }
+
+  return headrunnerNameEmail.join(delimiter);
 }
 
 
@@ -217,7 +274,7 @@ function prettyPrintRunData() {
 /**
  * Parses headrunner information in Headrunner sheet and stores it in Properties store.
  * 
- * @warning  Only execute when information needs updating.
+ * @WARNING  Only execute when information needs updating.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
  * @date  May 2, 2025
@@ -226,13 +283,12 @@ function prettyPrintRunData() {
  * ### Sample data structures
  * ```js
  * { sunday : {
- *    '10:00am' : { 'easy' : ['bobBurger', 'janeDoe'] },
- *    '2:15pm': { 'intermediate' : ['janeDoe'] }
+ *    '10:00am' : { 'easy' : ['Bob B.', 'Jane D.'] },
+ *    '2:15pm': { 'intermediate' : ['Jane D.'] }
  * }}
- * { 'bobBurger' : { email : 'bob.burger@mail.com', strava : '123456789'} }
+ * { 'Bob B.' : { email : 'bob.burger@mail.com', strava : '123456789'} }
  * ```
  */
-
 function readAndStoreRunData() {
   const sheet = GET_HEADRUNNER_SHEET_();
   const data = sheet.getDataRange().getValues();
@@ -246,7 +302,7 @@ function readAndStoreRunData() {
   const headrunnerObj = data.reduce((acc, row) => {
     
     // Keys must be identical in both objects (headruns + headrunners)
-    const nameKey = formatNameKey(row[colIndex.name]);
+    const nameKey = formatHeadrunnerName_(row[colIndex.name]);
     const email = row[colIndex.email];
     const stravaId = extractStravaId(row[colIndex.strava]);
     const levelStr = row[colIndex.level];
@@ -264,6 +320,7 @@ function readAndStoreRunData() {
   storeObject_(HEADRUN_STORE_NAME, headrunObj);
 
   Logger.log(`Completed parsing and storage of run data from '${SEMESTER_NAME}' sheet`);
+  prettyPrintRunData();
 
   /** Helper functions to extract data */
    function getColIndices(targets, headerRow) {
@@ -279,7 +336,7 @@ function readAndStoreRunData() {
     return indices;
   }
 
-  function formatNameKey(name) {
+  function formatNameKey_(name) {
     if (!name) return '';
     return name.replace(/[ \-]/g, '').replace(/^./, c => c.toLowerCase());
   }
@@ -289,6 +346,8 @@ function readAndStoreRunData() {
     return match ? match[1] : input;
   }
 }
+
+
 
 
 /**
@@ -392,25 +451,11 @@ function formatHeadrunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
   const rangeHeadRunner = sheet.getRange(startRow, headrunnerCol, numRow);
   const rawValues = rangeHeadRunner.getValues();
 
-  // Callback function to clean and format a single headrunner name
-  function formatName(name) {
-    const cleanedName = name
-      .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
-      .toLowerCase()
-      .replace(/\b\w/g, letter => letter.toUpperCase()); // Capitalize each proper name
-
-    // Split into first and last names
-    const [firstName, lastName = ""] = cleanedName.split(' ');
-    const lastInitial = lastName.charAt(0).toUpperCase();  // Get first letter of last name
-    return `${firstName} ${lastInitial}.`;  // Return formatted name
-  };
-
   // Callback function to process the raw value into the formatted format
   function processRow(row) {
     const headrunners = row[0]  // Get first column from 2D array
       .split(/[,|\n]+/)         // Split by commas or newlines
-      .map(formatName)   // Format each name using formatName()
+      .map(formatHeadrunnerName_)   // Format each name using formatName()
       .join('\n');       // Join the names with a newline
 
     return [headrunners]; // Return as a 2D array for .setValues()
@@ -423,6 +468,31 @@ function formatHeadrunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
   rangeHeadRunner.setValues(formattedNames);
   console.log(`[AC] Completed formatting of headrunner names`, formattedNames);
 }
+
+// Callback function to clean and format a single headrunner name
+function formatHeadrunnerName_(name) {
+  const cleanedName = name
+    .trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .toLowerCase()
+    .replace(/\b\w/g, letter => letter.toUpperCase()); // Capitalize each proper name
+
+  // Split into first, second (and rest if applicable)
+  const [firstPart, secondPart, ...rest] = cleanedName.split(' ');
+
+  // Get initial of last name (and prepend second part if applicable)
+  const lastPart = rest.length === 0 ? 
+    getInitial(secondPart) :
+   `${secondPart} ${getInitial(rest.join(''))}`
+  ;
+
+  return `${firstPart} ${lastPart}`;  // Return formatted name
+
+  function getInitial(name) {
+    const initial = (name.charAt(0) || '').toUpperCase();
+    return initial ? `${initial}.` : '';
+  }
+};
 
 
 /**

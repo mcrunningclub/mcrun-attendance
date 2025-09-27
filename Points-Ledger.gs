@@ -88,7 +88,7 @@ function transferSubmissionToLedger(row = getLastRow_()) {
   const packagedEvents = packageRowForLedger_(row);
 
   // STEP 1b: Only transfer if attendees count > 0
-  if (packagedEvents.length === 0) return;
+  //if (packagedEvents.length === 0) return;
 
   // STEP 2: Send submission using library and store new row index.
   // This triggers automations in the recipient sheet.
@@ -135,37 +135,40 @@ function transferSubmissionToLedger(row = getLastRow_()) {
  * @param {integer} row - The row in the attendance sheet to package.
  * @return {Array<Array<string>>} - A 2D array of packaged event data.
  */
-
 function packageRowForLedger_(row) {
   const sheet = GET_ATTENDANCE_SHEET_();
 
-  // Define dimenstion of range
+  // Define dimenstion of range to fetch
   const startCol = TIMESTAMP_COL;
   const numCols = DISTANCE_COL - startCol + 1;
 
-  // Fetch values from the row, convert to 1-indexed by unshifting
-  // Access is easier e.g [EMAIL_COL] vs [EMAIL_COL-1]
-  const rowValues = sheet.getSheetValues(row, startCol, 1, numCols)[0];
-  rowValues.unshift("");   // Padding for 1-indexed access
+  // Fetch values from the row
+  // Pad with empty string for 1-based indexing, e.g [EMAIL_COL] vs [EMAIL_COL-1]
+  const rowValues = ["", ...sheet.getSheetValues(row, startCol, 1, numCols)[0]];
 
-  // Identify attendee columns with actual data (not marked "None" or empty)
-  const validAttendeeCols = Object.values(ATTENDEE_MAP).filter(level => {
-    const attendee = rowValues[level];
-    return attendee && !attendee.includes(EMPTY_ATTENDEE_FLAG);
+  // Identify attendee columns with actual data (skip empty or flags)
+  let validAttendeeCols = Object.values(ATTENDEE_MAP).filter(level => {
+    const attendees = rowValues[level];
+    return attendees && !attendees.includes(EMPTY_ATTENDEE_FLAG);
   });
 
-  // Build list of events for all valid attendees
+  // Default to BEGINNER if no attendees found
+  if (validAttendeeCols.length === 0) validAttendeeCols = [ATTENDEES_BEGINNER_COL];
+
+  // Extract event details
   const exportTimestamp = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
   const eventTimestamp = rowValues[TIMESTAMP_COL];
   const distance = rowValues[DISTANCE_COL];
-
-  //const allHeadruns = getAllHeadruns_();
   const prepend = /(?:-|am|pm)/i.test(rowValues[HEADRUN_COL]) ? 'Headrun' : 'Event';
   const eventLabel = `${prepend} ${rowValues[RUN_LEVEL_COL]}\n${rowValues[HEADRUN_COL]}`;
+
+  // Append email to headrunner names if found
+  const headrunners = appendHeadrunnerEmail_(rowValues[HEADRUNNERS_COL]);
  
   const events = validAttendeeCols.map(colIndex => [
     exportTimestamp,        // Export Timestamp
     eventLabel,             // Event Name
+    headrunners,            // Headrunner Name + Email
     eventTimestamp,         // Event Timestamp
     rowValues[colIndex],    // Member Name + Email
     distance                // Distance
@@ -200,7 +203,7 @@ function setNewStravaTrigger_(logRow) {
   const fetchUrl = base + getWebAppId_() + `/exec?rowNum=${logRow}&key=${getSecretWebKey_()}`;
 
   const response = UrlFetchApp.fetch(fetchUrl);
-  Logger.log(`[AC] Setting new trigger in ${setNewStravaTrigger_.name}`);
+  Logger.log(`[AC] Setting new trigger in '${setNewStravaTrigger_.name}'`);
   Logger.log(`[AC] UrlFetchApp Response code '${response.getResponseCode()}': ${response.getContentText()}`);
 
   /** Helper: get secret key in script properties */

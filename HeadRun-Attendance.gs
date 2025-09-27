@@ -70,7 +70,7 @@ function onAppSubmission(row = getLastRow_()) {
   console.log(`[AC] Completed 'onAppSubmission' successfully!`);
 }
 
-function rTest() {
+function emailTest() {
   const row = getLastRow_();
   packageAndEmailSubmission_(row);
 }

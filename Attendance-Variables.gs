@@ -78,7 +78,7 @@ const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/1sar-Pmfb_Nar0
 const SCRIPT_PROPERTY = {
   isCheckingAttendance: 'IS_CHECKING_ATTENDANCE',
   calendarTriggers: 'calendarTriggers',
-  webAppId: 'WEB_APP_ID',
+  webAppId: 'WEB_APP_ID',   // ⚠️⚠️ UPDATE WEB_APP_ID FOR NEW 'POINTS LEDGER CODE' DEPLOYMENTS ⚠️⚠️
   webAppKey: 'WEB_APP_KEY',
 };
 
