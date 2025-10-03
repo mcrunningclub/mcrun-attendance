@@ -130,7 +130,6 @@ function getUserTimeZone_() {
   return Session.getScriptTimeZone();
 }
 
-
 /**
  * Returns the email of the current user executing Google Apps Script functions.
  * Useful for ensuring the correct account is executing Google automations.
@@ -139,9 +138,19 @@ function getUserTimeZone_() {
  */
 
 function getCurrentUserEmail_() {
-  return Session.getActiveUser().toString();
+  const userEmail = Session.getActiveUser().toString();
+  logAsAC_(`Current user email '${userEmail}'`, getCurrentUserEmail_.name);
+  return userEmail;
 }
 
+/**
+ * Logs message in a standard and comprehensible format.
+ */
+
+function logAsAC_(msg, funcName = "", useLogger = true) {
+  const message = `[AC#${funcName}] ${msg}`;
+  useLogger ? Logger.log(message) : console.log(message);
+}
 
 /**
  * Sorts the `ATTENDANCE_SHEET` by submission time.

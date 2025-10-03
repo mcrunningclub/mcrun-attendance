@@ -83,24 +83,31 @@ function appendMemberEmail_(row, registered, unregistered) {
  */
 
 function transferSubmissionToLedger(row = getLastRow_()) {
-  console.log(`Executing function '${transferSubmissionToLedger.name}'...`);
+  const funcName = transferSubmissionToLedger.name;
+  logAsAC_(`Executing for row #${row}...`, funcName);
+
   // STEP 1: Package all non-empty submission levels in single 2d arr
   const packagedEvents = packageRowForLedger_(row);
+  console.log('Packaged events:', packagedEvents);
 
   // STEP 1b: Only transfer if attendees count > 0
   //if (packagedEvents.length === 0) return;
 
   // STEP 2: Send submission using library and store new row index.
   // This triggers automations in the recipient sheet.
-  let logNewRow = 0;
+  let logNewRow = null;
   try {
+    logAsAC_(`Trying to execute '${sendNewSubmission_.name}' now...`, funcName);
     logNewRow = sendNewSubmission_(packagedEvents);
+    logAsAC_(`Successfully exited '${sendNewSubmission_.name}'!`, funcName);
   }
-
   // STEP 2b: Error occured, send using `openByUrl`. Downside: automations not triggered
   catch (e) {
-    Logger.log(e);    // Display error message from 'sendNewSubmission'
-    Logger.log(`[AC] Unable to transfer submission with library. Now trying with 'openByUrl'...`);
+    // Display error message from 'sendNewSubmission'
+    logAsAC_(
+      `Catch error: ${e.message}\nUnable to transfer submission with '${sendNewSubmission_.name}'. Now trying with 'openByUrl'...`, 
+      funcName
+    );
 
     // `Points Ledger` Google Sheet
     const ss = SpreadsheetApp.openByUrl(POINTS_LEDGER_URL);
@@ -114,18 +121,22 @@ function transferSubmissionToLedger(row = getLastRow_()) {
     logSheet.getRange(logNewRow, 1, packageNumRows, packageNumCols).setValues(packagedEvents);
 
     // Display successful message for Step 2b, and error message from Step 2.
-    Logger.log(`[AC] Successfully transferred event attendance submission to Ledger row ${logNewRow}`);
+    logAsAC_(`Successfully transferred event attendance submission to Ledger row #${logNewRow}`, funcName);
   }
 
   // STEP 3: Set trigger(s) to find and store strava activity, then send stats email
   // Previously used `storeStravaInLogSheet` and `triggerEmailInLedger`
   try {
+    logAsAC_(`Now trying to set Strava trigger for row #${logNewRow}`, funcName);
     setNewStravaTrigger_(logNewRow);
   }
   catch (e) {
-    Logger.log(`[AC] Unable to create trigger to find Strava activity using Points Ledger library`);
+    logAsAC_(`Unable to create trigger to find Strava activity using Points Ledger library`, funcName);
     console.error(e);
   }
+
+  // Log success message
+  logAsAC_(`Successfully executed!`, funcName);
 }
 
 
@@ -138,7 +149,7 @@ function transferSubmissionToLedger(row = getLastRow_()) {
 function packageRowForLedger_(row) {
   const sheet = GET_ATTENDANCE_SHEET_();
 
-  // Define dimenstion of range to fetch
+  // Define dimension of range to fetch
   const startCol = TIMESTAMP_COL;
   const numCols = DISTANCE_COL - startCol + 1;
 
@@ -152,7 +163,7 @@ function packageRowForLedger_(row) {
     return attendees && !attendees.includes(EMPTY_ATTENDEE_FLAG);
   });
 
-  // Default to BEGINNER if no attendees found
+  // Default to BEGINNER if no attendees found to allow storing Strava activity
   if (validAttendeeCols.length === 0) validAttendeeCols = [ATTENDEES_BEGINNER_COL];
 
   // Extract event details
@@ -162,7 +173,7 @@ function packageRowForLedger_(row) {
   const prepend = /(?:-|am|pm)/i.test(rowValues[HEADRUN_COL]) ? 'Headrun' : 'Event';
   const eventLabel = `${prepend} ${rowValues[RUN_LEVEL_COL]}\n${rowValues[HEADRUN_COL]}`;
 
-  // Append email to headrunner names if found
+  // Append email (if found) to headrunner names
   const headrunners = appendHeadrunnerEmail_(rowValues[HEADRUNNERS_COL]);
  
   const events = validAttendeeCols.map(colIndex => [
@@ -191,7 +202,6 @@ function sendNewSubmission_(submissionArr) {
   return executePointsLedgerFunction_(funcName, [submissionArr]);
 }
 
-
 /**
  * Sets a new trigger to find and store Strava activity for a logged row in the Points Ledger.
  *
@@ -203,8 +213,9 @@ function setNewStravaTrigger_(logRow) {
   const fetchUrl = base + getWebAppId_() + `/exec?rowNum=${logRow}&key=${getSecretWebKey_()}`;
 
   const response = UrlFetchApp.fetch(fetchUrl);
-  Logger.log(`[AC] Setting new trigger in '${setNewStravaTrigger_.name}'`);
-  Logger.log(`[AC] UrlFetchApp Response code '${response.getResponseCode()}': ${response.getContentText()}`);
+  const funcName = setNewStravaTrigger_.name;
+  logAsAC_(`Setting new trigger now...`, funcName);
+  logAsAC_(`UrlFetchApp Response code '${response.getResponseCode()}': ${response.getContentText()}`, funcName);
 
   /** Helper: get secret key in script properties */
   function getSecretWebKey_() {
@@ -252,10 +263,10 @@ function triggerEmailInLedger_(logRow) {
  * @param {Array} args - The arguments to pass to the function.
  * @return {*} - The return value of the executed function.
  */
-
 function executePointsLedgerFunction_(funcName, args) {
-  console.log(`\n---[AC] START OF '${funcName}()' LOG MESSAGES\n\n`);
+  Logger.log(`\n\n   ---START OF '${funcName}' LOG MESSAGES in [AC]---\n\n`);
   const retValue = PointsLedgerCode[funcName].apply(PointsLedgerCode, args);
-  console.log(`\n---[AC] END OF '${funcName}()' LOG MESSAGES\n\n`);
+  Logger.log(`\n\n   ---END OF '${funcName}()' LOG MESSAGES in [AC]---\n\n`);
+
   return retValue;
 }

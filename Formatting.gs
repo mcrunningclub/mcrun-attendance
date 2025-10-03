@@ -115,7 +115,11 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   rangeConfirmation.setValue(formattedValue);
 
   // Log debugging message
-  console.log(`[AC] Confirmation Response (raw): ${confirmationResp}   (formatted): ${formattedValue}`);
+  logAsAC_(
+    `Confirmation (raw): ${confirmationResp}   (formatted): ${formattedValue}`,
+    formatConfirmationInRow_.name,
+    false
+  );
 }
 
 
@@ -142,7 +146,7 @@ function formatAllNames() {
  */
 
 function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
-  console.log('[AC] Now attempting to format headrunner and attendee names');
+  logAsAC_('Now attempting to format headrunner and attendee names', formatNamesInRow_.name, false);
   formatAttendeeNamesInRow_(row);
   formatHeadrunnerInRow_(row);
   SpreadsheetApp.flush();   // Apply all changes
@@ -180,6 +184,8 @@ function formatAllAttendeeNames() {
 function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = GET_ATTENDANCE_SHEET_();
   const numColToGet = LEVEL_COUNT;
+
+  logAsAC_(`Starting name formatting in row #${row}`, formatAttendeeNamesInRow_.name, false);
 
   // Get attendee names starting from beginner col
   const nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
@@ -224,7 +230,11 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   }
   // Replace values with formatted names
   nameRange.setValues([namesArr]);    // setValues() requires 2D array
-  console.log(`[AC] Completed formatting of attendee names`, namesArr);
+  logAsAC_(
+    `Completed formatting of attendee names\n${namesArr}`, 
+    formatAttendeeNamesInRow_.name, 
+    false
+  );
 }
 
 

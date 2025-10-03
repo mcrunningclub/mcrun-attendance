@@ -54,35 +54,50 @@ const IMPORT_MAP = {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 10, 2025
- * @update  Apr 7, 2025
+ * @update  Sep 28, 2025
  */
 
 function processImportFromApp(importObj) {
   const importSheet = GET_IMPORT_SHEET_();
-  Logger.log(`[AC] Processing following import in '${processImportFromApp.name}'...`);
-  Logger.log(importObj);
 
+  // Log debugging messages
+  const funcName = processImportFromApp.name;
+  logAsAC_(` Processing following import...`, funcName, false);
+  console.log(importObj);
+
+  let newSemesterRow = null;
   try {
     // First add to import sheet as backup
     importSheet.appendRow([importObj]);
 
     // Now process input
     const attendanceObj = JSON.parse(importObj);
-    const newSemesterRow = copyToSemesterSheet_(attendanceObj);
-    console.log(`[AC] Successfully imported values to row ${newSemesterRow} in Attendance Sheet`);
+    logAsAC_(`Now trying to export values to row #${newSemesterRow} in Attendance Sheet`, funcName);
+    newSemesterRow = copyToSemesterSheet_(attendanceObj);
+    logAsAC_(`Successfully imported values!`, funcName);
 
     // Log successful transfer to attendance sheet
     const newImportRow = importSheet.getLastRow();
     toggleSuccessfulImport_(newImportRow, IS_IMPORTED_COL);
-
-    // Finally apply post-import functions
-    onAppSubmission(newSemesterRow);
   }
   catch (e) {
-    Logger.log(`[AC] Unable to fully process 'importObj' in ${processImportFromApp.name}`);
+    logAsAC_(`Unable to fully import 'importObj' in Attendance Sheet`, funcName);
+    throw Error(`${e.message} Import failed...`);
+  }
+
+  // Finally apply post-import functions
+  try {
+    if(newSemesterRow) {
+      logAsAC_(`Now trying to apply 'onAppSubmission' for row #${newSemesterRow}`, funcName);
+      onAppSubmission(newSemesterRow);
+    };
+  }
+  catch (e) {
+    logAsAC_(`Unable to apply '${onAppSubmission.name}' for 'importObj'`, funcName, false);
     throw e;
   }
 }
+
 
 
 /**
@@ -121,7 +136,7 @@ function toggleSuccessfulImport_(row, colIndex = null) {
 
   const isImportedRange = sheet.getRange(row, isImportedCol);
   isImportedRange.setValue(true);
-  console.log(`[AC] Toggled successful import in row ${row} (${toggleSuccessfulImport_.name})`);
+  logAsAC_(`Toggled successful import in row #${row}`, toggleSuccessfulImport_.name);
 }
 
 
@@ -175,7 +190,8 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  */
 
 function copyToSemesterSheet_(attendanceJSON, row = getLastRow_()) {
-  Logger.log(`Executing function '${copyToSemesterSheet_.name}'...`);
+  // Start with debugging message
+  logAsAC_(`Starting execution for row #${row}...`, copyToSemesterSheet_.name);
 
   const attendanceSheet = GET_ATTENDANCE_SHEET_();
   const importMap = IMPORT_MAP;
@@ -217,7 +233,7 @@ function copyToSemesterSheet_(attendanceJSON, row = getLastRow_()) {
   rangeToImport.setValues([valuesByIndex]);
 
   // Log and return startRow
-  console.log(`[AC] Set registration '${timestampValue}' in row ${startRow}`);
+  logAsAC_(`Set registration '${timestampValue}' in row #${startRow}`, copyToSemesterSheet_.name);
   return startRow;
 }
 

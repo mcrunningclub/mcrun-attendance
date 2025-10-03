@@ -61,13 +61,24 @@ function onFormSubmissionInRow_(row) {
  */
 
 function onAppSubmission(row = getLastRow_()) {
-  console.log(`[AC] Starting ${onAppSubmission.name} for row ${row}`);
-  bulkFormatting_(row);
-  transferAndFormat_(row);
+  const funcName = onAppSubmission.name;
+  logAsAC_(`Executing for row #${row}`, funcName);
 
-  packageAndEmailSubmission_(row);
+  //readAndStoreRunData();
+  logAsAC_(`Current headrunners in store:`, funcName);
+  console.log(getAllHeadrunners_());
+  
+  bulkFormatting_(row);
+  logAsAC_(`Completed formatting!`, funcName);
+  
+  transferAndFormat_(row);
+  logAsAC_(`Completed transfer and formatting!`, funcName);
+
+  //packageAndEmailSubmission_(row);    // Cannot be called using Attendance Code library (i.e. from AC-M)
+  //logAsAC_(`Completed packaging and email submission!`, funcName);
+
   sortAttendanceForm();
-  console.log(`[AC] Completed 'onAppSubmission' successfully!`);
+  logAsAC_(`Successfully executed!`, funcName, false);
 }
 
 function emailTest() {
@@ -81,18 +92,39 @@ function packageAndEmailSubmission_(row) {
   const submission = GET_ATTENDANCE_SHEET_().getSheetValues(row, 1, 1, -1)[0];
   const timestamp = submission[TIMESTAMP_COL - 1];
 
-  // Get corresponding run schedule and time for 'timestamp'
-  const currentWeekday = new Date(timestamp).getDay();
-  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
-  const currentTimeKey = getMatchedTimeKey_(timestamp, currentDaySchedule);
+  let headrunnerEmails = [];
+  const funcName = packageAndEmailSubmission_.name;
 
-  // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
-  const runScheduleLevels = currentDaySchedule[currentTimeKey];
-  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
+  try {
+    // Get corresponding run schedule and time for 'timestamp'
+    const currentWeekday = new Date(timestamp).getDay();
+    const currentDaySchedule = getScheduleFromStore_(currentWeekday);
+    const currentTimeKey = getMatchedTimeKey_(timestamp, currentDaySchedule);
 
-  // Finally send copy of submission to headrunners
-  const headrunTitle = getHeadrunTitle_(submission);
-  sendSubmissionCopy_({ headrunTitle, emailsByLevel}, submission);
+    // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
+    const runScheduleLevels = currentDaySchedule?.[currentTimeKey] || {};
+    headrunnerEmails = Object.values(getHeadrunnerEmailFromStore_(runScheduleLevels));
+  }
+  catch(e) {
+    logAsAC_(`Catch error: ${e.message}`, funcName);
+  }
+  finally {
+    // Check if emails were found, else try directly by name
+    if (!headrunnerEmails || headrunnerEmails.length === 0) {
+      logAsAC_(`Now trying to get emails using logged headrunner names`, funcName);
+      headrunnerEmails = tryByNames();
+    } 
+
+    // Send copy of submission to headrunners
+    const headrunTitle = getHeadrunTitle_(submission);
+    logAsAC_(`Found headrun title ${headrunTitle}. Now trying to send...`, funcName);
+    sendSubmissionCopy_({ headrunTitle, headrunnerEmails}, submission);
+  }
+
+  function tryByNames() {
+    const headrunnersInRow = GET_ATTENDANCE_SHEET_().getRange(row, HEADRUNNERS_COL).getValue() || "";
+    return getHeadrunnerEmailFromName_(headrunnersInRow.trim());
+  }
 }
 
 /**
@@ -297,18 +329,20 @@ function sendBotEmail_(subject, recipient, htmlBody) {
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Oct 9, 2023
- * @update  May 15, 2025
+ * @update  Sep 28, 2025
  *
  * @param {Object} emailObj  Contains email details.
- * @param {Object} emailObj.emailsByLevel  Emails of headrunners grouped by levels.
  * @param {string} emailObj.headrunTitle  The title of the headrun.
+ * @param {Object} emailObj.headrunnerEmails  Emails of headrunners grouped by levels.
+ * 
  * @param {Array} submission  The attendance submission data.
  */
 
-function sendSubmissionCopy_({ emailsByLevel, headrunTitle }, submission) {
+function sendSubmissionCopy_({ headrunTitle, headrunnerEmails }, submission) {
   // Error Management: prevent wrong user sending email
-  if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
-
+  if (! [APP_EMAIL,CLUB_EMAIL].includes(getCurrentUserEmail_())) throw Error('Please change to McRUN account');
+  
+  logAsAC_(`Now trying to send copy of attendance submission`, sendSubmissionCopy_.name);
   submission.unshift('');   // Make submission 1-indexed
 
   // Prepare values to populate copy email template
@@ -326,11 +360,11 @@ function sendSubmissionCopy_({ emailsByLevel, headrunTitle }, submission) {
   // Send email using email bot helper function
   sendBotEmail_(
     "McRUN Attendance Copy (" + headrunTitle + ")",  // Subject
-    Object.values(emailsByLevel).join(','),   // Headrunner recipients
+    headrunnerEmails.join(','),   // Headrunner recipients
     copyEmailHTML   // HTML body
   ); 
 
-  Logger.log(`Successfully sent copy of attendance submission for '${headrunTitle}'`);
+  logAsAC_(`Successfully sent copy of for '${headrunTitle}'`, sendSubmissionCopy_.name);
 
   /** Helper Function */
   function prepareAttendees() {

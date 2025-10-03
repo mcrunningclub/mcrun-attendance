@@ -18,6 +18,7 @@ limitations under the License.
 const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
 const VP_INTERNAL_EMAIL = 'nicolas.morrison@mail.mcgill.ca';
 const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
+const APP_EMAIL = 'mcgillstudentsrunningclub@gmail.com';
 
 const HEADRUNNER_STORE_NAME = 'headrunners';
 const HEADRUN_STORE_NAME = 'headruns';
@@ -29,7 +30,7 @@ const HEADRUN_STORE_NAME = 'headruns';
  * @param {Object} obj - The object to store.
  */
 function storeObject_(key, obj) {
-  const docProp = PropertiesService.getDocumentProperties();
+  const docProp = PropertiesService.getScriptProperties();
   docProp.setProperty(key, JSON.stringify(obj));
 }
 
@@ -44,14 +45,14 @@ function getAllHeadruns_() {
   return ALL_HEADRUNS ?? initializeRef();
 
   function initializeRef() {
-    const docProp = PropertiesService.getDocumentProperties();
+    const docProp = PropertiesService.getScriptProperties();
     ALL_HEADRUNS = JSON.parse(docProp.getProperty(HEADRUN_STORE_NAME));
     return ALL_HEADRUNS;
   }
 }
 
 function getAllHeadrunners_() {
-  const docProp = PropertiesService.getDocumentProperties();
+  const docProp = PropertiesService.getScriptProperties();
   return JSON.parse(docProp.getProperty(HEADRUNNER_STORE_NAME));
 }
 
@@ -66,10 +67,12 @@ function getWeekday_(weekdayIndex) {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  May 2, 2025
- * @update  May 5, 2025
+ * @update  Sep 28, 2025
  */
 function getScheduleFromStore_(currentWeekday) {
   const runSchedule = getAllHeadruns_();
+  if (!runSchedule) return null;
+
   const isString = typeof currentWeekday === 'string';
   const weekString = (isString ? currentWeekday : getWeekday_(currentWeekday)).toLowerCase();
 
@@ -96,6 +99,8 @@ function getScheduleFromStore_(currentWeekday) {
  * @update  Jun 1, 2025
  */
 function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
+  if (!runSchedule) return null;
+
   const timeKey = Object.keys(runSchedule).find((timeStr) => {
     const timeMatch = timeStr.match(/(\d+(?::\d+)?)(am|pm)/i);
 
@@ -113,8 +118,8 @@ function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
     const upperBound = unixTimestamp + offsetMilli;
     
     // Debug messages
-    Logger.log(`lowerBound: ${new Date(lowerBound)}`);
-    Logger.log(`upperBound: ${new Date(upperBound)}`);
+    //Logger.log(`lowerBound: ${new Date(lowerBound)}`);
+    //Logger.log(`upperBound: ${new Date(upperBound)}`);
 
     return (submissionDate >= lowerBound && submissionDate <= upperBound);
   });
@@ -135,7 +140,6 @@ function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
 
 
 function matchTimeRange() {
-  
 }
 
 
@@ -179,7 +183,7 @@ function getHeadrunnerEmailFromStore_(runScheduleLevels) {
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Sep 27, 2025
- * @update  Sep 27, 2025
+ * @update  Sep 28, 2025
  * 
  * ```js
  * const headrunners = ['Bob B.', 'Jane D.', 'Bart S.'];
@@ -190,14 +194,23 @@ function getHeadrunnerEmailFromStore_(runScheduleLevels) {
 function getHeadrunnerEmailFromName_(names) {
   // Get all headrunner info (e.g. nameKey, email, strava, ...)
   if (!names) return;
-  const headrunnerStore = getAllHeadrunners_();
 
-  // Reduce list of headrunners for their emails
-  return names.reduce((acc, nameKey) => {
-    const email = headrunnerStore[nameKey]?.email || "";
-    if (email) acc.push(email);
-    return acc;
-  }, []);
+  try {
+    const headrunnerStore = getAllHeadrunners_();
+
+    // Reduce list of headrunners for their emails
+    return names.reduce((acc, nameKey) => {
+      const email = headrunnerStore[nameKey]?.email || "";
+      if (email) acc.push(email);
+      return acc;
+    }, []);
+  }
+  catch(e) {
+    logAsAC_(`Unable to get headrunner email for names '${names}'`, getHeadrunnerEmailFromName_.name);
+    logAsAC_(`Catch error: ${e.message}`, getHeadrunnerEmailFromName_.name);
+  }
+
+  return [];
 }
 
 
@@ -215,11 +228,16 @@ function getHeadrunnerEmailFromName_(names) {
  * ```
  */
 function appendHeadrunnerEmail_(namesString, delimiter = '\n') {
-  if (!namesString) return;
-  const names = namesString.split(delimiter);
-
   // Get all headrunner info (e.g. nameKey, email, strava, ...)
+  if (!namesString) return;
   const headrunnerStore = getAllHeadrunners_();
+
+  // If store cannot be read (i.e. cannot access Script Properties, then return namesString)
+  // `getAllHeadrunners_()` will not work from external scripts
+  if (!headrunnerStore) return namesString;
+
+  // Split names into array
+  const names = namesString.split(delimiter);
 
   // Append email to name if found in store
   const headrunnerNameEmail = [];
@@ -228,7 +246,6 @@ function appendHeadrunnerEmail_(namesString, delimiter = '\n') {
     const nameEmail = names[i] + (email ? `:${email}` : '');
     headrunnerNameEmail.push(nameEmail);
   }
-
   return headrunnerNameEmail.join(delimiter);
 }
 
@@ -319,7 +336,7 @@ function readAndStoreRunData() {
   storeObject_(HEADRUNNER_STORE_NAME, headrunnerObj);
   storeObject_(HEADRUN_STORE_NAME, headrunObj);
 
-  Logger.log(`Completed parsing and storage of run data from '${SEMESTER_NAME}' sheet`);
+  Logger.log(`Completed parsing and storage of run data for '${SEMESTER_NAME}'`);
   prettyPrintRunData();
 
   /** Helper functions to extract data */
@@ -466,7 +483,11 @@ function formatHeadrunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow
 
   // Update the sheet with formatted names
   rangeHeadRunner.setValues(formattedNames);
-  console.log(`[AC] Completed formatting of headrunner names`, formattedNames);
+  logAsAC_(
+    `Completed formatting of headrunner names\n${formattedNames.join(';')}`,
+    formatHeadrunnerInRow_.name,
+    false
+  );
 }
 
 // Callback function to clean and format a single headrunner name

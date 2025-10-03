@@ -237,9 +237,10 @@ function checkThisEvent(timedate) {
   const currentDaySchedule = getScheduleFromStore_(currentWeekday);
   const currentTimeKey = getMatchedTimeKey_(timedate, currentDaySchedule);
 
+  // getMatchedTimeKey throws error if no timekey found
   // Get emails using run schedule for current day, then proceed to actual verification
-  const runScheduleLevels = currentDaySchedule[currentTimeKey];
-  const { 'timeKey' : matchedTimeKey, 'submission' : submission } = verifyAttendance_(currentWeekday);
+  //const runScheduleLevels = currentDaySchedule[currentTimeKey];
+  //const { 'timeKey' : matchedTimeKey, 'submission' : submission } = verifyAttendance_(currentWeekday);
 }
 
 
