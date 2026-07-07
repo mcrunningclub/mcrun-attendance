@@ -31,10 +31,10 @@ limitations under the License.
 function appendMemberEmail_(row, registered, unregistered) {
   const sheet = ATTENDANCE_SHEET;
   const numRowToGet = 1;
-  const numColToGet = LEVEL_COUNT;
+  const numColToGet = NUM_LEVELS;
 
   // Get attendee range starting from beginner col to advanced col
-  const attendeeRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, numRowToGet, numColToGet);  // Attendees columns
+  const attendeeRange = sheet.getRange(row, SEM_ATTENDANCE_COLS.B_ATTENDEES, numRowToGet, numColToGet);  // Attendees columns
 
   //const allAttendees = attendeeRange.getValues()[0]; // Single row of attendees
   const updatedAttendees = [];    // Resulting values to set in sheet
@@ -150,8 +150,8 @@ function packageRowForLedger_(row) {
   const sheet = GET_ATTENDANCE_SHEET_();
 
   // Define dimension of range to fetch
-  const startCol = TIMESTAMP_COL;
-  const numCols = DISTANCE_COL - startCol + 1;
+  const startCol = SEM_ATTENDANCE_COLS.TIMESTAMP;
+  const numCols = SEM_ATTENDANCE_COLS.DISTANCE - startCol + 1;
 
   // Fetch values from the row
   // Pad with empty string for 1-based indexing, e.g [EMAIL_COL] vs [EMAIL_COL-1]
@@ -164,17 +164,17 @@ function packageRowForLedger_(row) {
   });
 
   // Default to BEGINNER if no attendees found to allow storing Strava activity
-  if (validAttendeeCols.length === 0) validAttendeeCols = [ATTENDEES_BEGINNER_COL];
+  if (validAttendeeCols.length === 0) validAttendeeCols = [SEM_ATTENDANCE_COLS.B_ATTENDEES];
 
   // Extract event details
   const exportTimestamp = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
-  const eventTimestamp = rowValues[TIMESTAMP_COL];
-  const distance = rowValues[DISTANCE_COL];
-  const prepend = /(?:-|am|pm)/i.test(rowValues[HEADRUN_COL]) ? 'Headrun' : 'Event';
-  const eventLabel = `${prepend} ${rowValues[RUN_LEVEL_COL]}\n${rowValues[HEADRUN_COL]}`;
+  const eventTimestamp = rowValues[SEM_ATTENDANCE_COLS.TIMESTAMP];
+  const distance = rowValues[SEM_ATTENDANCE_COLS.DISTANCE];
+  const prepend = /(?:-|am|pm)/i.test(rowValues[SEM_ATTENDANCE_COLS.HEADRUN]) ? 'Headrun' : 'Event';
+  const eventLabel = `${prepend} ${rowValues[SEM_ATTENDANCE_COLS.RUN_LEVEL]}\n${rowValues[SEM_ATTENDANCE_COLS.HEADRUN]}`;
 
   // Append email (if found) to headrunner names
-  const headrunners = appendHeadrunnerEmail_(rowValues[HEADRUNNERS_COL]);
+  const headrunners = appendHeadrunnerEmail_(rowValues[SEM_ATTENDANCE_COLS.HEADRUNNERS]);
  
   const events = validAttendeeCols.map(colIndex => [
     exportTimestamp,        // Export Timestamp

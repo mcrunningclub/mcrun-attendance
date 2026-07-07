@@ -26,7 +26,7 @@ limitations under the License.
 
 function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
-  const rangePlatform = sheet.getRange(row, PLATFORM_COL);
+  const rangePlatform = sheet.getRange(row, SEM_ATTENDANCE_COLS.PLATFORM);
   rangePlatform.setValue('Google Form');
 }
 
@@ -100,7 +100,7 @@ function formatAllConfirmations() {
 
 function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = GET_ATTENDANCE_SHEET_();
-  const confirmationCol = CONFIRMATION_COL;
+  const confirmationCol = SEM_ATTENDANCE_COLS.CONFIRMATION;
 
   // Get confirmation col and value using `row`
   const rangeConfirmation = sheet.getRange(row, confirmationCol);
@@ -183,12 +183,12 @@ function formatAllAttendeeNames() {
 
 function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = GET_ATTENDANCE_SHEET_();
-  const numColToGet = LEVEL_COUNT;
+  const numColToGet = NUM_LEVELS;
 
   logAsAC_(`Starting name formatting in row #${row}`, formatAttendeeNamesInRow_.name, false);
 
   // Get attendee names starting from beginner col
-  const nameRange = sheet.getRange(row, ATTENDEES_BEGINNER_COL, 1, numColToGet);  // Attendees columns
+  const nameRange = sheet.getRange(row, SEM_ATTENDANCE_COLS.B_ATTENDEES, 1, numColToGet);  // Attendees columns
   var namesArr = nameRange.getValues()[0];    // 1D Array of size 3 (Beginner, Intermediate, Advanced)
 
   for (var i = 0; i < namesArr.length; i++) {
@@ -272,7 +272,7 @@ function createEmailCopy_(emailDetails) {
   }
 
   // Load HTML template and replace placeholders
-  const templateName = COPY_EMAIL_HTML_FILE;
+  const templateName = COPY_EMAIL_TEMPLATE;
   const template = HtmlService.createTemplateFromFile(templateName);
 
   template.TITLE = emailDetails.title;

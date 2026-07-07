@@ -21,22 +21,22 @@ const IMPORT_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetById(IMPORT_S
 // ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
 // SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
 const GET_IMPORT_SHEET_ = () => {
-  return (IMPORT_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SS_ID).getSheetById(IMPORT_SHEET_ID);
+  return (IMPORT_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SHEET_ID).getSheetById(IMPORT_SHEET_ID);
 }
 
 const IS_IMPORTED_COL = 10;   // Update if columns modified
 
 // MAPPING FROM MASTER ATTENDANCE SHEET TO SEMESTER SHEET
 const IMPORT_MAP = {
-  'timestamp': TIMESTAMP_COL,
-  'headrunners': HEADRUNNERS_COL,
-  'headRun': HEADRUN_COL,
-  'runLevel': RUN_LEVEL_COL,
-  'confirmation': CONFIRMATION_COL,
-  'distance': DISTANCE_COL,
-  'comments': COMMENTS_COL,
-  'platform': PLATFORM_COL,
-  'attendees': ATTENDEES_BEGINNER_COL,
+  'timestamp': SEM_ATTENDANCE_COLS.TIMESTAMP,
+  'headrunners': SEM_ATTENDANCE_COLS.HEADRUNNERS,
+  'headRun': SEM_ATTENDANCE_COLS.HEADRUN,
+  'runLevel': SEM_ATTENDANCE_COLS.RUN_LEVEL,
+  'confirmation': SEM_ATTENDANCE_COLS.CONFIRMATION,
+  'distance': SEM_ATTENDANCE_COLS.DISTANCE,
+  'comments': SEM_ATTENDANCE_COLS.COMMENTS,
+  'platform': SEM_ATTENDANCE_COLS.PLATFORM,
+  'attendees': SEM_ATTENDANCE_COLS.B_ATTENDEES,
 }
 
 // USED TO IMPORT NEW ATTENDANCE SUBMISSION FROM APP
@@ -159,7 +159,7 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
 
   // Get dimensions of array
   const numCol = 1;
-  const timestampCol = TIMESTAMP_COL;
+  const timestampCol = SEM_ATTENDANCE_COLS.TIMESTAMP;
   const endRow = sheet.getLastRow();
   const startRow = endRow - numOfRow + 1;
 

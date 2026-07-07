@@ -33,7 +33,6 @@ function updateWeeklyCalendarTriggers() {
   deleteExpiredCalendarTriggers_();
 }
 
-
 /**
  * Add new McRUN event from calendar to Apps Script trigger for today.
  * 
@@ -271,7 +270,6 @@ function deleteTriggerById(triggerId) {
   // If we reach here, the trigger was not found
   throw new Error(`⚠️ Trigger with id ${triggerId} not found`);
 }
-
 
 
 /**

@@ -42,10 +42,10 @@ function getAllUnregisteredMembers_() {
 
 function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const sheet = ATTENDANCE_SHEET;
-  const numColToGet = LEVEL_COUNT;
+  const numColToGet = NUM_LEVELS;
 
   // Get attendee names starting from beginner col to advanced col
-  const allAttendees = sheet.getSheetValues(row, ATTENDEES_BEGINNER_COL, 1, numColToGet)[0];
+  const allAttendees = sheet.getSheetValues(row, SEM_ATTENDANCE_COLS.B_ATTENDEES, 1, numColToGet)[0];
   const registered = [];
   const unregistered = [];
 
@@ -99,7 +99,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   /** Helper Function */
   function setNamesNotFound_(row, notFoundArr) {
     const sheet = ATTENDANCE_SHEET;
-    const unfoundNameRange = sheet.getRange(row, NAMES_NOT_FOUND_COL);
+    const unfoundNameRange = sheet.getRange(row, SEM_ATTENDANCE_COLS.NOT_FOUND);
     unfoundNameRange.setValue(notFoundArr);
   }
 }

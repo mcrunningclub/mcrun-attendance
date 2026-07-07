@@ -462,7 +462,7 @@ function formatAllHeadRunner() {
 
 function formatHeadrunnerInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
   const sheet = GET_ATTENDANCE_SHEET_();
-  const headrunnerCol = HEADRUNNERS_COL;
+  const headrunnerCol = SEM_ATTENDANCE_COLS.HEADRUNNERS;
 
   // Get all the values in `HEADRUNNERS_COL` in bulk
   const rangeHeadRunner = sheet.getRange(startRow, headrunnerCol, numRow);
@@ -544,7 +544,7 @@ function formatHeadrunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 
   const sheet = GET_ATTENDANCE_SHEET_();
 
   // Get the cell value, and remove hyphen-space in each cell
-  const rangeToFormat = sheet.getRange(startRow, HEADRUN_COL, numRow);
+  const rangeToFormat = sheet.getRange(startRow, SEM_ATTENDANCE_COLS.HEADRUN, numRow);
   var values = rangeToFormat.getValues();
 
   // Bulk format if applicable

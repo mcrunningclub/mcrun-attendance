@@ -75,6 +75,7 @@ function onAppSubmission(row = getLastRow_()) {
   logAsAC_(`Completed transfer and formatting!`, funcName);
 
   //packageAndEmailSubmission_(row);    // Cannot be called using Attendance Code library (i.e. from AC-M)
+  // Create trigger as bypass?
   //logAsAC_(`Completed packaging and email submission!`, funcName);
 
   sortAttendanceForm();
@@ -90,7 +91,7 @@ function emailTest() {
 function packageAndEmailSubmission_(row) {
   // Get submission values for 'row' and timestamp
   const submission = GET_ATTENDANCE_SHEET_().getSheetValues(row, 1, 1, -1)[0];
-  const timestamp = submission[TIMESTAMP_COL - 1];
+  const timestamp = submission[SEM_ATTENDANCE_COLS.TIMESTAMP - 1];
 
   let headrunnerEmails = [];
   const funcName = packageAndEmailSubmission_.name;
@@ -122,7 +123,7 @@ function packageAndEmailSubmission_(row) {
   }
 
   function tryByNames() {
-    const headrunnersInRow = GET_ATTENDANCE_SHEET_().getRange(row, HEADRUNNERS_COL).getValue() || "";
+    const headrunnersInRow = GET_ATTENDANCE_SHEET_().getRange(row, SEM_ATTENDANCE_COLS.HEADRUNNERS).getValue() || "";
     return getHeadrunnerEmailFromName_(headrunnersInRow.trim());
   }
 }
@@ -169,7 +170,7 @@ function getLastRow_(sheet = GET_ATTENDANCE_SHEET_()) {
   const numRow = sheet.getLastRow();
 
   // Fetch all values in the TIMESTAMP_COL
-  const values = sheet.getSheetValues(startRow, TIMESTAMP_COL, numRow, 1);
+  const values = sheet.getSheetValues(startRow, SEM_ATTENDANCE_COLS.TIMESTAMP, numRow, 1);
   let lastRow = values.length;
 
   // Loop through the values in reverse order
@@ -207,7 +208,7 @@ function toggleAttendanceCheck_() {
 
 function getHeadrunTitle_(submission) {
   if (submission) {
-    return submission[HEADRUN_COL - 1];
+    return submission[SEM_ATTENDANCE_COLS.HEADRUN - 1];
   }
   const today = new Date();
   return `${getWeekday_(today.getDay())} ${today.getHours() >= 12 ? "PM" : "AM"}`;   // e.g. 'Tuesday AM';
@@ -268,8 +269,8 @@ function checkAttendanceSubmission(today = new Date(), headrunTitle, level) {
 
     // Gets values of all timelogs
     const numRows = sheet.getLastRow() - 1;
-    const numCols = COMMENTS_COL;
-    const submissionArr = sheet.getSheetValues(2, TIMESTAMP_COL, numRows, numCols);
+    const numCols = SEM_ATTENDANCE_COLS.COMMENTS;
+    const submissionArr = sheet.getSheetValues(2, SEM_ATTENDANCE_COLS.TIMESTAMP, numRows, numCols);
 
     // Get date at trigger time and compare with timestamp of existing submissions
     return findMatchingTimeKey();
@@ -348,10 +349,10 @@ function sendSubmissionCopy_({ headrunTitle, headrunnerEmails }, submission) {
   // Prepare values to populate copy email template
   const headrun = {
     title : headrunTitle,
-    distance : submission[DISTANCE_COL],
+    distance : submission[SEM_ATTENDANCE_COLS.DISTANCE],
     attendees : prepareAttendees(),
-    confirmation : submission[CONFIRMATION_COL],
-    comments : submission[COMMENTS_COL] || 'None'
+    confirmation : submission[SEM_ATTENDANCE_COLS.CONFIRMATION],
+    comments : submission[SEM_ATTENDANCE_COLS.COMMENTS] || 'None'
   };
 
   // Create html code by populating with `headrun` values
@@ -364,7 +365,7 @@ function sendSubmissionCopy_({ headrunTitle, headrunnerEmails }, submission) {
     copyEmailHTML   // HTML body
   ); 
 
-  logAsAC_(`Successfully sent copy of for '${headrunTitle}'`, sendSubmissionCopy_.name);
+  logAsAC_(`Successfully sent copy for '${headrunTitle}'`, sendSubmissionCopy_.name);
 
   /** Helper Function */
   function prepareAttendees() {
@@ -399,10 +400,10 @@ function sendEmailReminder_({ emailsByLevel, headrunTitle }) {
   if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
 
   // Load HTML template and replace placeholders
-  const templateName = REMINDER_EMAIL_HTML_FILE;
+  const templateName = REMINDER_EMAIL_TEMPLATE;
   const template = HtmlService.createTemplateFromFile(templateName);
 
-  template.LINK = GET_ATTENDANCE_GFORM_LINK_();
+  template.LINK = GET_ATTENDANCE_FORM_LINK_();
   template.SEMESTER = SEMESTER_NAME;
 
   // Returns string content from populated html template

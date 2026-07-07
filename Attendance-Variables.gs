@@ -14,29 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// LIST OF COLUMNS IN SHEET_NAME
-const TIMESTAMP_COL = 1;
-const EMAIL_COL = 2;
-const HEADRUNNERS_COL = 3;
-const HEADRUN_COL = 4;
-const RUN_LEVEL_COL = 5;
-const ATTENDEES_BEGINNER_COL = 6;
-const ATTENDEES_EASY_COL = 7;
-const ATTENDEES_INTERMEDIATE_COL = 8;
-const ATTENDEES_ADVANCED_COL = 9;
-const CONFIRMATION_COL = 10;
-const DISTANCE_COL = 11;
-const COMMENTS_COL = 12;
-const TRANSFER_STATUS_COL = 13;
-const PLATFORM_COL = 14;
-const NAMES_NOT_FOUND_COL = 15;
-
-
-/** TO UPDATE EACH SEMESTER */
+/** 
+ * Name of attendance sheet for the current semester
+ * TO UPDATE EACH SEMESTER 
+ */
 const ATTENDANCE_SHEET_NAME = 'HR Attendance F25';
+
+/**
+ * Name of semester
+ * TO UPDATE EACH SEMESTER 
+ */
 const SEMESTER_NAME = 'Fall 2025';
 
-const ATTENDANCE_SS_ID = '1kUevgOCN1wCdbNiVY412-7ejnlSjtIyKNHFVLV9KK1Q';
+/**
+ * ID of attendance sheet for the current semester
+ * TO UPDATE EACH SEMESTER 
+ */
+const ATTENDANCE_SHEET_ID = '1kUevgOCN1wCdbNiVY412-7ejnlSjtIyKNHFVLV9KK1Q';
+
+/**
+ * Attendance sheet object for the current semester
+ * TO UPDATE EACH SEMESTER 
+ */
 const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ATTENDANCE_SHEET_NAME);
 
 /**
@@ -46,35 +45,146 @@ const ATTENDANCE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AT
  * @return {GoogleAppsScript.Spreadsheet.Sheet} The attendance sheet object.
  */
 const GET_ATTENDANCE_SHEET_ = () => {
-  return (ATTENDANCE_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SS_ID).getSheetByName(ATTENDANCE_SHEET_NAME);
+  return (ATTENDANCE_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SHEET_ID).getSheetByName(ATTENDANCE_SHEET_NAME);
 }
 
+/**
+ * Mapping of column letters to numbers
+ */
+const COL = {
+  A: 1,
+  B: 2,
+  C: 3,
+  D: 4,
+  E: 5,
+  F: 6,
+  G: 7,
+  H: 8,
+  I: 9,
+  J: 10,
+  K: 11,
+  L: 12,
+  M: 13,
+  N: 14,
+  O: 15,
+  P: 16,
+  Q: 17,
+  R: 18,
+  S: 19,
+  T: 20,
+  U: 21,
+  V: 22,
+  W: 23,
+  X: 24,
+  Y: 25,
+  Z: 26
+}
+
+/**
+ * Mapping of columns in semester attendance sheet to column number (1-indexed)
+ */
+const SEM_ATTENDANCE_COLS = {
+  TIMESTAMP: COL.A,
+  EMAIL: COL.B,
+  HEADRUNNERS: COL.C,
+  HEADRUN: COL.D,
+  RUN_LEVEL: COL.E,
+  B_ATTENDEES: COL.F, // Beginner
+  E_ATTENDEES: COL.G, // Easy
+  I_ATTENDEES: COL.H, // Intermediate
+  A_ATTENDEES: COL.I, // Advanced
+  CONFIRMATION: COL.J,
+  DISTANCE: COL.K,
+  COMMENTS: COL.L,
+  TRANSFER_STATUS: COL.M,
+  PLATFORM: COL.N,
+  NOT_FOUND: COL.O,
+}
+
+/**
+ * Timezone of the script
+ */
 const TIMEZONE = getUserTimeZone_();
 
-// RUN LEVELS
+/**
+ * Maps run levels to column with attendees for that level
+ */
 const ATTENDEE_MAP = {
-  'beginner': ATTENDEES_BEGINNER_COL,
-  'easy': ATTENDEES_EASY_COL,
-  'intermediate': ATTENDEES_INTERMEDIATE_COL,
-  'advanced': ATTENDEES_ADVANCED_COL,
+  'beginner': SEM_ATTENDANCE_COLS.B_ATTENDEES,
+  'easy': SEM_ATTENDANCE_COLS.E_ATTENDEES,
+  'intermediate': SEM_ATTENDANCE_COLS.I_ATTENDEES,
+  'advanced': SEM_ATTENDANCE_COLS.A_ATTENDEES,
 };
 
-const LEVEL_COUNT = Object.keys(ATTENDEE_MAP).length;
+/**
+ * Number of run levels
+ */
+const NUM_LEVELS = Object.keys(ATTENDEE_MAP).length;
+
+/**
+ * String indicating that there are no attendees for a run level
+ */
 const EMPTY_ATTENDEE_FLAG = 'None';
 
-const MEMBER_EMAIL_COL = 1;   // Found in 'Members' sheet
-const MEMBER_SEARCH_KEY_COL = 6;  // Found in 'Members' sheet
-
 // EXTERNAL SHEETS USED IN SCRIPTS
-const MASTER_NAME = 'MASTER';
+/** 
+ * Name of sheet (in membership spreadsheet) with master registry
+ */
+const MEMBERSHIP_SHEET_NAME = 'MASTER';
+
+/**
+ * URL of membership spreadsheet
+ */
 const MEMBERSHIP_URL = "https://docs.google.com/spreadsheets/d/1qvoL3mJXCvj3m7Y70sI-FAktCiSWqEmkDxfZWz0lFu4/";
 
-// LEDGER SPREADSHEET
+/**
+ * Column in membership list with member email
+ */
+const MEMBER_EMAIL_COL = COL.A;
+
+/**
+ * Column in membership list with member key (ID?)
+ */
+const MEMBER_SEARCH_KEY_COL = COL.V;
+
+/** 
+ * Name of sheet with events log in points ledger spreadsheet
+ */
 const LOG_SHEET_NAME = 'Event Log';
+
+/**
+ * URL of points ledger spreadsheet
+ */
 const POINTS_LEDGER_URL = "https://docs.google.com/spreadsheets/d/1sar-Pmfb_Nar0Lc9u8-rXyllLvQMqBFlSwolCoHX-_4/";
 
+/** 
+ * ID of spreadsheet with head run schedule and list of head runners
+ */
+const HEADRUN_SHEET_ID = '14uhswSruvsR2TT94CPYsPfCPfuvUmHeYZ4xqZ1IbWTg';
 
-// SCRIPT PROPERTIES; MAKE SURE THAT NAMES MATCHES BANK
+/**
+ * Name of sheet with compiled head runs and head runners
+ */
+const COMPILED_SHEET_NAME = "Compiled";
+
+/**
+ * Sheet object with compiled head runs and head runners
+ */
+const GET_COMPILED_SHEET_ = () => SpreadsheetApp.openById(HEADRUN_SHEET_ID).getSheetByName(COMPILED_SHEET_NAME);
+
+/**
+ * Name of sheet with list of head runners and their info
+ */
+const HEADRUNNER_SHEET_NAME = "List of Head Runners";
+
+/**
+ * Sheet object with list of head runners and their info
+ */
+const GET_HEADRUNNER_SHEET_ = () => SpreadsheetApp.openById(HEADRUN_SHEET_ID).getSheetByName(HEADRUNNER_SHEET_NAME);
+
+/**
+ * Maps information to script property name with that information
+ */
 const SCRIPT_PROPERTY = {
   isCheckingAttendance: 'IS_CHECKING_ATTENDANCE',
   calendarTriggers: 'calendarTriggers',
@@ -82,199 +192,31 @@ const SCRIPT_PROPERTY = {
   webAppKey: 'WEB_APP_KEY',
 };
 
-
-// NAME OF HTML TEMPLATES. ENSURE CORRECT FILE NAME!!
-const COPY_EMAIL_HTML_FILE = 'Copy-Email';
-const REMINDER_EMAIL_HTML_FILE = 'Reminder-Email';
-
-const GET_ATTENDANCE_GFORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
-
-
-/** GET HEADRUN SCHEDULE AND HEADRUNNER INFO */
-const GET_HEADRUN_SS_ = () => SpreadsheetApp.openById('14uhswSruvsR2TT94CPYsPfCPfuvUmHeYZ4xqZ1IbWTg');
-
-const COMPILED_SHEET_NAME = "Compiled";
-const GET_COMPILED_SHEET_ = () => GET_HEADRUN_SS_().getSheetByName(COMPILED_SHEET_NAME);
-
-const HEADRUNNER_SHEET_NAME = "List of Head Runners";
-const GET_HEADRUNNER_SHEET_ = () => GET_HEADRUN_SS_().getSheetByName(HEADRUNNER_SHEET_NAME);
-
-
-/** GET PROP STORE OR GENERATE IF NULL  */
+/**
+ * Script properties
+ */
 let PROP_STORE = null;
+
+/** 
+ * Get property store or create if not found
+ */
 const GET_PROP_STORE_ = () => {
   return PROP_STORE ?? PropertiesService.getScriptProperties();
 }
 
+/**
+ * Name of email template used to send attendance copy (without '.html')
+ */
+const COPY_EMAIL_TEMPLATE = 'Copy-Email';
 
 /**
- * Returns the attendance sheet name for the current semester.
- *
- * @return {string} The name of the attendance sheet.
- * @customfunction
+ * Name of email template used to send reminder (without '.html')
  */
-
-function GET_SEMESTER_SHEET_NAME() {
-  return ATTENDANCE_SHEET_NAME;
-}
+const REMINDER_EMAIL_TEMPLATE = 'Reminder-Email';
 
 /**
- * Returns timezone for currently running script.
- *
- * Prevents incorrect time formatting during time changes like Daylight Savings Time.
- *
- * @return {string} Timezone as a geographical location (e.g., `'America/Montreal'`).
+ * Gets link of Google Form connected to attendance sheet
+ * 
+ * @return {string}  Link to attendance form
  */
-
-function getUserTimeZone_() {
-  return Session.getScriptTimeZone();
-}
-
-/**
- * Returns the email of the current user executing Google Apps Script functions.
- * Useful for ensuring the correct account is executing Google automations.
- *
- * @return {string} Email of the current user.
- */
-
-function getCurrentUserEmail_() {
-  const userEmail = Session.getActiveUser().toString();
-  logAsAC_(`Current user email '${userEmail}'`, getCurrentUserEmail_.name);
-  return userEmail;
-}
-
-/**
- * Logs message in a standard and comprehensible format.
- */
-
-function logAsAC_(msg, funcName = "", useLogger = true) {
-  const message = `[AC#${funcName}] ${msg}`;
-  useLogger ? Logger.log(message) : console.log(message);
-}
-
-/**
- * Sorts the `ATTENDANCE_SHEET` by submission time.
- * Excludes the header row from sorting.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 1, 2024
- * @update  Apr 7, 2025
- */
-
-function sortAttendanceForm() {
-  const sheet = GET_ATTENDANCE_SHEET_();
-
-  const numRows = sheet.getLastRow() - 1;  // Remove header row from count
-  const numCols = sheet.getLastColumn();
-  const range = sheet.getRange(2, 1, numRows, numCols);
-
-  // Sorts values by `Timestamp` without the header row
-  range.sort([{ column: 1, ascending: true }]);
-}
-
-
-/**
- * Changes the attendance status of all members to "not present."
- * Helper function for `consolidateMemberData()`.
- *
- * @trigger New head run or McRUN attendance submission.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 9, 2023
- * @update  Oct 29, 2024
- */
-
-function removePresenceChecks() {
-  const sheetURL = MEMBERSHIP_URL;
-  const ss = SpreadsheetApp.openByUrl(sheetURL);
-
-  const masterSheetName = MASTER_NAME;
-  const sheet = ss.getSheetByName(masterSheetName);
-
-  let rangeAttendance;
-  const rangeList = sheet.getNamedRanges();
-
-  for (let i = 0; i < rangeList.length; i++) {
-    if (rangeList[i].getName() === "attendanceStatus") {
-      rangeAttendance = rangeList[i];
-      break;
-    }
-  }
-
-  rangeAttendance.getRange().uncheck(); // Remove all Presence checks
-}
-
-/**
- * Formats specific columns of the `HR Attendance` sheet for better readability.
- * Includes freezing panes, bold formatting, text wrapping, alignment, and column resizing.
- *
- * @trigger New Google form or app submission.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 9, 2023
- * @update  May 13, 2025
- */
-
-function formatSpecificColumns_() {
-  const sheet = GET_ATTENDANCE_SHEET_();
-
-  // Helper function to improve readability
-  const getThisRange = (ranges) =>
-    Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
-
-  // 1. Freeze panes
-  sheet.setFrozenRows(1);
-  sheet.setFrozenColumns(1);
-
-  // 2. Bold formatting
-  getThisRange([
-    'A1:O1',  // Header Row
-    'A2:A',   // Timestamp
-    'D2:D',   // Headrun
-    'M2:O'    // Transfer Status + ... + Not Found
-  ]).setFontWeight('bold');
-
-  // 3. Font size adjustments
-  getThisRange(['A2:A', 'D2:D', 'N2:N']).setFontSize(11); // for Headrun + Submission Platform
-  getThisRange(['C2:C', 'F2:I']).setFontSize(9);  // Headrunners + Attendees
-
-  // 4. Text wrapping
-  getThisRange(['B2:E', 'J2:L']).setWrap(true);
-  getThisRange('F2:I').setWrap(false);  // Attendees
-
-  // 5. Horizontal and vertical alignment
-  getThisRange(['E2:E', 'M2:N']).setHorizontalAlignment('center');  // Headrun + Transfer Status + Submission Platform
-
-  getThisRange([
-    'D2:I',   // Headrun Details + Attendees
-    'M2:N',   // Transfer Status + Submission Platform
-  ]).setVerticalAlignment('middle');
-
-  // 6. Update banding colours by extending range
-  const dataRange = sheet.getRange(1,1);
-  const banding = dataRange.getBandings()[0];
-  banding.setRange(sheet.getDataRange());
-
-  // 7. Resize columns using `sizeMap`
-  const sizeMap = {
-    [TIMESTAMP_COL]: 150,
-    [EMAIL_COL]: 240,
-    [HEADRUNNERS_COL]: 240,
-    [HEADRUN_COL]: 155,
-    [RUN_LEVEL_COL]: 170,
-    [ATTENDEES_BEGINNER_COL]: 160,
-    [ATTENDEES_EASY_COL]: 160,
-    [ATTENDEES_INTERMEDIATE_COL]: 160,
-    [ATTENDEES_ADVANCED_COL]: 160,
-    [CONFIRMATION_COL]: 300,
-    [DISTANCE_COL]: 160,
-    [COMMENTS_COL]: 355,
-    [TRANSFER_STATUS_COL]: 135,
-    [PLATFORM_COL]: 160,
-    [NAMES_NOT_FOUND_COL]: 225
-  }
-
-  Object.entries(sizeMap).forEach(([col, width]) => {
-    sheet.setColumnWidth(col, width);
-  });
-}
+const GET_ATTENDANCE_FORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
