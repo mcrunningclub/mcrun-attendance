@@ -153,36 +153,6 @@ function transferAndFormat_(row) {
 }
 
 /**
- * Find row index of last submission in reverse using while-loop.
- * 
- * Used to prevent native `sheet.getLastRow()` from returning empty row.
- * 
- * @param {Spreadsheet.sheet} [sheet = GET_ATTENDANCE_SHEET_()] Target sheet
- * @return {integer}  Returns 1-index of last row in GSheet.
- *  
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Feb 8, 2025
- * @update  Apr 10, 2025
- */
-
-function getLastRow_(sheet = GET_ATTENDANCE_SHEET_()) {
-  const startRow = 1;
-  const numRow = sheet.getLastRow();
-
-  // Fetch all values in the TIMESTAMP_COL
-  const values = sheet.getSheetValues(startRow, SEM_ATTENDANCE_COLS.TIMESTAMP, numRow, 1);
-  let lastRow = values.length;
-
-  // Loop through the values in reverse order
-  while (values[lastRow - 1][0] === "") {
-    lastRow--;
-  }
-
-  return lastRow;
-}
-
-
-/**
  * Toggles the flag to run `checkAttendance()` by updating the value in the `ScriptProperties` bank.
  *
  * @trigger User choice in custom menu.

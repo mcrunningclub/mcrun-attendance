@@ -1,5 +1,3 @@
-
-
 /**
  * Returns timezone for currently running script.
  *
@@ -27,6 +25,9 @@ function getCurrentUserEmail_() {
 
 /**
  * Logs message in a standard and comprehensible format.
+ * @param {string} msg  Message to log
+ * @param {string} funcName  Name of the function to log if applicable. Defaults to ""
+ * @param {boolean} useLogger  If true, use the Logger class, otherwise use console
  */
 
 function logAsAC_(msg, funcName = "", useLogger = true) {
@@ -35,128 +36,152 @@ function logAsAC_(msg, funcName = "", useLogger = true) {
 }
 
 /**
- * Sorts the `ATTENDANCE_SHEET` by submission time.
- * Excludes the header row from sorting.
+ * Converts a string to title case.
  *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Nov 1, 2024
- * @update  Apr 7, 2025
+ * @param {string} inputString  The string to be converted to title case.
+ * @return {string}  The title-cased string.
  */
 
-function sortAttendanceForm() {
-  const sheet = GET_ATTENDANCE_SHEET_();
-
-  const numRows = sheet.getLastRow() - 1;  // Remove header row from count
-  const numCols = sheet.getLastColumn();
-  const range = sheet.getRange(2, 1, numRows, numCols);
-
-  // Sorts values by `Timestamp` without the header row
-  range.sort([{ column: 1, ascending: true }]);
+function toTitleCase_(inputString) {
+  return inputString.replace(/\w\S*/g, word => {
+    return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
+  });
 }
 
 
 /**
- * Changes the attendance status of all members to "not present."
- * Helper function for `consolidateMemberData()`.
- *
- * @trigger New head run or McRUN attendance submission.
- *
+ * Find row index of last submission in reverse using while-loop.
+ * 
+ * Used to prevent native `sheet.getLastRow()` from returning empty row.
+ * 
+ * @param {Spreadsheet.sheet} [sheet = GET_ATTENDANCE_SHEET_()] Target sheet
+ * @return {integer}  Returns 1-index of last row in GSheet.
+ *  
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 9, 2023
- * @update  Oct 29, 2024
+ * @date  Feb 8, 2025
+ * @update  Apr 10, 2025
  */
 
-function removePresenceChecks() {
-  const sheetURL = MEMBERSHIP_URL;
-  const ss = SpreadsheetApp.openByUrl(sheetURL);
+function getLastRow_(sheet = GET_ATTENDANCE_SHEET_()) {
+  const startRow = 1;
+  const numRow = sheet.getLastRow();
 
-  const masterSheetName = MEMBERSHIP_SHEET_NAME;
-  const sheet = ss.getSheetByName(masterSheetName);
+  // Fetch all values in the TIMESTAMP_COL
+  const values = sheet.getSheetValues(startRow, SEM_ATTENDANCE_COLS.TIMESTAMP, numRow, 1);
+  let lastRow = values.length;
 
-  let rangeAttendance;
-  const rangeList = sheet.getNamedRanges();
+  // Loop through the values in reverse order
+  while (values[lastRow - 1][0] === "") {
+    lastRow--;
+  }
 
-  for (let i = 0; i < rangeList.length; i++) {
-    if (rangeList[i].getName() === "attendanceStatus") {
-      rangeAttendance = rangeList[i];
-      break;
+  return lastRow;
+}
+
+
+/** 
+ * Format timestamp to format as `yyyy-MM-dd hh:mm:ss`.
+ * 
+ * Raw format cannot be understood by GSheet.
+ * 
+ * @param {string} raw  Datetime value to be formatted.
+ * @return {Date}  A Date object with correct format.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Feb 9, 2025
+ * @update  Feb 10, 2025
+ */
+
+function formatTimestamp_(raw) {
+  const date = new Date(raw);
+  const options = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false // 24-hour format
+  };
+
+  return date.toLocaleString('en-CA', options).replace(',', '');  // remove comma between date and time
+}
+
+
+/** 
+ * Compare the input timestamps.
+ * 
+ * @param {string} timestamp1  Timestamp 1
+ * @param {string} timestamp2  Timestamp 2
+ * 
+ * @return {Boolean}  Returns result of comparaison.
+ * 
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Mar 20, 2025
+ * @update  Mar 20, 2025
+ */
+
+function isSameTimestamp_(timestamp1, timestamp2) {
+  const ts1 = (timestamp1 instanceof Date) ? timestamp1 : new Date(timestamp1);
+  const ts2 = (timestamp2 instanceof Date) ? timestamp2 : new Date(timestamp2);
+  return ts1.getTime() === ts2.getTime();
+}
+
+
+/**
+ * Returns true if row is int and found in `ATTENDANCE_SHEET`.
+ *
+ * Helper function for UI functions for McRUN menu.
+ *
+ * @param {number}  The row number in `ATTENDANCE_SHEET` 1-indexed.
+ * @return {boolean}  Returns true if valid row in sheet.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT
+ * @date  Dec 6, 2024
+ * @update  Dec 6, 2024
+ */
+
+function isValidRow_(row) {
+  const sheet = ATTENDANCE_SHEET;
+  const lastRow = sheet.getLastRow();
+  const rowInt = parseInt(row);
+
+  return (Number.isInteger(rowInt) && rowInt >= 0 && rowInt <= lastRow);
+}
+
+
+/**
+ * Verifies that `SCRIPT_PROPERTY` bank matches script properties in 'Project Settings'.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 11, 2024
+ * @update  Dec 11, 2024
+ */
+
+function checkValidScriptProperties() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const keys = scriptProperties.getKeys();
+  const userDefinedProperties = Object.values(SCRIPT_PROPERTY);
+
+  const ui = SpreadsheetApp.getUi();
+  const errorTitle = "⚠️ WARNING TO DEVELOPER! ⚠️";
+
+  // Verify same size in both property banks
+  if (keys.length != userDefinedProperties.length) {
+    let errorMessage = "Script Properties in 'Project Settings' does not match 'SCRIPT_PROPERTY' in Google Apps Script";
+    ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
+
+    throw Error(errorMessage);
+  }
+
+  // Compare script properties in 'Project Settings' with user-defined 'SCRIPT_PROPERTY' object.
+  keys.forEach(key => {
+    let isIncluded = userDefinedProperties.includes(key);
+    if (!isIncluded) {
+      let errorMessage = `\`${key}\` in 'Project Settings' is not found in 'SCRIPT_PROPERTY' in Google Apps Script`;
+      ui.alert(errorTitle, errorMessage, ui.ButtonSet.OK);
+
+      throw Error(errorMessage);
     }
-  }
-
-  rangeAttendance.getRange().uncheck(); // Remove all Presence checks
-}
-
-/**
- * Formats specific columns of the `HR Attendance` sheet for better readability.
- * Includes freezing panes, bold formatting, text wrapping, alignment, and column resizing.
- *
- * @trigger New Google form or app submission.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 9, 2023
- * @update  May 13, 2025
- */
-
-function formatSpecificColumns_() {
-  const sheet = GET_ATTENDANCE_SHEET_();
-
-  // Helper function to improve readability
-  const getThisRange = (ranges) =>
-    Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
-
-  // 1. Freeze panes
-  sheet.setFrozenRows(1);
-  sheet.setFrozenColumns(1);
-
-  // 2. Bold formatting
-  getThisRange([
-    'A1:O1',  // Header Row
-    'A2:A',   // Timestamp
-    'D2:D',   // Headrun
-    'M2:O'    // Transfer Status + ... + Not Found
-  ]).setFontWeight('bold');
-
-  // 3. Font size adjustments
-  getThisRange(['A2:A', 'D2:D', 'N2:N']).setFontSize(11); // for Headrun + Submission Platform
-  getThisRange(['C2:C', 'F2:I']).setFontSize(9);  // Headrunners + Attendees
-
-  // 4. Text wrapping
-  getThisRange(['B2:E', 'J2:L']).setWrap(true);
-  getThisRange('F2:I').setWrap(false);  // Attendees
-
-  // 5. Horizontal and vertical alignment
-  getThisRange(['E2:E', 'M2:N']).setHorizontalAlignment('center');  // Headrun + Transfer Status + Submission Platform
-
-  getThisRange([
-    'D2:I',   // Headrun Details + Attendees
-    'M2:N',   // Transfer Status + Submission Platform
-  ]).setVerticalAlignment('middle');
-
-  // 6. Update banding colours by extending range
-  const dataRange = sheet.getRange(1,1);
-  const banding = dataRange.getBandings()[0];
-  banding.setRange(sheet.getDataRange());
-
-  // 7. Resize columns using `sizeMap`
-  const sizeMap = {
-    [SEM_ATTENDANCE_COLS.TIMESTAMP]: 150,
-    [SEM_ATTENDANCE_COLS.EMAIL]: 240,
-    [SEM_ATTENDANCE_COLS.HEADRUNNERS]: 240,
-    [SEM_ATTENDANCE_COLS.HEADRUN]: 155,
-    [SEM_ATTENDANCE_COLS.RUN_LEVEL]: 170,
-    [SEM_ATTENDANCE_COLS.B_ATTENDEES]: 160,
-    [SEM_ATTENDANCE_COLS.E_ATTENDEES]: 160,
-    [SEM_ATTENDANCE_COLS.I_ATTENDEES]: 160,
-    [SEM_ATTENDANCE_COLS.A_ATTENDEES]: 160,
-    [SEM_ATTENDANCE_COLS.CONFIRMATION]: 300,
-    [SEM_ATTENDANCE_COLS.DISTANCE]: 160,
-    [SEM_ATTENDANCE_COLS.COMMENTS]: 355,
-    [SEM_ATTENDANCE_COLS.TRANSFER_STATUS]: 135,
-    [SEM_ATTENDANCE_COLS.PLATFORM]: 160,
-    [SEM_ATTENDANCE_COLS.NOT_FOUNT]: 225
-  }
-
-  Object.entries(sizeMap).forEach(([col, width]) => {
-    sheet.setColumnWidth(col, width);
   });
 }
