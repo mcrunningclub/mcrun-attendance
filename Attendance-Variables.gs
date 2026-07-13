@@ -221,29 +221,59 @@ const REMINDER_EMAIL_TEMPLATE = 'Reminder-Email';
  */
 const GET_ATTENDANCE_FORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
 
-// Emails of current execs
+/**
+ * Email of club president
+ */
 const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
+
+/**
+ * Email of club VP Internal (VP Headruns)
+ */
 const VP_INTERNAL_EMAIL = 'nicolas.morrison@mail.mcgill.ca';
+
+/**
+ * Club email address
+ */
 const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
+
+/**
+ * Email address used to access the attendance app
+ */
 const APP_EMAIL = 'mcgillstudentsrunningclub@gmail.com';
 
+/**
+ * Name of script property that has headrunner info
+ */
 const HEADRUNNER_STORE_NAME = 'headrunners';
+
+/**
+ * Name of script property that has headrun info/schedule
+ */
 const HEADRUN_STORE_NAME = 'headruns';
 
-
-// IMPORT SHEET CONSTANTS
+/**
+ * ID of sheet with app imports
+ */
 const IMPORT_SHEET_ID = 82376152;
+
+/**
+ * Sheet object with app imports
+ */
 const IMPORT_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetById(IMPORT_SHEET_ID);
 
-// ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
-// SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+/**
+ * ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
+ * SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+ */
 const GET_IMPORT_SHEET_ = () => {
   return (IMPORT_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SHEET_ID).getSheetById(IMPORT_SHEET_ID);
 }
 
 const IS_IMPORTED_COL = 10;   // Update if columns modified
 
-// MAPPING FROM MASTER ATTENDANCE SHEET TO SEMESTER SHEET
+/**
+ * MAPPING FROM MASTER ATTENDANCE SHEET TO SEMESTER SHEET
+ */
 const IMPORT_MAP = {
   'timestamp': SEM_ATTENDANCE_COLS.TIMESTAMP,
   'headrunners': SEM_ATTENDANCE_COLS.HEADRUNNERS,
