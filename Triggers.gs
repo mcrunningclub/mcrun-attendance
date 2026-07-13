@@ -49,24 +49,6 @@ function addSingleEventTrigger() {
   PropertiesService.getScriptProperties().setProperty('testEvent', events[0]);
 }
 
-
-
-function cTest() {
-  const calendar = CalendarApp.getDefaultCalendar();
-  const day = new Date('2025-04-22 1:00:00');
-  const day2 = new Date('2025-04-23 23:00:00');
-
-  const events = calendar.getEvents(day, day2);
-  events.forEach(e => {
-    console.log(
-      e.getDescription(),
-      e.getTag('headrunner'),
-      e.getTitle()
-    )
-  })
-}
-
-
 /**
  * Get events from calendar and create time-based triggers.
  *
@@ -297,19 +279,4 @@ function deleteExpiredCalendarTriggers_() {
 
   props.setProperty(CALENDAR_STORE, JSON.stringify(updated));
   console.log(`Updated store ${CALENDAR_STORE} with values`, updated);
-}
-
-
-function testRepeatTrigger() {
-  // Trigger every 6 hours.
-  ScriptApp.newTrigger('myFunction')
-      .timeBased()
-      .everyHours(6)
-      .create();
-  // Trigger every Monday at 09:00.
-  ScriptApp.newTrigger('myFunction')
-      .timeBased()
-      .onWeekDay(ScriptApp.WeekDay.MONDAY)
-      .atHour(9)
-      .create();
 }

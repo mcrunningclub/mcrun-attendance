@@ -82,12 +82,6 @@ function onAppSubmission(row = getLastRow_()) {
   logAsAC_(`Successfully executed!`, funcName, false);
 }
 
-function emailTest() {
-  const row = getLastRow_();
-  packageAndEmailSubmission_(row);
-}
-
-
 function packageAndEmailSubmission_(row) {
   // Get submission values for 'row' and timestamp
   const submission = GET_ATTENDANCE_SHEET_().getSheetValues(row, 1, 1, -1)[0];

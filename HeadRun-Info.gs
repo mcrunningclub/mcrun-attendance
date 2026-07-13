@@ -529,7 +529,6 @@ function formatAllHeadRun() {
  * @date  Dec 10, 2024
  * @update  Apr 7, 2025
  */
-
 function formatHeadrunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
   const sheet = GET_ATTENDANCE_SHEET_();
 
