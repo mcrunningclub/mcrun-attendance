@@ -13,16 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-// Emails of current execs
-const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
-const VP_INTERNAL_EMAIL = 'nicolas.morrison@mail.mcgill.ca';
-const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
-const APP_EMAIL = 'mcgillstudentsrunningclub@gmail.com';
-
-const HEADRUNNER_STORE_NAME = 'headrunners';
-const HEADRUN_STORE_NAME = 'headruns';
-
 /**
  * Stores an object in the document properties store.
  *

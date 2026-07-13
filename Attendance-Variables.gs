@@ -220,3 +220,59 @@ const REMINDER_EMAIL_TEMPLATE = 'Reminder-Email';
  * @return {string}  Link to attendance form
  */
 const GET_ATTENDANCE_FORM_LINK_ = () => ATTENDANCE_SHEET.getFormUrl();
+
+// Emails of current execs
+const PRESIDENT_EMAIL = 'alexis.demetriou@mail.mcgill.ca';
+const VP_INTERNAL_EMAIL = 'nicolas.morrison@mail.mcgill.ca';
+const CLUB_EMAIL = 'mcrunningclub@ssmu.ca';
+const APP_EMAIL = 'mcgillstudentsrunningclub@gmail.com';
+
+const HEADRUNNER_STORE_NAME = 'headrunners';
+const HEADRUN_STORE_NAME = 'headruns';
+
+
+// IMPORT SHEET CONSTANTS
+const IMPORT_SHEET_ID = 82376152;
+const IMPORT_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetById(IMPORT_SHEET_ID);
+
+// ALLOWS PROPER SHEET REF WHEN ACCESSING AS LIBRARY FROM EXTERNAL SCRIPT
+// SpreadsheetApp.getActiveSpreadsheet() DOES NOT WORK IN EXTERNAL SCRIPT
+const GET_IMPORT_SHEET_ = () => {
+  return (IMPORT_SHEET) ?? SpreadsheetApp.openById(ATTENDANCE_SHEET_ID).getSheetById(IMPORT_SHEET_ID);
+}
+
+const IS_IMPORTED_COL = 10;   // Update if columns modified
+
+// MAPPING FROM MASTER ATTENDANCE SHEET TO SEMESTER SHEET
+const IMPORT_MAP = {
+  'timestamp': SEM_ATTENDANCE_COLS.TIMESTAMP,
+  'headrunners': SEM_ATTENDANCE_COLS.HEADRUNNERS,
+  'headRun': SEM_ATTENDANCE_COLS.HEADRUN,
+  'runLevel': SEM_ATTENDANCE_COLS.RUN_LEVEL,
+  'confirmation': SEM_ATTENDANCE_COLS.CONFIRMATION,
+  'distance': SEM_ATTENDANCE_COLS.DISTANCE,
+  'comments': SEM_ATTENDANCE_COLS.COMMENTS,
+  'platform': SEM_ATTENDANCE_COLS.PLATFORM,
+  'attendees': SEM_ATTENDANCE_COLS.B_ATTENDEES,
+}
+
+const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
+const TRIGGER_FUNC = checkAttendanceSubmission.name;
+const TRIGGER_BASE_ID = 'attendanceTrigger';
+const TRIGGER_OFFSET = 60 * 60 * 1000;  // 1 hour in ms
+
+
+/**
+ * Users authorized to use the McRUN menu.
+ *
+ * Prevents unwanted data overwrite in Gsheet.
+ *
+ * @constant {string[]} PERM_USER_ - List of authorized user emails.
+ */
+const PERM_USER_ = [
+  CLUB_EMAIL,
+  'ademetriou8@gmail.com',
+  'andreysebastian10.g@gmail.com',
+  'monaliu832@gmail.com'
+  // ADD NEW TECH MEMBERS!!
+];

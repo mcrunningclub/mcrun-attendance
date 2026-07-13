@@ -14,20 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/**
- * Users authorized to use the McRUN menu.
- *
- * Prevents unwanted data overwrite in Gsheet.
- *
- * @constant {string[]} PERM_USER_ - List of authorized user emails.
- */
-const PERM_USER_ = [
-  CLUB_EMAIL,
-  'ademetriou8@gmail.com',
-  'andreysebastian10.g@gmail.com',
-  'monaliu832@gmail.com'
-  // ADD NEW TECH MEMBERS!!
-];
 
 /**
  * Logs the user attempting to use the custom McRUN menu.
