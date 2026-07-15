@@ -27,7 +27,7 @@ limitations under the License.
 
 function onFormSubmission() {
   // Since GForm might not add submission to bottom, sort beforehand
-  sortAttendanceForm();
+  sortSemesterAttendance();
   SpreadsheetApp.flush();
 
   const row = getLastRow_();  // Get submission row index
@@ -78,7 +78,7 @@ function onAppSubmission(row = getLastRow_()) {
   // Create trigger as bypass?
   //logAsAC_(`Completed packaging and email submission!`, funcName);
 
-  sortAttendanceForm();
+  sortSemesterAttendance();
   logAsAC_(`Successfully executed!`, funcName, false);
 }
 
@@ -282,6 +282,54 @@ function sendBotEmail_(subject, recipient, htmlBody) {
   }
 
   MailApp.sendEmail(reminderEmail);
+}
+
+
+
+/**
+ * Create email using details from input `emailDetails' for internal use
+ *
+ * @param {Map<string>} emailDetails  Information needed to populate email body.
+ * @return {string}  HTML code for email.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Oct 29, 2024
+ * @update  May 15, 2025
+ *
+ * ```js
+ * // Sample Script ➜ Create email using info.
+ * const emailDetails = {
+ *    title : 'Monday - 6pm',
+ *    distance : '5km',
+ *    attendees : `['- Beginner: Bob Burger', '- Easy: Marge Simpson, Mabel Pines']`,
+ *    confirmation : No,
+ *    comments : 'Bob will pay fee next time.'
+ * };
+ * const emailHTML = createEmailCopy(emailDetails);
+ * ```
+ */
+
+function createEmailCopy_(emailDetails) {
+  // Check for non-empty key-value object
+  const size = Object.keys(emailDetails).length;
+
+  if (size < 5) {
+    const objectPrint = JSON.stringify(emailDetails);
+    throw Error(`Confirmation email cannot be created due to incorrect mapping of \`emailDetails\` argument:
+      ${objectPrint}`);
+  }
+
+  // Load HTML template and replace placeholders
+  const templateName = COPY_EMAIL_TEMPLATE;
+  const template = HtmlService.createTemplateFromFile(templateName);
+
+  template.TITLE = emailDetails.title;
+  template.DISTANCE = emailDetails.distance;
+  template.ATTENDEES = emailDetails.attendees;
+  template.CONFIRMATION = emailDetails.confirmation;
+  template.COMMENTS = emailDetails.comments;
+
+  return template.evaluate().getContent();  // Returns string content from populated html template
 }
 
 

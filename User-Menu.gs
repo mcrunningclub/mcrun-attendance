@@ -178,13 +178,13 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
  */
 
 function sortByTimestampUI_() {
-  const functionName = sortAttendanceForm.name;
+  const functionName = sortSemesterAttendance.name;
   const customMsg = "This sheet will be sorted by timestamp of submission."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
 function cleanSheetDataUI_() {
-  functionName = cleanSheetData.name;
+  functionName = formatSemesterAttendance.name;
   const customMsg = "This will clean and formal all the sheet data. \
   \n\nWARNING! Wide-sheet formatting may take some time."
 

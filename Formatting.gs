@@ -34,10 +34,10 @@ function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
 
 /**
  * Global wrapper function that runs the following on the sheet:
- *  - **formatAllHeadRun()**
- *  - **formatAllHeadRunner()**
- *  - **formatAllAttendeeNames()**
- *  - **formatAllConfirmations()**
+ *  - formats head run column for each row
+ *  - formats headrunner names for each row
+ *  - formats attendees' names for each row
+ *  - formats confirmations in each row
  *
  * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
  *
@@ -46,31 +46,11 @@ function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
  * @update  Dec 11, 2024
  */
 
-function cleanSheetData() {
-  formatAllHeadRun();   // Removes hyphen-space if applicable
-  formatAllHeadRunner();  // Applies uniform formatting to headrunners
-  formatAllConfirmations();  // Modifies bool to user-friendly message
-  formatAllAttendeeNames();  // Applies uniform formatting to attendees
-}
-
-/**
- * Formats all headrun entries in the attendance sheet.
- *
- * Removes hyphen-space if applicable.
- */
-
-function formatAllHeadRun() {
-  runOnSheet_(formatHeadrunInRow_.name);
-}
-
-/**
- * Wrapper function for `formatAllConfirmation` for **ALL** submissions.
- *
- * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
- */
-
-function formatAllConfirmations() {
-  runOnSheet_(formatConfirmationInRow_.name);
+function formatSemesterAttendance() {
+  runOnSheet_(formatHeadrunInRow_.name);   // Removes hyphen-space if applicable
+  runOnSheet_(formatHeadrunnersInRow_.name);  // Applies uniform formatting to headrunners
+  runOnSheet_(formatConfirmationInRow_.name);  // Modifies bool to user-friendly message
+  runOnSheet_(formatAttendeeNamesInRow_.name);  // Applies uniform formatting to attendees
 }
 
 
@@ -119,7 +99,7 @@ function formatConfirmationInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
 function formatAllNames() {
   const funcA = formatAttendeeNamesInRow_.name;
-  const funcB = formatHeadrunnerInRow_.name;
+  const funcB = formatHeadrunnersInRow_.name;
   runOnSheet_(funcA, funcB);  // Run both functions
 }
 
@@ -135,19 +115,8 @@ function formatAllNames() {
 function formatNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   logAsAC_('Now attempting to format headrunner and attendee names', formatNamesInRow_.name, false);
   formatAttendeeNamesInRow_(row);
-  formatHeadrunnerInRow_(row);
+  formatHeadrunnersInRow_(row);
   SpreadsheetApp.flush();   // Apply all changes
-}
-
-
-/**
- * Wrapper function for `formatAttendeeNamesInRow` for *ALL* submissions.
- *
- * Row number is 1-indexed in GSheet. Header row skipped. Top-to-bottom execution.
- */
-
-function formatAllAttendeeNames() {
-  runOnSheet_(formatAttendeeNamesInRow_.name);
 }
 
 
@@ -226,51 +195,121 @@ function formatAttendeeNamesInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
 
 /**
- * Create email using details from input `emailDetails' for internal use
+ * Formats headrunner names from `row` into uniform view, separated by newline.
  *
- * @param {Map<string>} emailDetails  Information needed to populate email body.
- * @return {string}  HTML code for email.
+ * Updated format is '`${firstName} ${lastNameLetter}.`'
+ *
+ * @param {integer} [row=ATTENDANCE_SHEET.getLastRow()]  The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
+ *                                                       Defaults to the last row in the sheet.
+ *
+ * @param {integer} numRow  Number of rows to format from `startRow`.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Oct 29, 2024
- * @update  May 15, 2025
+ * @date  Dec 10, 2024
+ * @update  Apr 7, 2024
  *
- * ```js
- * // Sample Script ➜ Create email using info.
- * const emailDetails = {
- *    title : 'Monday - 6pm',
- *    distance : '5km',
- *    attendees : `['- Beginner: Bob Burger', '- Easy: Marge Simpson, Mabel Pines']`,
- *    confirmation : No,
- *    comments : 'Bob will pay fee next time.'
- * };
- * const emailHTML = createEmailCopy(emailDetails);
+ * ```javascript
+ * // Sample Script ➜ Format names in row `7`.
+ * const rowToFormat = 7;
+ * formatHeadrunnerInRow(rowToFormat);
+ *
+ * // Sample Script ➜ Format names from row `3` to `9`.
+ * const startRow = 3;
+ * const numRow = 9 - startRow;
+ * formatHeadrunnerInRow(startRow, numRow);
  * ```
  */
 
-function createEmailCopy_(emailDetails) {
-  // Check for non-empty key-value object
-  const size = Object.keys(emailDetails).length;
+function formatHeadrunnersInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
+  const sheet = GET_ATTENDANCE_SHEET_();
+  const headrunnerCol = SEM_ATTENDANCE_COLS.HEADRUNNERS;
 
-  if (size < 5) {
-    const objectPrint = JSON.stringify(emailDetails);
-    throw Error(`Confirmation email cannot be created due to incorrect mapping of \`emailDetails\` argument:
-      ${objectPrint}`);
-  }
+  // Get all the values in `HEADRUNNERS_COL` in bulk
+  const rangeHeadRunner = sheet.getRange(startRow, headrunnerCol, numRow);
+  const rawValues = rangeHeadRunner.getValues();
 
-  // Load HTML template and replace placeholders
-  const templateName = COPY_EMAIL_TEMPLATE;
-  const template = HtmlService.createTemplateFromFile(templateName);
+  // Callback function to process the raw value into the formatted format
+  function processRow(row) {
+    const headrunners = row[0]  // Get first column from 2D array
+      .split(/[,|\n]+/)         // Split by commas or newlines
+      .map(formatHeadrunnerName_)   // Format each name using formatName()
+      .join('\n');       // Join the names with a newline
 
-  template.TITLE = emailDetails.title;
-  template.DISTANCE = emailDetails.distance;
-  template.ATTENDEES = emailDetails.attendees;
-  template.CONFIRMATION = emailDetails.confirmation;
-  template.COMMENTS = emailDetails.comments;
+    return [headrunners]; // Return as a 2D array for .setValues()
+  };
 
-  return template.evaluate().getContent();  // Returns string content from populated html template
+  // Map over each row to process and format by applying `processRow()`
+  const formattedNames = rawValues.map(processRow);   // apply processRow()
+
+  // Update the sheet with formatted names
+  rangeHeadRunner.setValues(formattedNames);
+  logAsAC_(
+    `Completed formatting of headrunner names\n${formattedNames.join(';')}`,
+    formatHeadrunnersInRow_.name,
+    false
+  );
 }
 
+/**
+ * Callback function to clean and format a single headrunner name
+ * 
+ * @param {string} name  Original string
+ * @return {string}  Formatted string
+ */
+function formatHeadrunnerName_(name) {
+  const cleanedName = name
+    .trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .toLowerCase()
+    .replace(/\b\w/g, letter => letter.toUpperCase()); // Capitalize each proper name
+
+  // Split into first, second (and rest if applicable)
+  const [firstPart, secondPart, ...rest] = cleanedName.split(' ');
+
+  // Get initial of last name (and prepend second part if applicable)
+  const lastPart = rest.length === 0 ? 
+    getInitial(secondPart) :
+   `${secondPart} ${getInitial(rest.join(''))}`
+  ;
+
+  return `${firstPart} ${lastPart}`;  // Return formatted name
+
+  function getInitial(name) {
+    const initial = (name.charAt(0) || '').toUpperCase();
+    return initial ? `${initial}.` : '';
+  }
+};
+
+
+/**
+ * Removes hyphen-space in headrun from `row` if applicable.
+ *
+ * @param {integer} [startRow=ATTENDANCE_SHEET.getLastRow()]
+ *                      The row in the `ATTENDANCE_SHEET` sheet (1-indexed).
+ *                      Defaults to the last row in the sheet.
+ *
+ * @param {integer} [numRow=1] Number of rows to format from `startRow`
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 10, 2024
+ * @update  Apr 7, 2025
+ */
+function formatHeadrunInRow_(startRow = ATTENDANCE_SHEET.getLastRow(), numRow = 1) {
+  const sheet = GET_ATTENDANCE_SHEET_();
+
+  // Get the cell value, and remove hyphen-space in each cell
+  const rangeToFormat = sheet.getRange(startRow, SEM_ATTENDANCE_COLS.HEADRUN, numRow);
+  var values = rangeToFormat.getValues();
+
+  // Bulk format if applicable
+  var formattedHeadRun = values.map(row => {
+    let cleanValue = row[0].toString().replace(/- /g, "");
+    return [cleanValue] // must return as 2d
+  });
+
+  // Replace with formatted value
+  rangeToFormat.setValues(formattedHeadRun);  // setValues requires 2d array
+}
 
 /**
  * Boiler plate function `functionName` to execute on complete sheet.
@@ -310,7 +349,7 @@ function runOnSheet_(functionName, functionName2 = "") {
  * @update  Apr 7, 2025
  */
 
-function sortAttendanceForm() {
+function sortSemesterAttendance() {
   const sheet = GET_ATTENDANCE_SHEET_();
 
   const numRows = sheet.getLastRow() - 1;  // Remove header row from count
@@ -366,37 +405,100 @@ function removePresenceChecks() {
 
 function formatSpecificColumns_() {
   const sheet = GET_ATTENDANCE_SHEET_();
+  const allCols = Object.entries(SEM_ATTENDANCE_COLS).length;
+  const lastRow = getLastRow_();
 
-  // Helper function to improve readability
-  const getThisRange = (ranges) =>
-    Array.isArray(ranges) ? sheet.getRangeList(ranges) : sheet.getRange(ranges);
+  // Helper functions
+  function getHeaderCells(columns) {
+    const str_cells = columns.map((colNumber) => {
+      const letter = String.fromCharCode(64 + colNumber);
+      return letter + '1';
+    })
+    return sheet.getRangeList(str_cells);
+  }
+
+  function getHeaderRow() {
+    return sheet.getRange(1, 1, 1, allCols);
+  }
+
+  function getColumnsExceptHeader(columns) {
+    const str_columns = columns.map((colNumber) => {
+      const letter = String.fromCharCode(64 + colNumber);
+      return letter + '2:' + letter + lastRow;
+    })
+    return sheet.getRangeList(str_columns);
+  }
+
+  function getColumnsIncludingHeader(columns) {
+    const str_columns = columns.map((colNumber) => {
+      const letter = String.fromCharCode(64 + colNumber);
+      return letter + '1:' + letter;
+    })
+    return sheet.getRangeList(str_columns);
+  }
 
   // 1. Freeze panes
   sheet.setFrozenRows(1);
   sheet.setFrozenColumns(1);
 
   // 2. Bold formatting
-  getThisRange([
-    'A1:O1',  // Header Row
-    'A2:A',   // Timestamp
-    'D2:D',   // Headrun
-    'M2:O'    // Transfer Status + ... + Not Found
+  getHeaderRow().setFontWeight('bold');
+  getColumnsExceptHeader([
+    SEM_ATTENDANCE_COLS.TIMESTAMP,
+    SEM_ATTENDANCE_COLS.HEADRUN,
+    SEM_ATTENDANCE_COLS.TRANSFER_STATUS,
+    SEM_ATTENDANCE_COLS.PLATFORM,
+    SEM_ATTENDANCE_COLS.NOT_FOUND
   ]).setFontWeight('bold');
 
   // 3. Font size adjustments
-  getThisRange(['A2:A', 'D2:D', 'N2:N']).setFontSize(11); // for Headrun + Submission Platform
-  getThisRange(['C2:C', 'F2:I']).setFontSize(9);  // Headrunners + Attendees
+  getColumnsExceptHeader([
+    SEM_ATTENDANCE_COLS.TIMESTAMP,
+    SEM_ATTENDANCE_COLS.HEADRUN,
+    SEM_ATTENDANCE_COLS.PLATFORM
+  ]).setFontSize(11);
+  getColumnsExceptHeader([
+    SEM_ATTENDANCE_COLS.HEADRUNNERS,
+    SEM_ATTENDANCE_COLS.A_ATTENDEES,
+    SEM_ATTENDANCE_COLS.B_ATTENDEES,
+    SEM_ATTENDANCE_COLS.E_ATTENDEES,
+    SEM_ATTENDANCE_COLS.I_ATTENDEES
+  ]).setFontSize(9);  // Headrunners + Attendees
 
   // 4. Text wrapping
-  getThisRange(['B2:E', 'J2:L']).setWrap(true);
-  getThisRange('F2:I').setWrap(false);  // Attendees
+  getColumnsExceptHeader([
+    SEM_ATTENDANCE_COLS.EMAIL,
+    SEM_ATTENDANCE_COLS.HEADRUNNERS,
+    SEM_ATTENDANCE_COLS.HEADRUN,
+    SEM_ATTENDANCE_COLS.RUN_LEVEL,
+    SEM_ATTENDANCE_COLS.CONFIRMATION,
+    SEM_ATTENDANCE_COLS.DISTANCE,
+    SEM_ATTENDANCE_COLS.COMMENTS
+  ]).setWrap(true);
+  getColumnsExceptHeader([
+    SEM_ATTENDANCE_COLS.HEADRUNNERS,
+    SEM_ATTENDANCE_COLS.A_ATTENDEES,
+    SEM_ATTENDANCE_COLS.B_ATTENDEES,
+    SEM_ATTENDANCE_COLS.E_ATTENDEES,
+    SEM_ATTENDANCE_COLS.I_ATTENDEES
+  ]).setWrap(false);  // Attendees
 
   // 5. Horizontal and vertical alignment
-  getThisRange(['E2:E', 'M2:N']).setHorizontalAlignment('center');  // Headrun + Transfer Status + Submission Platform
-
-  getThisRange([
-    'D2:I',   // Headrun Details + Attendees
-    'M2:N',   // Transfer Status + Submission Platform
+  getColumnsExceptHeader([
+    SEM_ATTENDANCE_COLS.HEADRUN,
+    SEM_ATTENDANCE_COLS.TRANSFER_STATUS,
+    SEM_ATTENDANCE_COLS.PLATFORM
+  ]).setHorizontalAlignment('center');  // Headrun + Transfer Status + Submission Platform
+  getColumnsExceptHeader([
+    SEM_ATTENDANCE_COLS.HEADRUN,
+    SEM_ATTENDANCE_COLS.RUN_LEVEL,
+    SEM_ATTENDANCE_COLS.HEADRUNNERS,
+    SEM_ATTENDANCE_COLS.A_ATTENDEES,
+    SEM_ATTENDANCE_COLS.B_ATTENDEES,
+    SEM_ATTENDANCE_COLS.E_ATTENDEES,
+    SEM_ATTENDANCE_COLS.I_ATTENDEES,
+    SEM_ATTENDANCE_COLS.TRANSFER_STATUS,
+    SEM_ATTENDANCE_COLS.PLATFORM
   ]).setVerticalAlignment('middle');
 
   // 6. Update banding colours by extending range
