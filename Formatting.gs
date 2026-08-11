@@ -30,7 +30,16 @@ function addMissingPlatform_(row = ATTENDANCE_SHEET.getLastRow()) {
   rangePlatform.setValue('Google Form');
 }
 
+/**
+ * Applies bulk formatting to specified row in the attendance sheet.
+ *
+ * @param {number} row - The row index in the attendance sheet to format.
+ */
 
+function bulkFormatRow_(row) {
+  formatConfirmationInRow_(row);  // Transforms bool to user-friendly message
+  formatNamesInRow_(row);     // Formats names in last row
+}
 
 /**
  * Global wrapper function that runs the following on the sheet:

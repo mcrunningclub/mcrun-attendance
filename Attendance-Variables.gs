@@ -287,7 +287,7 @@ const IMPORT_MAP = {
 }
 
 const CALENDAR_STORE = SCRIPT_PROPERTY.calendarTriggers;
-const TRIGGER_FUNC = checkAttendanceSubmission.name;
+const TRIGGER_FUNC = checkMissingAttendance.name;
 const TRIGGER_BASE_ID = 'attendanceTrigger';
 const TRIGGER_OFFSET = 60 * 60 * 1000;  // 1 hour in ms
 

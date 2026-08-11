@@ -193,7 +193,7 @@ function runSubmissionChecker() {
     const today = new Date();
     if (new Date(timedate) > today) continue;
 
-    const isSubmitted = checkAttendanceSubmission(timedate, level);
+    const isSubmitted = checkMissingAttendance(timedate, level);
     if (isSubmitted) {
       cleanUpTrigger(key, triggerId);
       Logger.log(`Cleaning up trigger ${key}\n\n${triggerData}`);
@@ -202,7 +202,7 @@ function runSubmissionChecker() {
       const emailObj = { emailsByLevel, title };
 
       // Send reminder of email
-      sendEmailReminder_(emailObj);
+      sendAttendanceReminder_(emailObj);
     }
   }
 }

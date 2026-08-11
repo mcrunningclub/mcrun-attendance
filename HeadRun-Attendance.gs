@@ -18,6 +18,8 @@ limitations under the License.
 
 /**
  * Functions to execute after form submission.
+ * 
+ * Sort & format attendance and process last row (newest).
  *
  * To use as a trigger function, it cannot have parameters.
  * Otherwise, a runtime exception is raised for new form submission.
@@ -33,26 +35,29 @@ function onFormSubmission() {
   const row = getLastRow_();  // Get submission row index
   console.log(`Latest row number: ${row}`);
 
-  onFormSubmissionInRow_(row);
-  transferAndFormat_(row);
+  processRow_(row);
+  transferSubmissionToLedger(row);
+  formatSpecificColumns_();
 }
 
 
 /**
- * Executes functions for a specific row after form submission.
+ * Sets platform to "Google Form", formats, and extracts unregistered
+ * members for the given row.
  *
  * @param {number} row  The row index in the attendance sheet to process.
  */
 
-function onFormSubmissionInRow_(row) {
+function processRow_(row) {
   addMissingPlatform_(row);    // Sets platform to 'Google Form'
-  bulkFormatting_(row);
+  bulkFormatRow_(row);
   getUnregisteredMembersInRow_(row);    // Find any unregistered members
 }
 
-
 /**
  * Functions to execute after McRUN app submission.
+ * 
+ * Format new entry, transfer to Points Ledger, sort & format attendance.
  *
  * @trigger McRUN App Attendance Submission.
  *
@@ -68,10 +73,11 @@ function onAppSubmission(row = getLastRow_()) {
   logAsAC_(`Current headrunners in store:`, funcName);
   console.log(getAllHeadrunners_());
   
-  bulkFormatting_(row);
+  bulkFormatRow_(row);
   logAsAC_(`Completed formatting!`, funcName);
   
-  transferAndFormat_(row);
+  transferSubmissionToLedger(row);
+  formatSpecificColumns_();
   logAsAC_(`Completed transfer and formatting!`, funcName);
 
   //packageAndEmailSubmission_(row);    // Cannot be called using Attendance Code library (i.e. from AC-M)
@@ -82,13 +88,22 @@ function onAppSubmission(row = getLastRow_()) {
   logAsAC_(`Successfully executed!`, funcName, false);
 }
 
-function packageAndEmailSubmission_(row) {
+
+/**
+ * Get headrunner emails from the submission and send them a copy of the submitted
+ * attendance.
+ * 
+ * Cannot be called using Attendance Code library (i.e. from AC-M)
+ * 
+ * @param {number} row  Row number of submission
+ */
+function packageAndEmailAttendance_(row) {
   // Get submission values for 'row' and timestamp
   const submission = GET_ATTENDANCE_SHEET_().getSheetValues(row, 1, 1, -1)[0];
   const timestamp = submission[SEM_ATTENDANCE_COLS.TIMESTAMP - 1];
 
   let headrunnerEmails = [];
-  const funcName = packageAndEmailSubmission_.name;
+  const funcName = packageAndEmailAttendance_.name;
 
   try {
     // Get corresponding run schedule and time for 'timestamp'
@@ -107,43 +122,15 @@ function packageAndEmailSubmission_(row) {
     // Check if emails were found, else try directly by name
     if (!headrunnerEmails || headrunnerEmails.length === 0) {
       logAsAC_(`Now trying to get emails using logged headrunner names`, funcName);
-      headrunnerEmails = tryByNames();
+      const headrunnersInRow = GET_ATTENDANCE_SHEET_().getRange(row, SEM_ATTENDANCE_COLS.HEADRUNNERS).getValue() || "";
+      headrunnerEmails = getHeadrunnerEmailFromName_(headrunnersInRow.trim());
     } 
 
     // Send copy of submission to headrunners
     const headrunTitle = getHeadrunTitle_(submission);
     logAsAC_(`Found headrun title ${headrunTitle}. Now trying to send...`, funcName);
-    sendSubmissionCopy_({ headrunTitle, headrunnerEmails}, submission);
+    sendAttendanceCopy_({ headrunTitle, headrunnerEmails}, submission);
   }
-
-  function tryByNames() {
-    const headrunnersInRow = GET_ATTENDANCE_SHEET_().getRange(row, SEM_ATTENDANCE_COLS.HEADRUNNERS).getValue() || "";
-    return getHeadrunnerEmailFromName_(headrunnersInRow.trim());
-  }
-}
-
-/**
- * Applies bulk formatting to a specific row in the attendance sheet.
- *
- * @param {number} row - The row index in the attendance sheet to format.
- */
-
-function bulkFormatting_(row) {
-  formatConfirmationInRow_(row);  // Transforms bool to user-friendly message
-  formatNamesInRow_(row);     // Formats names in last row
-}
-
-
-/**
- * Transfers and formats a specific row in the attendance sheet.
- *
- * @param {number} row - The row index in the attendance sheet to transfer and format.
- */
-
-function transferAndFormat_(row) {
-  const logRow = transferSubmissionToLedger(row);
-  //triggerEmailInLedger_(logRow);  @deprecated
-  formatSpecificColumns_();
 }
 
 /**
@@ -169,7 +156,13 @@ function toggleAttendanceCheck_() {
   return toggledState;
 }
 
-
+/**
+ * Gets the headrun title (weekday + AM/PM) from attendance submission.
+ * If no submission, uses current date.
+ * 
+ * @param {list} submission  Values from row in attendance sheet
+ * @returns {string}  e.g. Tuesday AM
+ */
 function getHeadrunTitle_(submission) {
   if (submission) {
     return submission[SEM_ATTENDANCE_COLS.HEADRUN - 1];
@@ -181,7 +174,13 @@ function getHeadrunTitle_(submission) {
 
 /**
  * Checks for missing submissions after a scheduled headrun.
- *
+ * 
+ * @param {Date} today  Date to check
+ * @param {string} headrunTitle  Title of the headrun
+ * @param {string?} level  Level of the headrun
+ * 
+ * @returns {boolean}  True if attendance is missing?
+ * 
  * @warning The service property `IS_CHECKING_ATTENDANCE` must be set to `true`.
  *
  * @trigger 30-60 mins after headrun schedule.
@@ -191,7 +190,7 @@ function getHeadrunTitle_(submission) {
  * @update  Jun 2, 2025
  */
 
-function checkAttendanceSubmission(today = new Date(), headrunTitle, level) {
+function checkMissingAttendance(today = new Date(), headrunTitle, level) {
   // First, check if attendance can be verified
   checkIfLegal();
 
@@ -284,8 +283,6 @@ function sendBotEmail_(subject, recipient, htmlBody) {
   MailApp.sendEmail(reminderEmail);
 }
 
-
-
 /**
  * Create email using details from input `emailDetails' for internal use
  *
@@ -309,7 +306,7 @@ function sendBotEmail_(subject, recipient, htmlBody) {
  * ```
  */
 
-function createEmailCopy_(emailDetails) {
+function createAttendanceEmail_(emailDetails) {
   // Check for non-empty key-value object
   const size = Object.keys(emailDetails).length;
 
@@ -351,11 +348,11 @@ function createEmailCopy_(emailDetails) {
  * @param {Array} submission  The attendance submission data.
  */
 
-function sendSubmissionCopy_({ headrunTitle, headrunnerEmails }, submission) {
+function sendAttendanceCopy_({ headrunTitle, headrunnerEmails }, submission) {
   // Error Management: prevent wrong user sending email
   if (! [APP_EMAIL,CLUB_EMAIL].includes(getCurrentUserEmail_())) throw Error('Please change to McRUN account');
   
-  logAsAC_(`Now trying to send copy of attendance submission`, sendSubmissionCopy_.name);
+  logAsAC_(`Now trying to send copy of attendance submission`, sendAttendanceCopy_.name);
   submission.unshift('');   // Make submission 1-indexed
 
   // Prepare values to populate copy email template
@@ -368,7 +365,7 @@ function sendSubmissionCopy_({ headrunTitle, headrunnerEmails }, submission) {
   };
 
   // Create html code by populating with `headrun` values
-  const copyEmailHTML = createEmailCopy_(headrun);
+  const copyEmailHTML = createAttendanceEmail_(headrun);
 
   // Send email using email bot helper function
   sendBotEmail_(
@@ -377,7 +374,7 @@ function sendSubmissionCopy_({ headrunTitle, headrunnerEmails }, submission) {
     copyEmailHTML   // HTML body
   ); 
 
-  logAsAC_(`Successfully sent copy for '${headrunTitle}'`, sendSubmissionCopy_.name);
+  logAsAC_(`Successfully sent copy for '${headrunTitle}'`, sendAttendanceCopy_.name);
 
   /** Helper Function */
   function prepareAttendees() {
@@ -407,7 +404,7 @@ function sendSubmissionCopy_({ headrunTitle, headrunnerEmails }, submission) {
  * @param {string} emailObj.headrunTitle - The title of the headrun.
  */
 
-function sendEmailReminder_({ emailsByLevel, headrunTitle }) {
+function sendAttendanceReminder_({ emailsByLevel, headrunTitle }) {
   // Error Management: prevent wrong user sending email
   if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
 

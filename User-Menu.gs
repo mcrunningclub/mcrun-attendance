@@ -236,7 +236,7 @@ function removePresenceCheckUI_() {
 }
 
 function checkMissingAttendanceUI_() {
-  const functionName = checkAttendanceSubmission.name;
+  const functionName = checkMissingAttendance.name;
   const customMsg = "WARNING. This will send an email reminder to headrunners if attendance is missing."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
@@ -306,7 +306,7 @@ function onFormSubmitUI_() {
   const fullMsg = (returnObj.msg ? `${returnObj.msg}\n\n` : '') + firstMsg;
 
   // Execute Function with argument
-  const functionName = onFormSubmissionInRow_.name;
+  const functionName = processRow_.name;
   confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
 }
 
