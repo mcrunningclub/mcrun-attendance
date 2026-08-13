@@ -113,7 +113,7 @@ function packageAndEmailAttendance_(row) {
 
     // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
     const runScheduleLevels = currentDaySchedule?.[currentTimeKey] || {};
-    headrunnerEmails = Object.values(getHeadrunnerEmailFromStore_(runScheduleLevels));
+    headrunnerEmails = Object.values(getHeadrunnerEmailsFromSchedule_(runScheduleLevels));
   }
   catch(e) {
     logAsAC_(`Catch error: ${e.message}`, funcName);
@@ -123,7 +123,7 @@ function packageAndEmailAttendance_(row) {
     if (!headrunnerEmails || headrunnerEmails.length === 0) {
       logAsAC_(`Now trying to get emails using logged headrunner names`, funcName);
       const headrunnersInRow = GET_ATTENDANCE_SHEET_().getRange(row, SEM_ATTENDANCE_COLS.HEADRUNNERS).getValue() || "";
-      headrunnerEmails = getHeadrunnerEmailFromName_(headrunnersInRow.trim());
+      headrunnerEmails = getHeadrunnerEmailsFromNames_(headrunnersInRow.trim());
     } 
 
     // Send copy of submission to headrunners
@@ -168,7 +168,7 @@ function getHeadrunTitle_(submission) {
     return submission[SEM_ATTENDANCE_COLS.HEADRUN - 1];
   }
   const today = new Date();
-  return `${getWeekday_(today.getDay())} ${today.getHours() >= 12 ? "PM" : "AM"}`;   // e.g. 'Tuesday AM';
+  return `${getWeekdayAsString_(today.getDay())} ${today.getHours() >= 12 ? "PM" : "AM"}`;   // e.g. 'Tuesday AM';
 }
 
 
@@ -208,7 +208,7 @@ function checkMissingAttendance(today = new Date(), headrunTitle, level) {
   headrunTitle = headrunTitle ?? getHeadrunTitle_(submission);
 
   // Headrunner emails separated by levels e.g. {'easy' : [emails], 'advanced' : [emails], ...}
-  const emailsByLevel = getHeadrunnerEmailFromStore_(runScheduleLevels);
+  const emailsByLevel = getHeadrunnerEmailsFromSchedule_(runScheduleLevels);
   const emailObj = { 'emailsByLevel' : emailsByLevel, 'headrunTitle' : headrunTitle };
 
   Logger.log(`Executed 'checkMissingAttendance' with ${JSON.stringify(emailObj)}`);

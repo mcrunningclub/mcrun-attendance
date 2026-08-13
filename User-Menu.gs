@@ -353,7 +353,7 @@ function importAppRecordUI_() {
   const fullMsg = (returnObj.msg ? `${returnObj.msg}\n\n` : '') + firstMsg;
 
   // Execute Function with argument
-  const functionName = transferThisRow_.name;
+  const functionName = transferImportToSemester_.name;
   confirmAndRunUserChoice_(functionName, fullMsg, selectedRow);
 }
 

@@ -23,9 +23,7 @@ limitations under the License.
 /** 
  * Process latest imported attendance submission via McRUN app.
  * 
- * Verifies if import is JSON-formatted string or GSheet multi-column import.
- * 
- * @param {SpreadsheetApp.Sheet} sourceSheet  Sheet with latest submission.
+ * @param {Object} importObj  Data to process (as JSON-formatted string?)
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Feb 10, 2025
@@ -48,12 +46,12 @@ function processImportFromApp(importObj) {
     // Now process input
     const attendanceObj = JSON.parse(importObj);
     logAsAC_(`Now trying to export values to row #${newSemesterRow} in Attendance Sheet`, funcName);
-    newSemesterRow = copyToSemesterSheet_(attendanceObj);
+    newSemesterRow = copyObjToSemesterSheet_(attendanceObj);
     logAsAC_(`Successfully imported values!`, funcName);
 
     // Log successful transfer to attendance sheet
     const newImportRow = importSheet.getLastRow();
-    toggleSuccessfulImport_(newImportRow, IS_IMPORTED_COL);
+    toggleIsImported_(newImportRow, IS_IMPORTED_COL);
   }
   catch (e) {
     logAsAC_(`Unable to fully import 'importObj' in Attendance Sheet`, funcName);
@@ -81,26 +79,38 @@ function processImportFromApp(importObj) {
  * @trigger  New head run or McRUN attendance submission.
  */
 
-function transferLastImport() {
+function transferLastImportToSemester() {
   const thisLastRow = getLastRow_(IMPORT_SHEET);
-  transferThisRow_(thisLastRow);
+  transferImportToSemester_(thisLastRow);
 }
 
-function transferThisRow_(row) {
+
+/**
+ * Copies row from import sheet to semester attendance sheet if it doesn't already exist.
+ * 
+ * @param {number} row  Number of the row to transfer
+ */
+function transferImportToSemester_(row) {
   const attendanceObj = JSON.parse(IMPORT_SHEET.getRange(row, 1).getValue());
   const attendanceTimestamp = attendanceObj['timestamp'];
 
   // Check if attendanceObj already imported in attendance sheet. Exit if true
-  const isFound = checkExistingTimestamp_(attendanceTimestamp, 3);   // Check last 3 rows
+  const isFound = timestampExistsInSemester_(attendanceTimestamp, 3);   // Check last 3 rows
   if (isFound) return;
 
   // Transfer if attendance submission not found.
-  copyToSemesterSheet_(attendanceObj);
-  toggleSuccessfulImport_(row);
+  copyObjToSemesterSheet_(attendanceObj);
+  toggleIsImported_(row);
 }
 
-
-function toggleSuccessfulImport_(row, colIndex = null) {
+/**
+ * Changes value of isImported column in import sheet to True.
+ * If column number is not provided, finds it using sheet header row.
+ * 
+ * @param {number} row  Number of row to change.
+ * @param {number} colIndex  (Optional) Number of column corresponding to isImported column.
+ */
+function toggleIsImported_(row, colIndex = null) {
   const sheet = GET_IMPORT_SHEET_();
   let isImportedCol = colIndex;
 
@@ -111,7 +121,7 @@ function toggleSuccessfulImport_(row, colIndex = null) {
 
   const isImportedRange = sheet.getRange(row, isImportedCol);
   isImportedRange.setValue(true);
-  logAsAC_(`Toggled successful import in row #${row}`, toggleSuccessfulImport_.name);
+  logAsAC_(`Toggled successful import in row #${row}`, toggleIsImported_.name);
 }
 
 
@@ -129,7 +139,7 @@ function toggleSuccessfulImport_(row, colIndex = null) {
  * @update  Mar 20, 2025
  */
 
-function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
+function timestampExistsInSemester_(timestampToCompare, numOfRow = 5) {
   const sheet = ATTENDANCE_SHEET;
 
   // Get dimensions of array
@@ -164,9 +174,9 @@ function checkExistingTimestamp_(timestampToCompare, numOfRow = 5) {
  * @update  Sep 18, 2025
  */
 
-function copyToSemesterSheet_(attendanceJSON, row = getLastRow_()) {
+function copyObjToSemesterSheet_(attendanceJSON, row = getLastRow_()) {
   // Start with debugging message
-  logAsAC_(`Starting execution for row #${row}...`, copyToSemesterSheet_.name);
+  logAsAC_(`Starting execution for row #${row}...`, copyObjToSemesterSheet_.name);
 
   const attendanceSheet = GET_ATTENDANCE_SHEET_();
   const importMap = IMPORT_MAP;
@@ -208,7 +218,7 @@ function copyToSemesterSheet_(attendanceJSON, row = getLastRow_()) {
   rangeToImport.setValues([valuesByIndex]);
 
   // Log and return startRow
-  logAsAC_(`Set registration '${timestampValue}' in row #${startRow}`, copyToSemesterSheet_.name);
+  logAsAC_(`Set registration '${timestampValue}' in row #${startRow}`, copyObjToSemesterSheet_.name);
   return startRow;
 }
 

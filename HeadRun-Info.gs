@@ -19,7 +19,7 @@ limitations under the License.
  * @param {string} key - The key under which the object will be stored.
  * @param {Object} obj - The object to store.
  */
-function storeObject_(key, obj) {
+function storeProperty_(key, obj) {
   const docProp = PropertiesService.getScriptProperties();
   docProp.setProperty(key, JSON.stringify(obj));
 }
@@ -32,45 +32,58 @@ let ALL_HEADRUNS = null;
  * @return {Object} - An object containing all headruns.
  */
 function getAllHeadruns_() {
-  return ALL_HEADRUNS ?? initializeRef();
+  return ALL_HEADRUNS ?? initializeHeadruns();
 
-  function initializeRef() {
+  function initializeHeadruns() {
     const docProp = PropertiesService.getScriptProperties();
     ALL_HEADRUNS = JSON.parse(docProp.getProperty(HEADRUN_STORE_NAME));
     return ALL_HEADRUNS;
   }
 }
 
+/**
+ * Retrieves headrunners from the properties store
+ * 
+ * @return {Object}  An object containing all headrunners
+ */
 function getAllHeadrunners_() {
   const docProp = PropertiesService.getScriptProperties();
   return JSON.parse(docProp.getProperty(HEADRUNNER_STORE_NAME));
 }
 
-/** Returns day code formatted as `weekday` in lowercase. Index [0-6] (Sunday = 0) */
-function getWeekday_(weekdayIndex) {
+/** 
+ * Returns day of week (starting on Sunday) given index of the day
+ * 
+ * @param {number} index  Index of weekday to get, eg. 1
+ * @return {string}  Name of weekday, eg. "Monday"
+ */
+function getWeekdayAsString_(index) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[weekdayIndex];
+  return days[index];
 }
 
 /** 
- * Find schedule for current weekday, either as string representation, or js equivalent (1 = 'monday').
+ * Return headrun schedule for given day of week.
+ * 
+ * @param {string|number} weekday  Day of week to get schedule for. Can be string representation or js equivalent (1 = 'monday').
+ * @return {}
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  May 2, 2025
  * @update  Sep 28, 2025
  */
-function getScheduleFromStore_(currentWeekday) {
+function getScheduleFromStore_(weekday) {
   const runSchedule = getAllHeadruns_();
   if (!runSchedule) return null;
 
-  const isString = typeof currentWeekday === 'string';
-  const weekString = (isString ? currentWeekday : getWeekday_(currentWeekday)).toLowerCase();
+  const isString = typeof weekday === 'string';
+  const weekdayStr = (isString ? weekday : getWeekdayAsString_(weekday)).toLowerCase();
 
   // Verify valid run schedule for current weekday, else throw error
-  if (runSchedule[weekString]) {
-    return runSchedule[weekString];
+  if (runSchedule[weekdayStr]) {
+    return runSchedule[weekdayStr];
   }
-  throw new Error(`No run schedule found for ${currentWeekday}`);
+  throw new Error(`No run schedule found for ${weekday}`);
 }
 
 
@@ -129,14 +142,13 @@ function getMatchedTimeKey_(submissionDate, runSchedule, offsetHours = 2) {
 }
 
 
-function matchTimeRange() {
-}
-
-
 /** 
  * Returns email address of headrunners for a run, divided by levels.
  * 
  * Replaced initial `getHeadRunnerEmail()`, which was hard-coded and required updating.
+ * 
+ * @param {string[]} runLevels  Headrun levels to get headrunner emails for.
+ * @return {Object}  Given run levels as keys and list of emails as values.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  May 2, 2025
@@ -144,16 +156,16 @@ function matchTimeRange() {
  * 
  * ```js
  * const runs = getScheduleFromStore_('monday');
- * const emails = getHeadrunnerEmailFromStore_(runs['8am']);
+ * const emails = getHeadrunnerEmailsFromSchedule_(runs['8am']);
  * Logger.log(emails)   // { beginner : ['bob@mail.com'], advanced : ['jane@mail.com'] };
  * ```
  */
-function getHeadrunnerEmailFromStore_(runScheduleLevels) {
+function getHeadrunnerEmailsFromSchedule_(runLevels) {
   const headrunnerStore = getAllHeadrunners_();
   const allEmails = {};
 
-  for (const level in runScheduleLevels) {
-    const levelHeadrunners = runScheduleLevels[level];
+  for (const level in runLevels) {
+    const levelHeadrunners = runLevels[level];
 
     const levelEmails = levelHeadrunners.reduce((arr, headrunner) => {
       const email = headrunnerStore[headrunner].email ?? '';
@@ -171,6 +183,9 @@ function getHeadrunnerEmailFromStore_(runScheduleLevels) {
  * Iterates array of headrunner names and returns array of email address if found.
  * Names are formatted as `firstName [middleName] initialLastName.`
  * 
+ * @param {string[]} names  Names of headrunners to get emails for.
+ * @return {string[]}  List of emails found. If no emails found, return empty list.
+ * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Sep 27, 2025
  * @update  Sep 28, 2025
@@ -181,7 +196,7 @@ function getHeadrunnerEmailFromStore_(runScheduleLevels) {
  * Logger.log(emails)   // ['bob@mail.com', 'bart@mail.com'] };
  * ```
  */
-function getHeadrunnerEmailFromName_(names) {
+function getHeadrunnerEmailsFromNames_(names) {
   // Get all headrunner info (e.g. nameKey, email, strava, ...)
   if (!names) return;
 
@@ -196,8 +211,8 @@ function getHeadrunnerEmailFromName_(names) {
     }, []);
   }
   catch(e) {
-    logAsAC_(`Unable to get headrunner email for names '${names}'`, getHeadrunnerEmailFromName_.name);
-    logAsAC_(`Catch error: ${e.message}`, getHeadrunnerEmailFromName_.name);
+    logAsAC_(`Unable to get headrunner email for names '${names}'`, getHeadrunnerEmailsFromNames_.name);
+    logAsAC_(`Catch error: ${e.message}`, getHeadrunnerEmailsFromNames_.name);
   }
 
   return [];
@@ -205,7 +220,11 @@ function getHeadrunnerEmailFromName_(names) {
 
 
 /**
- * Returns string of headrunner info as `name:email` delimited by newlines.
+ * Adds emails to string with headrunner names.
+ * 
+ * @param {string} names  Headrunner names delimited by newlines
+ * @param {string} delimiter  (Optional) Delimiter used to separate headrunners, default \n 
+ * @return {strin}  Headrunner info as `name:email` delimited by newlines.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Sep 27, 2025
@@ -217,31 +236,32 @@ function getHeadrunnerEmailFromName_(names) {
  * Logger.log(nameEmails)   // "Bob B.:bob@mail.com\nJane D.\nBart S.:bart@mail.com";
  * ```
  */
-function appendHeadrunnerEmail_(namesString, delimiter = '\n') {
+function appendHeadrunnerEmail_(namesStr, delimiter = '\n') {
   // Get all headrunner info (e.g. nameKey, email, strava, ...)
-  if (!namesString) return;
+  if (!namesStr) return;
   const headrunnerStore = getAllHeadrunners_();
 
   // If store cannot be read (i.e. cannot access Script Properties, then return namesString)
   // `getAllHeadrunners_()` will not work from external scripts
-  if (!headrunnerStore) return namesString;
+  if (!headrunnerStore) return namesStr;
 
   // Split names into array
-  const names = namesString.split(delimiter);
+  const names = namesStr.split(delimiter);
 
   // Append email to name if found in store
-  const headrunnerNameEmail = [];
+  const namesAndEmails = [];
   for(let i = 0; i < names.length; i++) {
     const email = headrunnerStore[names[i]]?.email || "";
     const nameEmail = names[i] + (email ? `:${email}` : '');
-    headrunnerNameEmail.push(nameEmail);
+    namesAndEmails.push(nameEmail);
   }
-  return headrunnerNameEmail.join(delimiter);
+  return namesAndEmails.join(delimiter);
 }
 
 
-/** Display all headrun and headrunner data in user-friendly log */
-
+/** 
+ * Display all headrun and headrunner data in user-friendly log
+ */
 function prettyPrintRunData() {
   prettyPrintHeadrunnerObj();
   prettyPrintHeadrunObj();
@@ -323,8 +343,8 @@ function readAndStoreRunData() {
   }, {});
 
   // Save information to properties store
-  storeObject_(HEADRUNNER_STORE_NAME, headrunnerObj);
-  storeObject_(HEADRUN_STORE_NAME, headrunObj);
+  storeProperty_(HEADRUNNER_STORE_NAME, headrunnerObj);
+  storeProperty_(HEADRUN_STORE_NAME, headrunObj);
 
   Logger.log(`Completed parsing and storage of run data for '${SEMESTER_NAME}'`);
   prettyPrintRunData();
@@ -353,8 +373,6 @@ function readAndStoreRunData() {
     return match ? match[1] : input;
   }
 }
-
-
 
 
 /**
