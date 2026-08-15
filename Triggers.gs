@@ -24,40 +24,19 @@ function updateWeeklyCalendarTriggers() {
   // Error Management: ensure correct calendar is used
   if (getCurrentUserEmail_() != CLUB_EMAIL) throw Error('Please change to McRUN account');
 
-  createDailyAttendanceTrigger_();
+  createCalendarTriggersForWeek_();
   deleteExpiredCalendarTriggers_();
 }
 
 /**
- * Add new McRUN event from calendar to Apps Script trigger for today.
- * 
- * @trigger  Updated calendar.
- *
- * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
- * @date  Apr 17, 2025
- * @update  Apr 17, 2025
- */
-
-function addSingleEventTrigger() {
-  const now = new Date();
-  const midnight = new Date(new Date().setHours(23, 59, 59, 59));
-
-  const calendar = CalendarApp.getDefaultCalendar();
-  const events = calendar.getEvents(now, midnight);
-  events.forEach(e => createAndStoreTrigger_(e));
-
-  PropertiesService.getScriptProperties().setProperty('testEvent', events[0]);
-}
-
-/**
- * Get events from calendar and create time-based triggers.
+ * Get events for current week from calendar and create time-based triggers.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) + ChatGPT
  * @date  Apr 17, 2025
  * @update  Apr 27, 2025
  */
 
-function createDailyAttendanceTrigger_() {
+function createCalendarTriggersForWeek_() {
   const calendar = CalendarApp.getDefaultCalendar();
 
   const now = new Date();
@@ -72,7 +51,7 @@ function createDailyAttendanceTrigger_() {
     event.getStartTime() > now
   );
 
-  filteredEvents.forEach(event => createAndStoreTrigger_(event));
+  filteredEvents.forEach(event => createCalendarTrigger_(event));
 
   // Helper: Gets the Sunday of the current week
   function getStartOfWeek(date) {
@@ -85,26 +64,9 @@ function createDailyAttendanceTrigger_() {
 }
 
 /**
- * Gets the start of the day for a given date.
- *
- * @param {Date} date - The date for which to get the start of the day.
- * @return {Date} - A new Date object set to the start of the given day.
+ * Get cancelled events for today from calendar and remove their triggers.
  */
-
-function getStartOfDay_(date) {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  return start;
-}
-
-function getEndOfDay_(date) {
-  const start = new Date(date);
-  start.setHours(23, 59, 59, 59);
-  return start;
-} 
-
-
-function updateCalendarTriggers() {
+function cleanUpCalendarTriggersForToday() {
   // Get events from 12am to 11:59pm
   const now = new Date();
   const start = getStartOfDay_(now);
@@ -118,7 +80,7 @@ function updateCalendarTriggers() {
   for (const event of events) {
     if (offset < event.getLastUpdated() && isCancelled(event)) {
       const triggerId = event.getTag('id');
-      cleanUpTrigger(triggerId);
+      deleteTrigger_(triggerId, null);
       console.log(`This event has been cancelled: ${isCancelled(event)}`);
     }
   }
@@ -130,7 +92,26 @@ function updateCalendarTriggers() {
   }
 }
 
+/**
+ * Add new McRUN event(s) from calendar to Apps Script trigger for today.
+ * 
+ * @trigger  Updated calendar.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Apr 17, 2025
+ * @update  Apr 17, 2025
+ */
 
+function createCalendarTriggersForToday() {
+  const now = new Date();
+  const midnight = new Date(new Date().setHours(23, 59, 59, 59));
+
+  const calendar = CalendarApp.getDefaultCalendar();
+  const events = calendar.getEvents(now, midnight);
+  events.forEach(e => createCalendarTrigger_(e));
+
+  PropertiesService.getScriptProperties().setProperty('testEvent', events[0]);
+}
 
 /**
  * Add time-based trigger using event information from Calendar.
@@ -142,7 +123,7 @@ function updateCalendarTriggers() {
  * @update  Jun 2, 2025
  */
 
-function createAndStoreTrigger_(event) {
+function createCalendarTrigger_(event) {
   const scriptProperties = PropertiesService.getScriptProperties();
   const startTime = new Date(event.getStartTime().getTime() + TRIGGER_OFFSET);
 
@@ -175,8 +156,9 @@ function createAndStoreTrigger_(event) {
   }
 }
 
-
-
+/**
+ * Check if attendance has been submitted and send reminder email if not.
+ */
 function runSubmissionChecker() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const allProps = scriptProperties.getProperties();
@@ -195,7 +177,7 @@ function runSubmissionChecker() {
 
     const isSubmitted = checkMissingAttendance(timedate, level);
     if (isSubmitted) {
-      cleanUpTrigger(key, triggerId);
+      deleteTrigger_(triggerId, key);
       Logger.log(`Cleaning up trigger ${key}\n\n${triggerData}`);
     }
     else {
@@ -207,45 +189,30 @@ function runSubmissionChecker() {
   }
 }
 
-
-function checkThisEvent(timedate) {
-  const currentWeekday = timedate.getDay();
-  const currentDaySchedule = getScheduleFromStore_(currentWeekday);
-  const currentTimeKey = getMatchedTimeKey_(timedate, currentDaySchedule);
-
-  // getMatchedTimeKey throws error if no timekey found
-  // Get emails using run schedule for current day, then proceed to actual verification
-  //const runScheduleLevels = currentDaySchedule[currentTimeKey];
-  //const { 'timeKey' : matchedTimeKey, 'submission' : submission } = verifyAttendance_(currentWeekday);
-}
-
-
-/** Helper: remove trigger and data in script properties */
-function cleanUpTrigger(key, triggerId) {
-  deleteTriggerById(triggerId);
-  PropertiesService.getScriptProperties().deleteProperty(key);
-}
-
 /**
- * Deletes a trigger by its unique ID.
+ * Deletes a trigger by its unique ID and removes its data from script properties if needed.
  *
  * This function iterates through all project triggers to find and delete the one
  * with the specified unique ID. If the trigger is not found, it throws an error.
  *
- * @param {string} triggerId - The unique ID of the trigger to delete.
+ * @param {string} id - The unique ID of the trigger to delete.
+ * @param {string} key - (Optional) The key of trigger's associated script property.
  */
-function deleteTriggerById(triggerId) {
+function deleteTrigger_(id, key = null) {
   const triggers = ScriptApp.getProjectTriggers();
 
   for (let trigger of triggers) {
-    if (trigger.getUniqueId() === triggerId) {
+    if (trigger.getUniqueId() === id) {
       ScriptApp.deleteTrigger(trigger);
-      Logger.log(`Trigger with id ${triggerId} deleted!`);
+      if (key) {
+        PropertiesService.getScriptProperties().deleteProperty(key);
+      }
+      Logger.log(`Trigger with id ${id} deleted!`);
       return;
     }
   }
   // If we reach here, the trigger was not found
-  throw new Error(`⚠️ Trigger with id ${triggerId} not found`);
+  throw new Error(`⚠️ Trigger with id ${id} not found`);
 }
 
 

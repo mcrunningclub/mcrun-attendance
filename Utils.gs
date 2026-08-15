@@ -10,6 +10,33 @@ function getUserTimeZone_() {
   return Session.getScriptTimeZone();
 }
 
+
+
+/**
+ * Gets the start of the day for a given date.
+ *
+ * @param {Date} date - The date for which to get the start of the day.
+ * @return {Date} - A new Date object set to the start of the given day.
+ */
+
+function getStartOfDay_(date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+/**
+ * Gets the end of the day for a given date.
+ *
+ * @param {Date} date - The date for which to get the end of the day.
+ * @return {Date} - A new Date object set to the end of the given day.
+ */
+function getEndOfDay_(date) {
+  const start = new Date(date);
+  start.setHours(23, 59, 59, 59);
+  return start;
+} 
+
 /**
  * Returns the email of the current user executing Google Apps Script functions.
  * Useful for ensuring the correct account is executing Google automations.

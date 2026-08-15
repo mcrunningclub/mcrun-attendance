@@ -15,10 +15,9 @@ limitations under the License.
 */
 
 /**
- * Appends email to attendee name if found. Otherwise, do not add to name.
- *
- * Loops through all levels found in `row`. Sets new cell values in the end.
- *
+ * Appends attendee emails to names for each run level in specified
+ * row of attendance (if found). 
+ * 
  * @param {integer} row  Row in `ATTENDANCE_SHEET` to append email.
  * @param {string[][]} registered  All search keys of registered members (sorted) and emails.
  * @param {string[][]} unregistered  All unregistered attendees grouped by levels.
@@ -28,7 +27,7 @@ limitations under the License.
  * @update  Apr 1, 2025
  */
 
-function appendMemberEmail_(row, registered, unregistered) {
+function appendAttendeeEmails_(row, registered, unregistered) {
   const sheet = ATTENDANCE_SHEET;
   const numRowToGet = 1;
   const numColToGet = NUM_LEVELS;
@@ -77,7 +76,8 @@ function appendMemberEmail_(row, registered, unregistered) {
  * Transfers a submission from the attendance sheet to the Points Ledger.
  *
  * Packages all non-empty submission levels into a 2D array and sends it to the ledger.
- * If the transfer fails, it retries using `openByUrl`.
+ * If the transfer fails, it retries using `openByUrl`. Also sets a trigger to search for
+ * the Strava activity.
  *
  * @param {integer} [row=getLastRow_()] - The row in the attendance sheet to transfer.
  */
@@ -87,7 +87,7 @@ function transferSubmissionToLedger(row = getLastRow_()) {
   logAsAC_(`Executing for row #${row}...`, funcName);
 
   // STEP 1: Package all non-empty submission levels in single 2d arr
-  const packagedEvents = packageRowForLedger_(row);
+  const packagedEvents = packageSubmissionForLedger_(row);
   console.log('Packaged events:', packagedEvents);
 
   // STEP 1b: Only transfer if attendees count > 0
@@ -146,7 +146,7 @@ function transferSubmissionToLedger(row = getLastRow_()) {
  * @param {integer} row - The row in the attendance sheet to package.
  * @return {Array<Array<string>>} - A 2D array of packaged event data.
  */
-function packageRowForLedger_(row) {
+function packageSubmissionForLedger_(row) {
   const sheet = GET_ATTENDANCE_SHEET_();
 
   // Define dimension of range to fetch
@@ -203,14 +203,14 @@ function sendNewSubmission_(submissionArr) {
 }
 
 /**
- * Sets a new trigger to find and store Strava activity for a logged row in the Points Ledger.
+ * Sets a new trigger to find and store Strava activity for a row in the Points Ledger.
  *
- * @param {integer} logRow - The row index in the Points Ledger to set the trigger for.
+ * @param {integer} ledgerRow - The row index in the Points Ledger to set the trigger for.
  */
 
-function setNewStravaTrigger_(logRow) {
+function setNewStravaTrigger_(ledgerRow) {
   const base = "https://script.google.com/macros/s/";
-  const fetchUrl = base + getWebAppId_() + `/exec?rowNum=${logRow}&key=${getSecretWebKey_()}`;
+  const fetchUrl = base + getWebAppId_() + `/exec?rowNum=${ledgerRow}&key=${getSecretWebKey_()}`;
 
   const response = UrlFetchApp.fetch(fetchUrl);
   const funcName = setNewStravaTrigger_.name;
@@ -227,32 +227,6 @@ function setNewStravaTrigger_(logRow) {
     const property = 'WEB_APP_ID';
     return PropertiesService.getScriptProperties().getProperty(property);
   }
-}
-
-
-/**
- * @deprecated  Does not set trigger in 'Points Ledger' scope.
- */
-
-function setNewStravaTriggerOld_(logRow) {
-  const funcName = PointsLedgerCode.createNewStravaTrigger.name;
-  return executePointsLedgerFunction_(funcName, [logRow]);
-}
-
-/**
- * @deprecated  Difficult to debug and properly execute.
- */
-function storeStravaInLogSheet_(logRow) {
-  const funcName = PointsLedgerCode.findAndStoreStravaActivity.name;
-  return executePointsLedgerFunction_(funcName, [logRow]);
-}
-
-/**
- * @deprecated. Difficult to debug and properly execute.
- */
-function triggerEmailInLedger_(logRow) {
-  const funcName = PointsLedgerCode.sendStatsEmail.name;
-  executePointsLedgerFunction_(funcName, [undefined, logRow]);
 }
 
 

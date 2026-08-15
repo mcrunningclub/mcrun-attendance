@@ -94,7 +94,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   setNamesNotFound_(row, unregistered.join("\n"));
 
   // Append email to registered attendees
-  appendMemberEmail_(row, registered, unregistered);
+  appendAttendeeEmails_(row, registered, unregistered);
 
   /** Helper Function */
   function setNamesNotFound_(row, notFoundArr) {
