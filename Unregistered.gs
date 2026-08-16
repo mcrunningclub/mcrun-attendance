@@ -15,9 +15,7 @@ limitations under the License.
 */
 
 /**
- * Wrapper function for `getUnregisteredMembers` for *ALL* rows.
- *
- * Executes the function for all rows in the attendance sheet, skipping the header row.
+ * Finds attendees who are unregistered members for all rows in the attendance sheet.
  */
 
 function getAllUnregisteredMembers_() {
@@ -28,9 +26,7 @@ function getAllUnregisteredMembers_() {
 /**
  * Find attendees in a specific row of the attendance sheet who are unregistered members.
  *
- * Sets unregistered members in the `NOT_FOUND_COL` column.
- * 
- * List of members found in `Members` sheet.
+ * Sets unregistered members in the "Not Found" column. List of members found in `Members` sheet.
  *
  * @param {number} [row=ATTENDANCE_SHEET.getLastRow()] - The row number in the attendance sheet (1-indexed).
  *                                                      Defaults to the last row in the sheet.
@@ -52,9 +48,6 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
   const memberMap = getMemberMap_();
   const cleanMemberMap = formatAndSortMemberMap_(memberMap, 0, 1);    // searchKeyIndex: 0, emailIndex: 1
 
-  // Function to prepare a name: remove whitespace, strip accents, capitalize, and swap names
-  const prepareThisName = compose_(formatThisName_, reverseThisName_);
-
   allAttendees.forEach(level => {
     const namesWithEmail = [];
     const namesWithoutEmail = [];
@@ -71,7 +64,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
       if (name.includes(':')) {
         namesWithEmail.push(name); // Name with email
       } else {
-        const nameToFind = prepareThisName(name);
+        const nameToFind = reverseName_(formatName_(name));
         namesWithoutEmail.push(nameToFind); // Name without email
       }
     });
@@ -81,7 +74,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
     const {
       'unregistered': foundUnregistered,
       'registered': foundRegistered
-    } = findUnregistered_(namesWithoutEmail.sort(), cleanMemberMap);
+    } = getUnregisteredFromList_(namesWithoutEmail.sort(), cleanMemberMap);
 
     // Combine and sort both arrays
     const mergedRegistered = [...namesWithEmail, ...foundRegistered];
@@ -106,9 +99,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
 
 
 /**
- * Helper function to find unregistered attendees.
- *
- * Compares attendees against the member map to identify unregistered members.
+ * Finds unregistered attendees in the given list by comparing against the member map.
  *
  * @param {string[]} attendees - All attendees of the head run (sorted).
  * @param {string[][]} memberMap - All search keys of registered members (sorted) and emails.
@@ -120,7 +111,7 @@ function getUnregisteredMembersInRow_(row = ATTENDANCE_SHEET.getLastRow()) {
  * @update  Feb 9, 2025
  */
 
-function findUnregistered_(attendees, memberMap) {
+function getUnregisteredFromList_(attendees, memberMap) {
   const unregistered = [];
   const registeredMap = {}    // Saves member name-email pair
 
@@ -186,15 +177,6 @@ function findUnregistered_(attendees, memberMap) {
   return returnObject;
 }
 
-
-/** HELPER FUNCTIONS TO FORMAT */
-
-// Group functions to apply on `input`
-function compose_(...fns) {
-  return (input) => fns.reduce((v, f) => f(v), input);
-}
-
-
 /**
  * Formats a name by removing whitespace, stripping accents, and capitalizing names.
  *
@@ -202,7 +184,7 @@ function compose_(...fns) {
  * @return {string} - The formatted name.
  */
 
-function formatThisName_(name) {
+function formatName_(name) {
   return name
     .trim()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")  // Strip accents
@@ -219,7 +201,7 @@ function formatThisName_(name) {
  * @return {string} - The reversed name.
  */
 
-function reverseThisName_(name) {
+function reverseName_(name) {
   let nameParts = name.split(/\s+/)   // Split by spaces;
 
   if (nameParts.length === 1) {
@@ -262,13 +244,8 @@ function reverseThisName_(name) {
 function formatAndSortMemberMap_(memberMap, searchKeyIndex, emailIndex) {
   const formattedMap = memberMap.map(row => {
     const memberEmail = row[emailIndex];
-    const formattedSearchKey = row[searchKeyIndex]
-      .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // Strip accents
-      .replace(/[\u2018\u2019']/g, "") // Remove apostrophes (`, ', ’)
-      .toLowerCase()
-      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each word
-
+    const formattedSearchKey = formatName_(row[searchKeyIndex]);
+      
     // Combine formatted searchkey and email
     return [formattedSearchKey, memberEmail];
   });
@@ -299,24 +276,9 @@ function formatAndSortMemberMap_(memberMap, searchKeyIndex, emailIndex) {
  * ```
  */
 
-function swapAndFormatName_(names) {
+function swapAndFormatNames_(names) {
   const formattedNames = names.map(name => {
-    let nameParts = name
-      .trim()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // Strip accents
-      .replace(/[\u2018\u2019']/g, "")  // Remove apostrophes (`, ', ’)
-      .toLowerCase()
-      .replace(/\b\w/g, l => l.toUpperCase())   // Capitalize each name
-      .split(/\s+/) // Split by spaces
-      ;
-
-    // Replace hyphens with spaces. Can only perform after splitting first and last name.
-    nameParts = nameParts.map(name => name.replace(/-/g, " "));
-
-    // If first name is not hyphenated, only left-most substring stored in first name
-    const firstName = nameParts[0];
-    const lastName = nameParts[nameParts.length - 1];
-    return `${lastName}, ${firstName}`; // Format as "LastName, FirstName"
+    return reverseName_(formatName_(name));
   });
 
   return formattedNames.sort();
@@ -335,7 +297,7 @@ function getMemberMap_() {
   // Get existing member registry in `Members` sheet
   const memberSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Members");
 
-  const memberEmailCol = MEMBER_EMAIL_COL - 1;    // GSheet to array (1-index to 0-index)
+  const memberEmailIndex = MEMBER_EMAIL_COL - 1;    // GSheet to array (1-index to 0-index)
   const memberKeyIndex = MEMBER_SEARCH_KEY_COL - 1;
 
   const startCol = 1;
@@ -349,7 +311,7 @@ function getMemberMap_() {
   // Step 1. Combine memberKey and email
   // Step 2. Filter rows with empty names or emails
   const memberMap = memberSheetValues
-    .map(row => [row[memberKeyIndex], row[memberEmailCol]])
+    .map(row => [row[memberKeyIndex], row[memberEmailIndex]])
     .filter(row => row[0] && row[1]);
 
   return memberMap;

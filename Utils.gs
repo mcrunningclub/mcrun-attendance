@@ -106,6 +106,35 @@ function getLastRow_(sheet = GET_ATTENDANCE_SHEET_()) {
 }
 
 
+/**
+ * Boiler plate function `functionName` to execute on complete sheet.
+ *
+ * Also executes `functionName2` if non-empty.
+ *
+ * @param {string}  functionName  Name of function to execute.
+ * @param {string}  [functionName2=""]  Name of function to execute.
+ *                                      Defaults to empty string.
+ *
+ * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
+ * @date  Dec 11, 2024
+ * @update  Dec 11, 2024
+ */
+
+function runOnSheet_(functionName, functionName2 = "") {
+  const sheet = ATTENDANCE_SHEET;
+  const startRow = 2  // Skip header row
+  const numRows = sheet.getLastRow();
+
+  for (var row = startRow; row <= numRows; row++) {
+    this[functionName](row);
+
+    // Only executes `functionName2` if non-empty.
+    if (functionName2) {
+      this[functionName2](row);
+    }
+  }
+}
+
 /** 
  * Format timestamp to format as `yyyy-MM-dd hh:mm:ss`.
  * 
