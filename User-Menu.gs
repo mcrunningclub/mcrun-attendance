@@ -170,33 +170,37 @@ function confirmAndRunUserChoice_(functionName, additionalMsg = "", funcArg = ""
 
 
 /**
- * Scripts for `Formatting` menu items.
- *
- * Extracting function name using `name` property to allow for refactoring.
- *
- * Some functions include a custom message for user.
+ * Scripts for formatting: Sort semester attendance sheet by timestamp
  */
-
 function sortByTimestampUI_() {
   const functionName = sortSemesterAttendance.name;
   const customMsg = "This sheet will be sorted by timestamp of submission."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
+/**
+ * Scripts for formatting: Clean data in semester attendance sheet
+ */
 function cleanSheetDataUI_() {
   functionName = formatSemesterAttendance.name;
-  const customMsg = "This will clean and formal all the sheet data. \
+  const customMsg = "This will clean and format all the sheet data. \
   \n\nWARNING! Wide-sheet formatting may take some time."
 
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
+/**
+ * Scripts for formatting: Format semester attendance sheet
+ */
 function prettifySheetUI_() {
   const functionName = prettifySheet.name;
   const customMsg = "This will improve the sheet formatting, and hide the attendee emails."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
+/**
+ * Scripts for formatting: Format names for all rows in semester attendance sheet
+ */
 function formatAllNamesUI_() {
   functionName = formatAllNames.name;
   const customMsg = "This will format all the names found in this sheet. \
@@ -206,9 +210,9 @@ function formatAllNamesUI_() {
 }
 
 /**
+ * Scripts for formatting: Format names for a given row in semester attendance sheet.
  * This UI function can target a specific row, or the last row if input is omitted.
  */
-
 function formatNamesInRowUI_() {
   const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
   const selectedRow = returnObj.row;
@@ -222,25 +226,26 @@ function formatNamesInRowUI_() {
 
 
 /**
- * Scripts for `Attendance` menu items.
- *
- * Extracting function name using `name` property to allow for refactoring.
- *
- * Some functions include a custom message for user.
+ * Scripts for attendance: Remove prescence checkmarks
  */
-
 function removePresenceCheckUI_() {
   const functionName = removePresenceChecks.name;
   const customMsg = "This will remove the presence checkmarks in the membership registry."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
+/**
+ * Scripts for attendance: Check for missing attendance
+ */
 function checkMissingAttendanceUI_() {
   const functionName = checkMissingAttendance.name;
   const customMsg = "WARNING. This will send an email reminder to headrunners if attendance is missing."
   confirmAndRunUserChoice_(functionName, customMsg);
 }
 
+/**
+ * Scripts for attendance: Allow/Disallow automatic check for missing attendance
+ */
 function toggleAttendanceCheckUI_() {
   const functionName = toggleAttendanceCheck_.name;
   const customMsg = "Turn on to allow McRUN bot (checkMissingAttendance) to check for \
@@ -269,6 +274,7 @@ function findAllUnregisteredUI_() {
 }
 
 /**
+ * Scripts for attendance: Find unregistered attendees.
  * This UI function can target a specific row, or the last row if input is omitted.
  */
 
@@ -288,13 +294,8 @@ function findUnregisteredAttendeesUI_() {
 
 
 /**
- * Scripts for `Triggers` menu items.
- *
- * Extracting function name using `name` property to allow for refactoring.
- *
- * Some functions include a custom message for user.
+ * Scripts for triggers: Process new attendance submission (for google form).
  */
-
 function onFormSubmitUI_() {
   const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
   const selectedRow = returnObj.row;
@@ -311,6 +312,9 @@ function onFormSubmitUI_() {
 }
 
 
+/**
+ * Scripts for triggers: Process new attendance submission (for app).
+ */
 function onAppSubmitUI_() {
   const functionName = onAppSubmission.name;
   const customMsg = "This will run functions triggered when new attendance is submitted using the app."
@@ -319,13 +323,8 @@ function onAppSubmitUI_() {
 
 
 /**
- * Scripts for `Transfer` menu items.
- *
- * Extracting function name using `name` property to allow for refactoring.
- *
- * Some functions include a custom message for user.
+ * Scripts for transferring: Export attendance to points ledger.
  */
-
 function exportToPointsLedgerUI_() {
   const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
   const selectedRow = returnObj.row;
@@ -342,6 +341,9 @@ function exportToPointsLedgerUI_() {
 }
 
 
+/**
+ * Scripts for transferring: Import attendance recorded from app.
+ */
 function importAppRecordUI_() {
   const returnObj = requestRowInput_();  // returnObj = {row : int, msg : string}
   const selectedRow = returnObj.row;
@@ -359,9 +361,10 @@ function importAppRecordUI_() {
 
 
 /**
- * Helper Functions for user input, etc.
+ * Creates popup that asks user to input a row number.
+ * 
+ * @returns {row: integer, msg: string}  Object with user response and optional message to display.
  */
-
 function requestRowInput_() {
   const ui = SpreadsheetApp.getUi();
   const headerMsg = "Which row do you want to target?";
@@ -381,14 +384,10 @@ function requestRowInput_() {
  *
  * @param {string} userResponse  User response text from `SpreadsheetApp.getUi().prompt`
  * @param {GoogleAppsScript.Base.Ui} ui  User interface in Google Sheets
- * @return {Result} `Result`  Packaged result of processing.
+ * @return {row: integer, msg: string}  Packaged result of processing, where row is the
+ *                    parsed integer value of `userResponse` and msg is the custom 
+ *                    message to display to the user.
  * 
- * ### Properties of Return Object
- * - ```Result.row {integer}``` — Parsed integer value of `userResponse`.
- * 
- * - ```Result.msg {string}``` — Custom message to display to the user.
- * 
- * ### Metadata
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Mar 24, 2025
  * @update  Mar 24, 2025
