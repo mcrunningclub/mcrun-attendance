@@ -189,7 +189,7 @@ function isSameTimestamp_(timestamp1, timestamp2) {
  *
  * Helper function for UI functions for McRUN menu.
  *
- * @param {number}  The row number in `ATTENDANCE_SHEET` 1-indexed.
+ * @param {number} row  The row number in `ATTENDANCE_SHEET` 1-indexed.
  * @return {boolean}  Returns true if valid row in sheet.
  *
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>) & ChatGPT

@@ -66,7 +66,7 @@ function getWeekdayAsString_(index) {
  * Return headrun schedule for given day of week.
  * 
  * @param {string|number} weekday  Day of week to get schedule for. Can be string representation or js equivalent (1 = 'monday').
- * @return {}
+ * @return {Object}  JSON of run schedule for the given weekday. null if getAllHeadruns_ doesn't return anything
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  May 2, 2025
@@ -224,7 +224,7 @@ function getHeadrunnerEmailsFromNames_(names) {
  * 
  * @param {string} names  Headrunner names delimited by newlines
  * @param {string} delimiter  (Optional) Delimiter used to separate headrunners, default \n 
- * @return {strin}  Headrunner info as `name:email` delimited by newlines.
+ * @return {string}  Headrunner info as `name:email` delimited by newlines.
  * 
  * @author [Andrey Gonzalez](<andrey.gonzalez@mail.mcgill.ca>)
  * @date  Sep 27, 2025
